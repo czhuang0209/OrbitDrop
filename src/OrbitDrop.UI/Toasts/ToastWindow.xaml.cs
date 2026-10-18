@@ -15,6 +15,7 @@ public partial class ToastWindow : Window
 {
     private readonly DispatcherTimer _autoClose = new();
     private bool _closing;
+    private bool _clickAnywhere = true;
 
     public ToastWindow()
     {
@@ -23,7 +24,7 @@ public partial class ToastWindow : Window
         _autoClose.Tick += (_, _) => { _autoClose.Stop(); FadeOutAndClose(); };
         MouseEnter += (_, _) => _autoClose.Stop();
         MouseLeave += (_, _) => { if (_autoClose.Interval > TimeSpan.Zero && Kind != ToastKind.Running) _autoClose.Start(); };
-        MouseLeftButtonUp += (_, e) => { if (ShowButton.Visibility == Visibility.Visible && e.OriginalSource is not System.Windows.Controls.Button) ShowRequested?.Invoke(); };
+        MouseLeftButtonUp += (_, e) => { if (_clickAnywhere && ShowButton.Visibility == Visibility.Visible && e.OriginalSource is not System.Windows.Controls.Button) ShowRequested?.Invoke(); };
         Shadow.Opacity = ThemeManager.Number("ToastShadowOpacity");
         SetIndeterminate(true);
     }
@@ -50,6 +51,14 @@ public partial class ToastWindow : Window
         AnimateProgress(fraction);
     }
 
+    /// <summary>Turns the "Show" link into a named action that only fires from the button itself, not a click on the card.</summary>
+    public void SetAction(string label)
+    {
+        ShowButton.Content = label;
+        ShowButton.ToolTip = null;
+        _clickAnywhere = false;
+    }
+
     public void SetResult(ToastKind kind, string title, string detail, bool canShow, TimeSpan autoClose)
     {
         Kind = kind;
@@ -57,7 +66,7 @@ public partial class ToastWindow : Window
         DetailText.Text = detail;
         CloseButton.ToolTip = "Dismiss";
         ShowButton.Visibility = canShow ? Visibility.Visible : Visibility.Collapsed;
-        Cursor = canShow ? Cursors.Hand : null;
+        Cursor = canShow && _clickAnywhere ? Cursors.Hand : null;
         AutomationProperties(title, detail);
 
         RingSpin.BeginAnimation(RotateTransform.AngleProperty, null);

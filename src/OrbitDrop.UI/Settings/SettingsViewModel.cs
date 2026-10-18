@@ -21,6 +21,11 @@ public interface ISettingsHost
     void ShowOnboarding();
     void OpenPath(string path);
     void ResetSettings();
+    // Updates (defaults keep design-review hosts simple)
+    string UpdateStatusText => "You're up to date";
+    string UpdateButtonText => "Check now";
+    bool UpdateBusy => false;
+    void UpdateButtonClicked() { }
 }
 
 public sealed class SettingsViewModel : ObservableObject
@@ -36,6 +41,7 @@ public sealed class SettingsViewModel : ObservableObject
         OpenSettingsFileCommand = new RelayCommand(() => host.OpenPath(Path.GetDirectoryName(host.SettingsPath)!));
         OpenLicenseCommand = new RelayCommand(() => { if (host.LicensePath is { } p) host.OpenPath(p); }, () => host.LicensePath is not null);
         ResetCommand = new RelayCommand(() => { host.ResetSettings(); RaiseAll(); });
+        UpdateCommand = new RelayCommand(host.UpdateButtonClicked);
     }
 
     private AppSettings S => _host.Settings;
@@ -100,6 +106,19 @@ public sealed class SettingsViewModel : ObservableObject
 
     // ---- About
     public string VersionText => _host.VersionText;
+    public bool CheckForUpdates { get => S.CheckForUpdates; set => Set(s => s.CheckForUpdates = value, nameof(CheckForUpdates)); }
+    public string UpdateStatusText => _host.UpdateStatusText;
+    public string UpdateButtonText => _host.UpdateButtonText;
+    public bool UpdateButtonEnabled => !_host.UpdateBusy;
+    public RelayCommand UpdateCommand { get; }
+
+    /// <summary>Called by the app when an update check or download changes state.</summary>
+    public void RefreshUpdates()
+    {
+        Raise(nameof(UpdateStatusText));
+        Raise(nameof(UpdateButtonText));
+        Raise(nameof(UpdateButtonEnabled));
+    }
 
     public RelayCommand PreviewWheelCommand { get; }
     public RelayCommand ShowOnboardingCommand { get; }

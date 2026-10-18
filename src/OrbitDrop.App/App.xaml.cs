@@ -37,6 +37,8 @@ public partial class App : Application, ISettingsHost, ITrayCommands
     private SettingsWindow? _settingsWindow;
     private OnboardingWindow? _onboarding;
     private DispatcherTimer? _saveDebounce;
+    private UpdateManager? _updates;
+    private SettingsViewModel? _settingsVm;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -117,10 +119,18 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         _tray.ContextMenuRequested += pt => ShowTrayMenu(pt);
         _tray.Show();
 
+        _updates = new UpdateManager(_toasts, () => _settings, Update, () => _instance?.ReleaseOwnership(), Quit);
+        _updates.Changed += () => _settingsVm?.RefreshUpdates();
+        _updates.Start();
+
         _instance.ListenForActivation(() => Dispatcher.BeginInvoke(() => OpenSettings()));
 
-        bool background = args.Contains("--background");
-        if (!_settings.OnboardingCompleted && !background) ShowOnboarding();
+        // The silent installer relaunches with --updated after an in-app update.
+        bool updated = args.Contains("--updated");
+        bool background = args.Contains("--background") || updated;
+        if (updated)
+            _toasts.ShowMessage(ToastKind.Success, "OrbitDrop updated", $"You're now on version {UpdateManager.Current}. Your settings were kept.", ScreenInfo.CursorPosition);
+        else if (!_settings.OnboardingCompleted && !background) ShowOnboarding();
         else if (!background)
             _toasts.ShowMessage(ToastKind.Info, "OrbitDrop is running",
                 $"Drag files and tap {TriggerKeyName}. Find OrbitDrop in the notification area.", ScreenInfo.CursorPosition);
@@ -174,8 +184,9 @@ public partial class App : Application, ISettingsHost, ITrayCommands
     {
         if (_settingsWindow is null)
         {
-            _settingsWindow = new SettingsWindow(new SettingsViewModel(this));
-            _settingsWindow.Closed += (_, _) => _settingsWindow = null;
+            _settingsVm = new SettingsViewModel(this);
+            _settingsWindow = new SettingsWindow(_settingsVm);
+            _settingsWindow.Closed += (_, _) => { _settingsWindow = null; _settingsVm = null; };
             _settingsWindow.Show();
         }
         if (page is not null) _settingsWindow.ShowPage(page);
@@ -202,6 +213,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
     protected override void OnExit(ExitEventArgs e)
     {
         _saveDebounce?.Stop();
+        _updates?.Stop();
         if (_store is not null && _instance?.IsFirst == true) SaveNow();
         _interaction?.Dispose();
         _detector?.Dispose();
@@ -286,6 +298,62 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         Log.Detailed = false;
         SaveNow();
         Log.Info("Settings reset to defaults");
+    }
+
+    // ------------------------------------------------------------------ Updates (Settings → About and the tray menu)
+
+    public string UpdateStatusText
+    {
+        get
+        {
+            if (_updates is null) return "";
+            string last = _settings.LastUpdateCheck is { } t ? $" · checked {Ago(t)}" : "";
+            return _updates.State switch
+            {
+                UpdateState.Checking => "Checking GitHub for a newer version…",
+                UpdateState.Available or UpdateState.Downloading or UpdateState.Installing when _updates.Available is { } r =>
+                    UpdateManager.IsInstalled ? $"OrbitDrop {r.Version} is available. Installing takes a few seconds and keeps your settings."
+                                              : $"OrbitDrop {r.Version} is available. This is the portable copy, so download it from GitHub.",
+                UpdateState.Failed => $"{_updates.Error}{last}",
+                _ when _settings.LastUpdateCheck is null => $"You have version {UpdateManager.Current}. Not checked yet.",
+                _ => $"You're up to date (version {UpdateManager.Current}){last}",
+            };
+        }
+    }
+
+    public string UpdateButtonText => _updates?.State switch
+    {
+        UpdateState.Checking => "Checking…",
+        UpdateState.Downloading => "Downloading…",
+        UpdateState.Installing => "Installing…",
+        UpdateState.Available => UpdateManager.IsInstalled ? "Install update" : "Download",
+        _ => "Check now",
+    };
+
+    public bool UpdateBusy => _updates?.State is UpdateState.Checking or UpdateState.Downloading or UpdateState.Installing;
+
+    public void UpdateButtonClicked()
+    {
+        if (_updates is null) return;
+        if (_updates.State == UpdateState.Available) _ = _updates.InstallAsync();
+        else _ = _updates.CheckAsync(manual: true);
+    }
+
+    public bool UpdateAvailable => _updates?.Available is not null;
+
+    public string UpdateMenuText => _updates?.Available is { } r
+        ? $"{(UpdateManager.IsInstalled ? "Install" : "Download")} OrbitDrop {r.Version}"
+        : "Check for updates";
+
+    public void UpdateMenuClicked() => UpdateButtonClicked();
+
+    private static string Ago(DateTimeOffset t)
+    {
+        var d = DateTimeOffset.UtcNow - t;
+        if (d < TimeSpan.FromMinutes(1)) return "just now";
+        if (d < TimeSpan.FromHours(1)) return $"{(int)d.TotalMinutes} min ago";
+        if (d < TimeSpan.FromDays(1)) return $"{(int)d.TotalHours} h ago";
+        return t.ToLocalTime().ToString("d MMM");
     }
 
     private void ScheduleSave()

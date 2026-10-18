@@ -37,6 +37,18 @@ public sealed class ToastManager
         toast.SetResult(kind, title, detail, canShow: false, duration ?? TimeSpan.FromSeconds(5));
     }
 
+    /// <summary>A result card with one action button (e.g. "Install"). Only the button triggers the action.</summary>
+    public void ShowAction(ToastKind kind, string title, string detail, string actionLabel, Action action, Win32.POINT anchor, TimeSpan? duration = null)
+    {
+        var toast = Create(anchor);
+        toast.SetAction(actionLabel);
+        toast.ShowRequested += () => { toast.FadeOutAndClose(); action(); };
+        toast.SetResult(kind, title, detail, canShow: true, duration ?? TimeSpan.FromSeconds(12));
+    }
+
+    /// <summary>An empty card the caller drives with <see cref="ToastWindow.SetRunning"/> / <see cref="ToastWindow.SetResult"/>.</summary>
+    public ToastWindow ShowProgress(Win32.POINT anchor) => Create(anchor);
+
     private ToastWindow Create(Win32.POINT anchor)
     {
         while (_toasts.Count >= MaxVisible) _toasts[0].Window.FadeOutAndClose();

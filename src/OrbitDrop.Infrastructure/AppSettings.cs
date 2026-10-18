@@ -39,6 +39,10 @@ public sealed class AppSettings
     public bool ExtendedDragDetection { get; set; }
     public bool DetailedLogging { get; set; }
 
+    // Updates: one anonymous request to GitHub Releases at most once a day, only while this is on.
+    public bool CheckForUpdates { get; set; } = true;
+    public DateTimeOffset? LastUpdateCheck { get; set; }
+
     public AppSettings Clone() => (AppSettings)MemberwiseClone();
 
     /// <summary>Clamps values that may have been hand-edited into an invalid range.</summary>

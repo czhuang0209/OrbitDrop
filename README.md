@@ -5,11 +5,11 @@
 
 ## Download
 
-**[⬇ Download OrbitDrop for Windows (installer)](https://github.com/i3sam/OrbitDrop/releases/download/v0.1.1-alpha/OrbitDrop-Setup.exe)** · [portable .zip](https://github.com/i3sam/OrbitDrop/releases/download/v0.1.1-alpha/OrbitDrop-Portable.zip) · [all releases](https://github.com/i3sam/OrbitDrop/releases)
+**[⬇ Download OrbitDrop for Windows (installer)](https://github.com/i3sam/OrbitDrop/releases/download/v0.1.2-alpha/OrbitDrop-Setup.exe)** · [portable .zip](https://github.com/i3sam/OrbitDrop/releases/download/v0.1.2-alpha/OrbitDrop-Portable.zip) · [all releases](https://github.com/i3sam/OrbitDrop/releases)
 
 Run the installer: no admin rights or .NET needed. This alpha isn't code-signed yet, so if Windows shows "Windows protected your PC", click **More info → Run anyway**.
 
-> **Status: 0.1.1-alpha.** The core gesture is validated on Windows 11 (single monitor, 100% scale). Multi-monitor, mixed-DPI and Windows 10 sign-off are still pending; see [the feasibility report](docs/research/02-feasibility-report.md).
+> **Status: 0.1.2-alpha.** The core gesture is validated on Windows 11 (single monitor, 100% scale). Multi-monitor, mixed-DPI and Windows 10 sign-off are still pending; see [the feasibility report](docs/research/02-feasibility-report.md).
 
 ## How it works
 
@@ -19,13 +19,13 @@ Run the installer: no admin rights or .NET needed. This alpha isn't code-signed 
 
 Tap Shift again to switch **Convert → Tools → Actions**. Release on the centre or press **Esc** to cancel.
 
-| Mode | 0.1.1 capabilities |
+| Mode | 0.1.2 capabilities |
 |---|---|
 | Convert | Images: PNG ↔ JPG ↔ BMP ↔ TIFF ↔ GIF · Video: MP4, WMV, or extract audio as MP3 / M4A / WAV / WMA · Audio: MP3 ↔ M4A ↔ WAV ↔ WMA |
 | Tools | Images: rotate, flip, grayscale · Video: compress to 720p, remove audio |
 | Actions | Copy path, Copy name, Show in folder (any file) |
 
-**Private by design:** everything runs locally. No uploads, no account, no telemetry.
+**Private by design:** everything runs locally. No uploads, no account, no telemetry. The only network request is an optional once-a-day update check against GitHub Releases (Settings → About; turn it off any time).
 
 ## Build from source
 

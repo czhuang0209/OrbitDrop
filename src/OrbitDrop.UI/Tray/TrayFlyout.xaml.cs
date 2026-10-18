@@ -14,6 +14,10 @@ public interface ITrayCommands
     void OpenSettings(string? page = null);
     void ShowOnboarding();
     void Quit();
+    /// <summary>"Check for updates", or "Install OrbitDrop x.y.z" once a newer release is known.</summary>
+    string UpdateMenuText => "Check for updates";
+    bool UpdateAvailable => false;
+    void UpdateMenuClicked() { }
 }
 
 /// <summary>Notification-area menu in the OrbitDrop design language. Closes when it loses focus or on Esc.</summary>
@@ -42,6 +46,9 @@ public partial class TrayFlyout : Window
         StatusDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, paused ? "Orbit.Warning" : "Orbit.Success");
         PauseGlyph.Text = paused ? "" : "";
         PauseText.Text = paused ? "Resume" : "Pause";
+        UpdateText.Text = _commands.UpdateMenuText;
+        UpdateGlyph.Text = _commands.UpdateAvailable ? "" : ""; // Download : Sync
+        UpdateDot.Visibility = _commands.UpdateAvailable ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>Opens above (or below) the tray anchor point, right-aligned to it, inside the work area.</summary>
@@ -81,6 +88,7 @@ public partial class TrayFlyout : Window
     private void OnPause(object sender, RoutedEventArgs e) => Run(() => _commands.Paused = !_commands.Paused);
     private void OnSettings(object sender, RoutedEventArgs e) => Run(() => _commands.OpenSettings());
     private void OnHelp(object sender, RoutedEventArgs e) => Run(_commands.ShowOnboarding);
+    private void OnUpdate(object sender, RoutedEventArgs e) => Run(_commands.UpdateMenuClicked);
     private void OnAbout(object sender, RoutedEventArgs e) => Run(() => _commands.OpenSettings("About"));
     private void OnExit(object sender, RoutedEventArgs e) => Run(_commands.Quit);
 }

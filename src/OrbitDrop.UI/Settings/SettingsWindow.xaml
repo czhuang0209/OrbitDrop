@@ -334,10 +334,31 @@
                     </Border>
                     <Border Style="{StaticResource Orbit.Card}">
                         <DockPanel>
+                            <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE895;" />
+                            <Button DockPanel.Dock="Right" Content="{Binding UpdateButtonText}" Style="{StaticResource Orbit.Button.Standard}"
+                                    Command="{Binding UpdateCommand}" IsEnabled="{Binding UpdateButtonEnabled}" VerticalAlignment="Center" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Updates" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="{Binding UpdateStatusText}" Style="{StaticResource RowHint}" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Orbit.Card}">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE823;" />
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding CheckForUpdates}" AutomationProperties.Name="Check for updates automatically" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Check for updates automatically" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="Once a day, OrbitDrop asks GitHub whether a newer version exists. Nothing about you or your files is sent, and nothing installs without your click." Style="{StaticResource RowHint}" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Orbit.Card}">
+                        <DockPanel>
                             <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE72E;" />
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="Private by design" Style="{StaticResource RowTitle}" />
-                                <TextBlock Text="Everything runs on this PC. OrbitDrop never uploads files, needs no account, and collects no telemetry." Style="{StaticResource RowHint}" />
+                                <TextBlock Text="Everything runs on this PC. OrbitDrop never uploads files, needs no account, and collects no telemetry. The only network request is the update check above." Style="{StaticResource RowHint}" />
                             </StackPanel>
                         </DockPanel>
                     </Border>

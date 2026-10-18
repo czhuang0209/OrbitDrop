@@ -12,6 +12,7 @@ public sealed class SingleInstance : IDisposable
     private readonly Mutex _mutex;
     private readonly EventWaitHandle? _activate;
     private RegisteredWaitHandle? _wait;
+    private bool _released;
 
     public SingleInstance()
     {
@@ -32,11 +33,19 @@ public sealed class SingleInstance : IDisposable
     /// <summary>Second instance: ask the first one to come forward.</summary>
     public void SignalFirstInstance() => _activate?.Set();
 
+    /// <summary>Gives up the running-copy mutex early, e.g. just before handing over to the installer during an update.</summary>
+    public void ReleaseOwnership()
+    {
+        if (_released) return;
+        _released = true;
+        if (IsFirst) { try { _mutex.ReleaseMutex(); } catch (ApplicationException) { } }
+        _mutex.Dispose();
+    }
+
     public void Dispose()
     {
         _wait?.Unregister(null);
         _activate?.Dispose();
-        if (IsFirst) { try { _mutex.ReleaseMutex(); } catch (ApplicationException) { } }
-        _mutex.Dispose();
+        ReleaseOwnership();
     }
 }

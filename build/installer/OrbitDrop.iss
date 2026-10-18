@@ -2,10 +2,10 @@
 ; Built by build/package.ps1, which passes AppVersion, NumericVersion, SourceDir and OutputDir.
 
 #ifndef AppVersion
-  #define AppVersion "0.1.1-alpha"
+  #define AppVersion "0.1.2-alpha"
 #endif
 #ifndef NumericVersion
-  #define NumericVersion "0.1.1.0"
+  #define NumericVersion "0.1.2.0"
 #endif
 #ifndef SourceDir
   #define SourceDir "..\..\artifacts\publish\win-x64"
@@ -62,11 +62,18 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 
 [Run]
 Filename: "{app}\OrbitDrop.exe"; Description: "Start OrbitDrop now"; Flags: nowait postinstall skipifsilent
+; In-app updates run Setup silently with /RELAUNCH=1: start the new version once its files are in place.
+Filename: "{app}\OrbitDrop.exe"; Parameters: "--updated"; Flags: nowait; Check: IsUpdateRelaunch
 
 [UninstallRun]
 Filename: "{sys}\taskkill.exe"; Parameters: "/im OrbitDrop.exe /f"; Flags: runhidden; RunOnceId: "StopOrbitDrop"
 
 [Code]
+function IsUpdateRelaunch: Boolean;
+begin
+  Result := WizardSilent and (ExpandConstant('{param:RELAUNCH|0}') = '1');
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep = usPostUninstall then
