@@ -128,7 +128,7 @@ internal static class FilmAssets
         n++;
     }
 
-    /// <summary>What sits "behind" the wheel in the film: the off-white stage with violet and sky glows.</summary>
+    /// <summary>What sits "behind" the wheel in the film: the off-white stage with soft neutral washes.</summary>
     private static ImageSource FilmBackdrop(bool dark)
     {
         double s = WheelGeometry.Extent;

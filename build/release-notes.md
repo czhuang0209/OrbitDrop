@@ -1,3 +1,9 @@
+## What's new in 0.1.1-alpha
+
+- **New look:** a new OrbitDrop icon (a droplet in orbit) and a clean black-and-white design across the wheel, Settings, tray menu, notifications and welcome guide, in both light and dark themes.
+- **Smarter wheel:** if a file can't be converted, the wheel opens straight into Actions instead of showing an empty ring, and Shift skips empty modes.
+- **Video and audio** conversion via Windows Media Foundation (added since the first alpha).
+
 ## Download
 
 | File | What it is |

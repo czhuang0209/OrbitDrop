@@ -74,7 +74,7 @@ Esc / release elsewhere ─► dismiss, nothing written
 | Session end | Drag-button release, Esc, or drop. *Not* drag-image hide | Feasibility R8 |
 | Theme | WPF Fluent `ThemeMode` (System/Light/Dark, live) + OrbitDrop token dictionaries swapped live | Native Windows 11 look with Mica, no dependency. API is marked experimental (`WPF0001`); isolated in `ThemeManager` |
 | Wheel material | One-time snapshot of the area behind the wheel (GDI `BitBlt` *without* `CAPTUREBLT`, so the drag image is excluded), downsampled and blurred, then tinted | The frosted look is impossible on per-pixel-alpha windows through public DWM APIs |
-| Accent | OrbitDrop Violet by default; "Use Windows accent colour" option with contrast guard | The user's own accent was dark grey (probe finding F2) |
+| Accent | Monochrome (black on light, white on dark) by default; "Use Windows accent colour" option with contrast guard | Brand is black and white (design system v1.1); a user's own accent can be dark grey (probe finding F2) |
 | Processing | In-process WIC on dedicated STA threads | Built into Windows. **Process isolation (`OrbitDrop.Worker` + Job Objects) arrives in M2** together with native third-party engines |
 | Tray | Own `Shell_NotifyIcon` wrapper + custom WPF flyout menu | ~150 lines, so no WinForms or third-party package, and the menu matches the design system |
 | Installer | **Inno Setup 6**, per-user (`PrivilegesRequired=lowest`), no admin, Start Menu, clean uninstall | Free, standard, preinstalled on GitHub's Windows runners |
