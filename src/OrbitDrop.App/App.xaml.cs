@@ -46,6 +46,17 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         ThemeManager.Current.Initialize(this);
 
         // Design-review renders run alongside a live instance and never touch settings or the screen.
+        int film = Array.IndexOf(args, "--render-film");
+        if (film >= 0)
+        {
+            string dir = film + 1 < args.Length ? args[film + 1] : Path.Combine(Environment.CurrentDirectory, "film-assets");
+            int code;
+            try { code = FilmAssets.Run(dir, BuildRegistry()); }
+            catch (Exception ex) { Directory.CreateDirectory(dir); File.WriteAllText(Path.Combine(dir, "error.txt"), ex.ToString()); code = 1; }
+            Shutdown(code);
+            return;
+        }
+
         int render = Array.IndexOf(args, "--render-ui");
         if (render >= 0)
         {

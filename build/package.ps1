@@ -60,6 +60,14 @@ if (-not $SkipInstaller) {
     $outputs += Join-Path $artifacts "OrbitDrop-$Version-$Runtime-setup.exe"
 }
 
+# Stable names for one-click download links (README -> releases/download/<tag>/OrbitDrop-Setup.exe)
+Copy-Item $zip (Join-Path $artifacts "OrbitDrop-Portable.zip") -Force
+$outputs += Join-Path $artifacts "OrbitDrop-Portable.zip"
+if (-not $SkipInstaller) {
+    Copy-Item (Join-Path $artifacts "OrbitDrop-$Version-$Runtime-setup.exe") (Join-Path $artifacts "OrbitDrop-Setup.exe") -Force
+    $outputs += Join-Path $artifacts "OrbitDrop-Setup.exe"
+}
+
 Write-Host "> Checksums"
 $sums = $outputs | ForEach-Object { "{0}  {1}" -f (Get-FileHash $_ -Algorithm SHA256).Hash.ToLowerInvariant(), (Split-Path $_ -Leaf) }
 # UTF-8 without BOM so `sha256sum -c SHA256SUMS.txt` works.

@@ -98,21 +98,24 @@ internal static class UiReview
         return 0;
     }
 
-    private static void RenderElement(FrameworkElement element, double width, double height, Brush background, string dir, string name, ref int count)
+    private static void RenderElement(FrameworkElement element, double width, double height, Brush? background, string dir, string name, ref int count, double[]? scales = null)
     {
         element.Measure(new Size(width, double.IsNaN(height) ? double.PositiveInfinity : height));
         double h = double.IsNaN(height) ? element.DesiredSize.Height : height;
         double w = double.IsNaN(width) ? element.DesiredSize.Width : width;
         element.Arrange(new Rect(0, 0, w, h));
         element.UpdateLayout();
-        foreach (double scale in new[] { 1.0, 1.5 })
+        foreach (double scale in scales ?? [1.0, 1.5])
         {
-            var dv = new DrawingVisual();
-            using (var dc = dv.RenderOpen()) dc.DrawRectangle(background, null, new Rect(0, 0, w, h));
             var bmp = new RenderTargetBitmap((int)Math.Ceiling(w * scale), (int)Math.Ceiling(h * scale), 96 * scale, 96 * scale, PixelFormats.Pbgra32);
-            bmp.Render(dv);
+            if (background is not null)
+            {
+                var dv = new DrawingVisual();
+                using (var dc = dv.RenderOpen()) dc.DrawRectangle(background, null, new Rect(0, 0, w, h));
+                bmp.Render(dv);
+            }
             bmp.Render(element); // direct render keeps layout offsets (a VisualBrush would stretch to content bounds)
-            Save(bmp, Path.Combine(dir, $"{name}-{scale * 100:F0}.png"), ref count);
+            Save(bmp, Path.Combine(dir, scales is null ? $"{name}-{scale * 100:F0}.png" : $"{name}.png"), ref count);
         }
     }
 

@@ -384,17 +384,21 @@ public sealed class RadialWheel : Window
     // ------------------------------------------------------------------ design review
 
     /// <summary>Renders the wheel offscreen over a sample wallpaper (used by --render-ui; no screen capture).</summary>
-    public BitmapSource RenderPreview(ImageSource wallpaper, double scale)
+    /// <param name="wallpaperBehind">False renders the wheel alone on transparency (wallpaper only shows through the frost).</param>
+    public BitmapSource RenderPreview(ImageSource wallpaper, double scale, bool wallpaperBehind = true)
     {
         _backdrop.Source = wallpaper;
         _root.Measure(new Size(Extent, Extent));
         _root.Arrange(new Rect(0, 0, Extent, Extent));
         _root.UpdateLayout();
         int px = (int)Math.Ceiling(Extent * scale);
-        var dv = new DrawingVisual();
-        using (var dc = dv.RenderOpen()) dc.DrawImage(wallpaper, new Rect(0, 0, Extent, Extent));
         var bmp = new RenderTargetBitmap(px, px, 96 * scale, 96 * scale, PixelFormats.Pbgra32);
-        bmp.Render(dv);
+        if (wallpaperBehind)
+        {
+            var dv = new DrawingVisual();
+            using (var dc = dv.RenderOpen()) dc.DrawImage(wallpaper, new Rect(0, 0, Extent, Extent));
+            bmp.Render(dv);
+        }
         bmp.Render(_root);
         bmp.Freeze();
         _backdrop.Source = null;
