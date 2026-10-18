@@ -5,12 +5,12 @@
     <sys:Boolean x:Key="Orbit.IsDark">True</sys:Boolean>
 
     <!-- Brand -->
-    <Color x:Key="Orbit.C.Accent">#6B5DF2</Color>
-    <Color x:Key="Orbit.C.AccentHover">#7C70F5</Color>
-    <Color x:Key="Orbit.C.AccentPressed">#5D4FE0</Color>
-    <Color x:Key="Orbit.C.AccentText">#A69DFF</Color>
-    <Color x:Key="Orbit.C.AccentSubtle">#2E2A52</Color>
-    <Color x:Key="Orbit.C.OnAccent">#FFFFFF</Color>
+    <Color x:Key="Orbit.C.Accent">#F4F4F6</Color>
+    <Color x:Key="Orbit.C.AccentHover">#FFFFFF</Color>
+    <Color x:Key="Orbit.C.AccentPressed">#D9D9DE</Color>
+    <Color x:Key="Orbit.C.AccentText">#FFFFFF</Color>
+    <Color x:Key="Orbit.C.AccentSubtle">#2E2E34</Color>
+    <Color x:Key="Orbit.C.OnAccent">#111114</Color>
 
     <!-- Neutrals -->
     <Color x:Key="Orbit.C.SurfaceBase">#1C1C21</Color>

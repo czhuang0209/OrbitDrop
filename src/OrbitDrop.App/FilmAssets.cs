@@ -135,9 +135,10 @@ internal static class FilmAssets
         var dv = new DrawingVisual();
         using (var dc = dv.RenderOpen())
         {
-            dc.DrawRectangle(new SolidColorBrush(dark ? Color.FromRgb(0x14, 0x14, 0x1C) : Color.FromRgb(0xF7, 0xF8, 0xFC)), null, new Rect(0, 0, s, s));
-            dc.DrawEllipse(new RadialGradientBrush(Color.FromArgb(150, 0x7A, 0x5C, 0xFF), Color.FromArgb(0, 0x7A, 0x5C, 0xFF)), null, new Point(s * 0.25, s * 0.3), s * 0.45, s * 0.45);
-            dc.DrawEllipse(new RadialGradientBrush(Color.FromArgb(130, 0x3F, 0xA8, 0xFF), Color.FromArgb(0, 0x3F, 0xA8, 0xFF)), null, new Point(s * 0.8, s * 0.75), s * 0.4, s * 0.4);
+            // Apple-style neutral washes: pale mist blue and warm cream (no saturated colour).
+            dc.DrawRectangle(new SolidColorBrush(dark ? Color.FromRgb(0x12, 0x12, 0x14) : Color.FromRgb(0xFB, 0xFB, 0xFD)), null, new Rect(0, 0, s, s));
+            dc.DrawEllipse(new RadialGradientBrush(dark ? Color.FromArgb(90, 0x50, 0x56, 0x62) : Color.FromArgb(150, 0xD9, 0xE2, 0xEE), Color.FromArgb(0, 0xD9, 0xE2, 0xEE)), null, new Point(s * 0.25, s * 0.3), s * 0.45, s * 0.45);
+            dc.DrawEllipse(new RadialGradientBrush(dark ? Color.FromArgb(70, 0x5A, 0x55, 0x50) : Color.FromArgb(140, 0xF1, 0xE9, 0xDF), Color.FromArgb(0, 0xF1, 0xE9, 0xDF)), null, new Point(s * 0.8, s * 0.75), s * 0.4, s * 0.4);
         }
         var bmp = new RenderTargetBitmap((int)s, (int)s, 96, 96, PixelFormats.Pbgra32);
         bmp.Render(dv);

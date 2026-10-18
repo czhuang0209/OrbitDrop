@@ -116,7 +116,7 @@
                                     <Border Height="72" Background="#F3F3F6" CornerRadius="5">
                                         <Grid Width="40" Height="40">
                                             <Ellipse Fill="#FFFFFF" Stroke="#E4E4EB" />
-                                            <Path Data="M20,20 L20,2 A18,18 0 0 1 37.1,14.4 Z" Fill="#5847E0" />
+                                            <Path Data="M20,20 L20,2 A18,18 0 0 1 37.1,14.4 Z" Fill="#111114" />
                                             <Ellipse Width="16" Height="16" Fill="#FFFFFF" />
                                         </Grid>
                                     </Border>
@@ -125,7 +125,7 @@
                                     <Border Height="72" Background="#1C1C21" CornerRadius="5">
                                         <Grid Width="40" Height="40">
                                             <Ellipse Fill="#2F2F38" Stroke="#3A3A45" />
-                                            <Path Data="M20,20 L20,2 A18,18 0 0 1 37.1,14.4 Z" Fill="#6B5DF2" />
+                                            <Path Data="M20,20 L20,2 A18,18 0 0 1 37.1,14.4 Z" Fill="#F4F4F6" />
                                             <Ellipse Width="16" Height="16" Fill="#2A2A32" />
                                         </Grid>
                                     </Border>
@@ -139,8 +139,8 @@
                             <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding UseWindowsAccent}" AutomationProperties.Name="Use Windows accent colour" />
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="Use Windows accent colour" Style="{StaticResource RowTitle}" />
-                                <TextBlock Text="Highlight wheel options with your system accent instead of OrbitDrop Violet." Style="{StaticResource RowHint}" />
-                                <TextBlock Text="Your accent colour is too close to the wheel's surface to read clearly, so OrbitDrop Violet is used instead."
+                                <TextBlock Text="Highlight wheel options with your system accent instead of black and white." Style="{StaticResource RowHint}" />
+                                <TextBlock Text="Your accent colour is too close to the wheel's surface to read clearly, so OrbitDrop's black and white is used instead."
                                            Style="{StaticResource RowHint}" Foreground="{DynamicResource Orbit.Warning}"
                                            Visibility="{Binding AccentFallbackVisible, Converter={StaticResource BoolToVis}}" />
                             </StackPanel>

@@ -10,7 +10,7 @@ namespace OrbitDrop.UI;
 /// <list type="bullet">
 /// <item>WPF Fluent <c>ThemeMode</c> for native controls, title bars and Mica (API marked experimental: isolated here);</item>
 /// <item>OrbitDrop token dictionaries (Tokens.Light/Dark.xaml), swapped in place, so every DynamicResource updates;</item>
-/// <item>optional Windows accent, with a contrast guard that falls back to OrbitDrop Violet.</item>
+/// <item>optional Windows accent, with a contrast guard that falls back to the OrbitDrop monochrome accent.</item>
 /// </list>
 /// </summary>
 public sealed class ThemeManager
@@ -73,7 +73,7 @@ public sealed class ThemeManager
         if (!useWindowsAccent) return;
 
         if (SystemTheme.AccentColor is not { } accent) { AccentFallbackActive = true; return; }
-        // Guard: the accent must stand out against wheel segments (≥ 3:1) or we keep OrbitDrop Violet.
+        // Guard: the accent must stand out against wheel segments (≥ 3:1) or we keep the monochrome accent.
         var segment = (Color)_activeTokens![("Orbit.C.WheelSegment")];
         if (Contrast(accent, segment) < 3.0) { AccentFallbackActive = true; return; }
 

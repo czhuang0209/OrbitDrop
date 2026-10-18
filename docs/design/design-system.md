@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Version | 1.0 (Milestone 1) |
+| Version | 1.1 (monochrome rebrand) |
 | Source of truth | `src/OrbitDrop.UI/Themes/Tokens.Light.xaml`, `Tokens.Dark.xaml`. This document describes them, and the code must match |
 | Review tool | `OrbitDrop.exe --render-ui <folder>` renders every surface in light and dark at 100% and 150% |
 
@@ -13,25 +13,26 @@
 - **Native first.** Windows 11 typography, corner radii, Mica on windows, Fluent controls.
 - **One accent, used sparingly.** Colour means "this is what will happen". Everything else stays neutral.
 - **Motion with purpose.** Things bloom from where your attention already is (the cursor) and get out of the way instantly.
-- **Original identity.** No orange, no citrus, no Tangerine shapes or assets. The OrbitDrop motif is an *orbit*: a ring and a travelling dot.
+- **Original identity.** Black and white, no brand hue, no Tangerine shapes or assets. The OrbitDrop motif is a droplet in orbit.
 
 ## 2. Colour tokens
 
 Every UI colour comes from a token. Tokens exist once per theme and are swapped live when the theme changes.
 
-### 2.1 Brand
+### 2.1 Brand (monochrome)
+
+OrbitDrop is black and white. Emphasis comes from contrast and weight, never from a brand hue. (Changed in v1.1: the original violet accent was retired.)
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `Accent` | `#5847E0` | `#6B5DF2` | Hovered wheel segment, primary buttons, toggles. White text on it: 6.0:1 (light) / 4.6:1 (dark) |
-| `AccentHover` | `#4C3BD2` | `#7C70F5` | Hover on accent buttons |
-| `AccentPressed` | `#3F30B8` | `#5D4FE0` | Pressed |
-| `AccentText` | `#4A3AD1` | `#A69DFF` | Links, accent-coloured text on surfaces |
-| `AccentSubtle` | `#EEEBFF` | `#2E2A52` | Selected nav item, info toast tint |
-| `OnAccent` | `#FFFFFF` | `#FFFFFF` | Text and icons on `Accent` |
-| `BrandGradient` | `#7A5CFF → #3FA8FF` | same | App icon, onboarding illustration only |
+| `Accent` | `#111114` | `#F4F4F6` | Hovered wheel segment, primary buttons, toggles |
+| `AccentHover` | `#2B2B31` | `#FFFFFF` | Hover on accent buttons |
+| `AccentPressed` | `#000000` | `#D9D9DE` | Pressed |
+| `AccentText` | `#111114` | `#FFFFFF` | Links, emphasised text |
+| `AccentSubtle` | `#ECECEF` | `#2E2E34` | Selected navigation item |
+| `OnAccent` | `#FFFFFF` | `#111114` | Text and icons on `Accent` (≥ 15:1 in both themes) |
 
-**Windows accent option.** When "Use Windows accent colour" is on, `Accent` comes from the system. `OnAccent` is then picked by luminance (black if L > 0.55). If the system accent's contrast against the wheel segment surface is below 3:1 (for example dark grey on dark), OrbitDrop Violet is used instead and Settings says so.
+**Windows accent option.** When "Use Windows accent colour" is on, `Accent` comes from the system, with a 3:1 contrast guard against the wheel surface; below that, the monochrome accent is kept.
 
 ### 2.2 Neutrals
 
@@ -129,7 +130,7 @@ Windows use the system DWM shadow and Mica; custom shadows only on per-pixel-tra
 
 - UI glyphs from Segoe Fluent Icons, at 16 px in lists and 20 px on wheel tool segments.
 - Format segments are **text-only** (PNG, JPG…); tool and action segments are **icon + label**.
-- **App icon:** a violet-to-sky gradient tile, a white orbit ring tilted at −20°, a document glyph at the centre, and a satellite dot on the ring. Generated from vectors by `tools/IconGen` at 16–256 px. At 16 and 20 px the document is dropped, leaving the ring and dot.
+- **App icon:** a glossy near-black squircle tile with a shaded white droplet orbited by a ring that passes behind and in front of the drop, plus a small moon. Generated from vectors by `tools/IconGen` at 16–1024 px; at 16–24 px the drop is flat and the ring thicker so it stays crisp.
 
 ## 8. Surfaces
 

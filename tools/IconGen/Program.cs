@@ -3,17 +3,15 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-// OrbitDrop brand icon: violet→sky tile, a tilted orbit ring around a document, and a satellite dot.
-// At 16–24 px the document is dropped and the ring is thickened so the mark stays legible.
+// OrbitDrop brand mark v2 (monochrome): a white droplet orbited by a ring, on a glossy near-black squircle tile.
+// Realism comes from layered shading: tile depth gradient + top sheen + rim light, a droplet with a soft
+// radial body, specular highlight and contact shadow, and a ring that passes behind and in front of the drop.
+// At 16–24 px the mark simplifies (flat drop, thicker ring) so it stays crisp in the notification area.
 
 namespace IconGen;
 
 internal static class Program
 {
-    private static readonly Color Violet = Color.FromRgb(0x7A, 0x5C, 0xFF);
-    private static readonly Color Sky = Color.FromRgb(0x3F, 0xA8, 0xFF);
-    private static readonly Color Ink = Color.FromRgb(0x4B, 0x3B, 0xD6);
-
     [STAThread]
     private static int Main(string[] args)
     {
@@ -23,12 +21,14 @@ internal static class Program
         int[] icoSizes = [16, 20, 24, 32, 40, 48, 64, 96, 128, 256];
         var pngs = icoSizes.Select(s => (Size: s, Data: Png(Render(s)))).ToList();
         File.WriteAllBytes(Path.Combine(outDir, "orbitdrop.ico"), Ico(pngs));
-        foreach (int s in new[] { 32, 64, 256, 512 })
+        foreach (int s in new[] { 32, 64, 256, 512, 1024 })
             File.WriteAllBytes(Path.Combine(outDir, $"orbitdrop-{s}.png"), Png(Render(s)));
 
         Console.WriteLine($"Wrote icon set to {Path.GetFullPath(outDir)}");
         return 0;
     }
+
+    private static Color Rgb(byte r, byte g, byte b, byte a = 255) => Color.FromArgb(a, r, g, b);
 
     private static BitmapSource Render(int px)
     {
@@ -37,85 +37,113 @@ internal static class Program
         var dv = new DrawingVisual();
         using (var dc = dv.RenderOpen())
         {
-            // Tile (Windows-style rounded square with a small inset so it doesn't look oversized in the tray).
-            double inset = small ? 0 : s * 0.04;
-            var tile = new Rect(inset, inset, s - 2 * inset, s - 2 * inset);
-            var gradient = new LinearGradientBrush(Violet, Sky, new Point(0, 0), new Point(1, 1));
-            dc.DrawRoundedRectangle(gradient, null, tile, tile.Width * 0.24, tile.Height * 0.24);
-            // Soft top highlight for depth.
-            var sheen = new LinearGradientBrush(Color.FromArgb(70, 255, 255, 255), Color.FromArgb(0, 255, 255, 255), 90);
-            dc.DrawRoundedRectangle(sheen, null, tile, tile.Width * 0.24, tile.Height * 0.24);
+            // ---- tile: squircle with depth
+            double inset = small ? 0.5 : s * 0.035;
+            var tile = Squircle(new Rect(inset, inset, s - 2 * inset, s - 2 * inset), 5.0);
+            dc.DrawGeometry(new LinearGradientBrush(Rgb(0x2E, 0x2E, 0x34), Rgb(0x08, 0x08, 0x0A), 90), null, tile);
+            if (!small)
+            {
+                // soft top sheen
+                dc.PushClip(tile);
+                dc.DrawEllipse(new RadialGradientBrush(Rgb(255, 255, 255, 34), Rgb(255, 255, 255, 0)) { Center = new Point(0.5, 0.2), GradientOrigin = new Point(0.5, 0.05), RadiusX = 0.7, RadiusY = 0.55 },
+                    null, new Point(s * 0.5, s * 0.12), s * 0.62, s * 0.42);
+                dc.Pop();
+                // rim light along the top edge
+                dc.DrawGeometry(null, new Pen(new LinearGradientBrush(Rgb(255, 255, 255, 70), Rgb(255, 255, 255, 0), 90), Math.Max(1, s * 0.006)), tile);
+            }
 
-            var c = new Point(s / 2, s / 2);
-            double rx = s * (small ? 0.36 : 0.37), ry = s * (small ? 0.17 : 0.155), tilt = -24;
-            double ringW = s * (small ? 0.09 : 0.05);
-            var ringPen = new Pen(Brushes.White, ringW) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
-            var backPen = new Pen(new SolidColorBrush(Color.FromArgb(150, 255, 255, 255)), ringW);
-            var rotate = new RotateTransform(tilt, c.X, c.Y);
+            var c = new Point(s * 0.5, s * 0.54);
+            double r = s * (small ? 0.2 : 0.165);
+            var drop = Droplet(c, r, tipY: s * (small ? 0.2 : 0.235));
 
-            // Back half of the orbit (behind the document).
+            double rx = s * (small ? 0.42 : 0.385), ry = s * (small ? 0.14 : 0.115), tilt = -17;
+            var ringCenter = new Point(s * 0.5, c.Y - r * 0.15);
+            double ringW = s * (small ? 0.075 : 0.038);
+            var rotate = new RotateTransform(tilt, ringCenter.X, ringCenter.Y);
+
+            // ---- ring, back half (behind the drop)
             dc.PushTransform(rotate);
-            dc.DrawGeometry(null, backPen, HalfEllipse(c, rx, ry, top: true));
+            dc.DrawGeometry(null, new Pen(new SolidColorBrush(Rgb(255, 255, 255, small ? (byte)150 : (byte)95)), ringW) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round },
+                HalfEllipse(ringCenter, rx, ry, top: true));
             dc.Pop();
 
+            // ---- droplet
             if (small)
             {
-                dc.DrawEllipse(Brushes.White, null, c, s * 0.15, s * 0.15); // planet
+                dc.DrawGeometry(Brushes.White, null, drop);
             }
             else
             {
-                // Document with a folded corner.
-                double w = s * 0.30, h = s * 0.38, r = s * 0.035, fold = s * 0.09;
-                var doc = new Rect(c.X - w / 2, c.Y - h / 2, w, h);
-                var body = new StreamGeometry();
-                using (var g = body.Open())
+                // contact shadow under the drop
+                dc.DrawEllipse(new RadialGradientBrush(Rgb(0, 0, 0, 120), Rgb(0, 0, 0, 0)), null, new Point(c.X, c.Y + r * 1.05), r * 1.05, r * 0.28);
+                // body: bright top-left, cool grey falloff toward the lower-right edge
+                var body = new RadialGradientBrush
                 {
-                    g.BeginFigure(new Point(doc.Left + r, doc.Top), true, true);
-                    g.LineTo(new Point(doc.Right - fold, doc.Top), true, true);
-                    g.LineTo(new Point(doc.Right, doc.Top + fold), true, true);
-                    g.LineTo(new Point(doc.Right, doc.Bottom - r), true, true);
-                    g.ArcTo(new Point(doc.Right - r, doc.Bottom), new Size(r, r), 0, false, SweepDirection.Clockwise, true, true);
-                    g.LineTo(new Point(doc.Left + r, doc.Bottom), true, true);
-                    g.ArcTo(new Point(doc.Left, doc.Bottom - r), new Size(r, r), 0, false, SweepDirection.Clockwise, true, true);
-                    g.LineTo(new Point(doc.Left, doc.Top + r), true, true);
-                    g.ArcTo(new Point(doc.Left + r, doc.Top), new Size(r, r), 0, false, SweepDirection.Clockwise, true, true);
-                }
-                body.Freeze();
-                dc.DrawGeometry(Brushes.White, null, body);
-                var corner = new StreamGeometry();
-                using (var g = corner.Open())
-                {
-                    g.BeginFigure(new Point(doc.Right - fold, doc.Top), true, true);
-                    g.LineTo(new Point(doc.Right - fold, doc.Top + fold), true, true);
-                    g.LineTo(new Point(doc.Right, doc.Top + fold), true, true);
-                }
-                dc.DrawGeometry(new SolidColorBrush(Color.FromRgb(0xD9, 0xD3, 0xFF)), null, corner);
-                var line = new Pen(new SolidColorBrush(Color.FromArgb(150, Ink.R, Ink.G, Ink.B)), Math.Max(1, s * 0.022))
-                    { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
-                for (int i = 0; i < 3; i++)
-                {
-                    double y = doc.Top + h * (0.42 + i * 0.16);
-                    double len = i == 2 ? w * 0.38 : w * 0.56;
-                    dc.DrawLine(line, new Point(doc.Left + w * 0.2, y), new Point(doc.Left + w * 0.2 + len, y));
-                }
+                    GradientOrigin = new Point(0.36, 0.42), Center = new Point(0.45, 0.5), RadiusX = 0.75, RadiusY = 0.7,
+                    GradientStops = { new GradientStop(Rgb(255, 255, 255), 0), new GradientStop(Rgb(0xF1, 0xF1, 0xF4), 0.45), new GradientStop(Rgb(0xB9, 0xBB, 0xC4), 1) },
+                };
+                dc.DrawGeometry(body, null, drop);
+                // inner edge darkening for volume
+                dc.DrawGeometry(null, new Pen(new LinearGradientBrush(Rgb(0, 0, 0, 0), Rgb(0x3A, 0x3C, 0x46, 70), 70), r * 0.08), drop);
+                // specular highlight
+                dc.PushClip(drop);
+                dc.DrawEllipse(new RadialGradientBrush(Rgb(255, 255, 255, 235), Rgb(255, 255, 255, 0)), null, new Point(c.X - r * 0.38, c.Y - r * 0.32), r * 0.32, r * 0.42);
+                dc.DrawEllipse(new RadialGradientBrush(Rgb(255, 255, 255, 120), Rgb(255, 255, 255, 0)), null, new Point(c.X + r * 0.42, c.Y + r * 0.45), r * 0.18, r * 0.12);
+                dc.Pop();
             }
 
-            // Front half of the orbit and the satellite.
+            // ---- ring, front half (in front of the drop) + satellite
             dc.PushTransform(rotate);
-            dc.DrawGeometry(null, ringPen, HalfEllipse(c, rx, ry, top: false));
-            double a = 28 * Math.PI / 180; // satellite position on the front arc
-            var sat = new Point(c.X + rx * Math.Cos(a), c.Y + ry * Math.Sin(a));
-            double satR = s * (small ? 0.085 : 0.06);
-            dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(60, 255, 255, 255)), null, sat, satR * 1.9, satR * 1.9);
-            dc.DrawEllipse(Brushes.White, null, sat, satR, satR);
+            var frontBrush = new LinearGradientBrush(Rgb(255, 255, 255, 200), Rgb(255, 255, 255), 0);
+            dc.DrawGeometry(null, new Pen(frontBrush, ringW) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round }, HalfEllipse(ringCenter, rx, ry, top: false));
+            double a = 24 * Math.PI / 180;
+            var sat = new Point(ringCenter.X + rx * Math.Cos(a), ringCenter.Y + ry * Math.Sin(a));
+            double satR = s * (small ? 0.075 : 0.05);
+            if (!small) dc.DrawEllipse(new SolidColorBrush(Rgb(0x0B, 0x0B, 0x0D)), null, sat, satR * 1.28, satR * 1.28); // gap where the moon crosses the ring
+            var moon = small ? (Brush)Brushes.White : new RadialGradientBrush(Rgb(255, 255, 255), Rgb(0xC2, 0xC4, 0xCC)) { GradientOrigin = new Point(0.35, 0.35) };
+            dc.DrawEllipse(moon, null, sat, satR, satR);
             dc.Pop();
         }
 
         var bmp = new RenderTargetBitmap(px, px, 96, 96, PixelFormats.Pbgra32);
-        RenderOptions.SetEdgeMode(dv, EdgeMode.Unspecified);
         bmp.Render(dv);
         bmp.Freeze();
         return bmp;
+    }
+
+    /// <summary>Teardrop pointing up: round base centred at <paramref name="c"/>, tip at <paramref name="tipY"/>.</summary>
+    private static Geometry Droplet(Point c, double r, double tipY)
+    {
+        var g = new StreamGeometry();
+        using (var ctx = g.Open())
+        {
+            var tip = new Point(c.X, tipY);
+            ctx.BeginFigure(tip, true, true);
+            ctx.BezierTo(new Point(c.X - r * 0.12, tipY + (c.Y - tipY) * 0.35), new Point(c.X - r, c.Y - r * 0.85), new Point(c.X - r, c.Y), true, true);
+            ctx.ArcTo(new Point(c.X + r, c.Y), new Size(r, r), 0, false, SweepDirection.Counterclockwise, true, true);
+            ctx.BezierTo(new Point(c.X + r, c.Y - r * 0.85), new Point(c.X + r * 0.12, tipY + (c.Y - tipY) * 0.35), tip, true, true);
+        }
+        g.Freeze();
+        return g;
+    }
+
+    /// <summary>Superellipse ("squircle") filling <paramref name="rect"/>; n≈5 matches modern app-icon shapes.</summary>
+    private static Geometry Squircle(Rect rect, double n)
+    {
+        var g = new StreamGeometry();
+        using (var ctx = g.Open())
+        {
+            double a = rect.Width / 2, b = rect.Height / 2, cx = rect.X + a, cy = rect.Y + b;
+            const int steps = 180;
+            for (int i = 0; i <= steps; i++)
+            {
+                double t = i * 2 * Math.PI / steps, ct = Math.Cos(t), st = Math.Sin(t);
+                var p = new Point(cx + a * Math.Sign(ct) * Math.Pow(Math.Abs(ct), 2 / n), cy + b * Math.Sign(st) * Math.Pow(Math.Abs(st), 2 / n));
+                if (i == 0) ctx.BeginFigure(p, true, true); else ctx.LineTo(p, true, true);
+            }
+        }
+        g.Freeze();
+        return g;
     }
 
     private static Geometry HalfEllipse(Point c, double rx, double ry, bool top)
@@ -124,8 +152,7 @@ internal static class Program
         using (var ctx = g.Open())
         {
             ctx.BeginFigure(new Point(c.X - rx, c.Y), false, false);
-            ctx.ArcTo(new Point(c.X + rx, c.Y), new Size(rx, ry), 0, false,
-                top ? SweepDirection.Clockwise : SweepDirection.Counterclockwise, true, true);
+            ctx.ArcTo(new Point(c.X + rx, c.Y), new Size(rx, ry), 0, false, top ? SweepDirection.Clockwise : SweepDirection.Counterclockwise, true, true);
         }
         g.Freeze();
         return g;
