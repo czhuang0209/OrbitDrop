@@ -31,6 +31,22 @@ public static class WheelGeometry
         return Math.Min(count - 1, (int)(rel / step));
     }
 
+    /// <summary>Clearance kept between a segment label and the ring's inner and outer edges.</summary>
+    public const double LabelInset = 6;
+
+    /// <summary>
+    /// True when a <paramref name="w"/>×<paramref name="h"/> box centred at (<paramref name="cx"/>, <paramref name="cy"/>)
+    /// (relative to the wheel centre) stays inside the ring, so a label can't run into the hub or off the disc.
+    /// </summary>
+    public static bool LabelFits(double cx, double cy, double w, double h)
+    {
+        double rMin = InnerR + LabelInset, rMax = OuterR - LabelInset;
+        // Nearest point of the box to the centre (clamped), and its farthest corner.
+        double nx = Math.Clamp(0, cx - w / 2, cx + w / 2), ny = Math.Clamp(0, cy - h / 2, cy + h / 2);
+        double fx = Math.Max(Math.Abs(cx - w / 2), Math.Abs(cx + w / 2)), fy = Math.Max(Math.Abs(cy - h / 2), Math.Abs(cy + h / 2));
+        return Math.Sqrt(nx * nx + ny * ny) >= rMin && Math.Sqrt(fx * fx + fy * fy) <= rMax;
+    }
+
     public static double SizeFactor(Infrastructure.WheelSize size) => size switch
     {
         Infrastructure.WheelSize.Compact => 0.86,

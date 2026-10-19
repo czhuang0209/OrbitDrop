@@ -46,6 +46,18 @@ public class WheelGeometryTests
 
     [Fact]
     public void Empty_wheel_never_returns_a_segment() => Assert.Equal(WheelGeometry.HitHub, At(0, 0));
+
+    [Fact]
+    public void Wide_label_at_eight_o_clock_does_not_fit_but_a_wrapped_one_does()
+    {
+        // Label centre of segment 3 of 3 (150°): a one-line "Show in folder" (~76 wide) reaches into the hub.
+        double a = 150 * Math.PI / 180, cx = WheelGeometry.LabelR * Math.Cos(a), cy = WheelGeometry.LabelR * Math.Sin(a);
+        Assert.False(WheelGeometry.LabelFits(cx, cy, 76, 15));
+        Assert.True(WheelGeometry.LabelFits(cx, cy, 42, 30));
+    }
+
+    [Fact]
+    public void Label_must_stay_inside_the_disc() => Assert.False(WheelGeometry.LabelFits(0, -WheelGeometry.LabelR, 40, 80));
 }
 
 public class SettingsStoreTests

@@ -1,4 +1,9 @@
-## What's new in 0.1.2-alpha
+## What's new in 0.1.3-alpha
+
+- **Cleaner wheel labels:** long labels such as "Show in folder" no longer run past the edge of their segment. Each label is fitted to its segment, nudged slightly or wrapped onto two lines when needed.
+- If you're on 0.1.2, this is the first update you can install from inside OrbitDrop: look for the "OrbitDrop 0.1.3-alpha is available" card, or choose **Check for updates** in the tray menu.
+
+## In 0.1.2-alpha
 
 - **In-app updates:** OrbitDrop now tells you when a new version is out. Click **Install** and it downloads the new installer, checks it against the published SHA-256 checksum, updates in place and reopens, keeping your settings. You can also use **Check for updates** in the tray menu or Settings → About.
 - **You stay in control:** the check runs at most once a day and makes one anonymous request to GitHub Releases. Nothing about you or your files is sent, and nothing installs until you click. Turn it off in Settings → About.

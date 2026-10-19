@@ -192,7 +192,6 @@ public sealed class RadialWheel : Window
                 FontWeight = FontWeights.SemiBold,
                 TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
-                Width = items.Count > 5 ? 64 : 78,
             };
             TextBlock? glyph = null;
             var stack = new StackPanel();
@@ -208,7 +207,7 @@ public sealed class RadialWheel : Window
                 stack.Children.Add(glyph);
             }
             stack.Children.Add(label);
-            stack.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            center = FitLabel(stack, label, center, items.Count > 5 ? 64 : 78, items.Count > 4 ? 5 : 10);
             System.Windows.Controls.Canvas.SetLeft(stack, center.X - stack.DesiredSize.Width / 2);
             System.Windows.Controls.Canvas.SetTop(stack, center.Y - stack.DesiredSize.Height / 2);
 
@@ -423,6 +422,44 @@ public sealed class RadialWheel : Window
         var geo = new PathGeometry([fig]);
         geo.Freeze();
         return geo;
+    }
+
+    /// <summary>
+    /// Keeps a segment's label inside the ring. A long label on a wide segment ("Show in folder" on a three-item wheel)
+    /// would otherwise run past the segment's edge and vanish against the rim. Tries the widest wrap first, nudging the
+    /// label up to <paramref name="maxShift"/> units from its natural centre, and only then wraps tighter.
+    /// Returns the centre to place the stack at.
+    /// </summary>
+    private static Point FitLabel(StackPanel stack, TextBlock label, Point center, double maxWidth, double maxShift)
+    {
+        var inf = new Size(double.PositiveInfinity, double.PositiveInfinity);
+        var shifts = new List<Vector>();
+        for (double x = -maxShift; x <= maxShift; x += 1)
+            for (double y = -maxShift; y <= maxShift; y += 1)
+                if (x * x + y * y <= maxShift * maxShift) shifts.Add(new Vector(x, y));
+        shifts.Sort((a, b) => a.LengthSquared.CompareTo(b.LengthSquared));
+
+        for (double w = maxWidth; w >= 40; w -= 4)
+        {
+            label.MaxWidth = w;
+            // Not in the visual tree yet, so a repeat Measure with the same size would return the cached result.
+            label.InvalidateMeasure();
+            stack.InvalidateMeasure();
+            stack.Measure(inf);
+            // The label sits at the bottom of the stack (under the glyph); test its own box, not the stack's.
+            double lw = label.DesiredSize.Width, lh = label.DesiredSize.Height;
+            double below = stack.DesiredSize.Height / 2 - lh / 2;
+            foreach (var s in shifts)
+            {
+                var c = center + s;
+                if (LabelFits(c.X - Extent / 2, c.Y + below - Extent / 2, lw, lh)) return c;
+            }
+        }
+        label.MaxWidth = maxWidth; // nothing fits (very long text): keep the original layout
+        label.InvalidateMeasure();
+        stack.InvalidateMeasure();
+        stack.Measure(inf);
+        return center;
     }
 
     private TextBlock HubText(double size, FontWeight weight, double opacity) => new()
