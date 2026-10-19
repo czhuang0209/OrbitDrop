@@ -46,6 +46,7 @@ public partial class SettingsWindow : Window
     // ------------------------------------------------------------------ Wheel page
 
     private HashSet<string> _draft = [];
+    private List<string> _draftOrder = [];
     private IReadOnlyList<WheelCategory> _catalog = [];
     private WheelCategory? _kind;
     private OperationMode _mode = OperationMode.Convert;
@@ -56,6 +57,7 @@ public partial class SettingsWindow : Window
         if (KindPicker.Children.Count > 0) return;
         _catalog = _vm.WheelCatalog;
         _draft = new HashSet<string>(_vm.HiddenOptions, StringComparer.Ordinal);
+        _draftOrder = _vm.OptionOrder.ToList();
         foreach (var category in _catalog)
         {
             var kind = category;
@@ -63,6 +65,12 @@ public partial class SettingsWindow : Window
             button.Checked += (_, _) => { _kind = kind; BuildModePicker(); };
             KindPicker.Children.Add(button);
         }
+        Editor.Reordered += keys =>
+        {
+            // This wheel's order first, then everything else as it was.
+            _draftOrder = [.. keys, .. _draftOrder.Where(k => !keys.Contains(k))];
+            ShowEditor();
+        };
         Editor.Toggled += key =>
         {
             if (!_draft.Remove(key)) _draft.Add(key);
@@ -88,28 +96,33 @@ public partial class SettingsWindow : Window
 
     private void ShowEditor()
     {
-        var entries = _kind?.Modes.FirstOrDefault(m => m.Mode == _mode)?.Entries ?? [];
+        var entries = (_kind?.Modes.FirstOrDefault(m => m.Mode == _mode)?.Entries ?? []).ToList();
+        // Same rule as the real wheel: arranged slices first, in order; the rest keep their default order.
+        var rank = _draftOrder.Select((k, i) => (k, i)).GroupBy(x => x.k).ToDictionary(g => g.Key, g => g.First().i);
+        entries = entries.Select((e, i) => (e, i)).OrderBy(x => rank.TryGetValue(x.e.Choice.Key, out int r) ? r : int.MaxValue).ThenBy(x => x.i).Select(x => x.e).ToList();
         Editor.Show(entries, _draft);
-        bool changed = !_draft.SetEquals(_vm.HiddenOptions);
+        bool changed = !_draft.SetEquals(_vm.HiddenOptions) || !_draftOrder.SequenceEqual(_vm.OptionOrder);
         UnsavedText.Visibility = changed ? Visibility.Visible : Visibility.Collapsed;
         SaveWheelButton.IsEnabled = UndoWheelButton.IsEnabled = changed;
     }
 
     private void OnSaveWheel(object sender, RoutedEventArgs e)
     {
-        _vm.SetHiddenOptions(_draft);
+        _vm.SetWheel(_draft, _draftOrder);
         ShowEditor();
     }
 
     private void OnUndoWheel(object sender, RoutedEventArgs e)
     {
         _draft = new HashSet<string>(_vm.HiddenOptions, StringComparer.Ordinal);
+        _draftOrder = _vm.OptionOrder.ToList();
         ShowEditor();
     }
 
     private void OnShowAll(object sender, RoutedEventArgs e)
     {
         _draft.Clear();
+        _draftOrder.Clear(); // back to the default wheel: everything shown, default order
         ShowEditor();
     }
 

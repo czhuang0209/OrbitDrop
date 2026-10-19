@@ -112,7 +112,8 @@ public sealed class InteractionController : IDropSink, IDisposable
     /// <summary>Next mode that has options for these files (empty modes are skipped once the files are known).</summary>
     /// <summary>What the wheel offers for these files: the registry's options minus the ones the user turned off.</summary>
     private IReadOnlyList<OperationDescriptor> Options(FileSet files, OperationMode mode) =>
-        WheelFilter.Apply(_registry.Query(files, mode), new HashSet<string>(_settings().HiddenOptions, StringComparer.Ordinal));
+        WheelOrder.Apply(WheelFilter.Apply(_registry.Query(files, mode), new HashSet<string>(_settings().HiddenOptions, StringComparer.Ordinal)),
+            _settings().OptionOrder);
 
     /// <summary>"Tools" / "Actions" / "Convert": what the next switch leads to (for the centre's hint).</summary>
     private string NextModeLabel(Session s) => NextMode(s, s.Mode, includeCurrent: false).ToString();

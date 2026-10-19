@@ -50,6 +50,8 @@ public sealed class AppSettings
 
     // Wheel: options and groups the user turned off (see WheelFilter).
     public string[] HiddenOptions { get; set; } = [];
+    /// <summary>Slice order the user arranged (see WheelOrder); empty means the default order.</summary>
+    public string[] OptionOrder { get; set; } = [];
 
     // Actions: the last few folders used with Copy to / Move to (most recent first).
     public string[] RecentFolders { get; set; } = [];
@@ -66,6 +68,7 @@ public sealed class AppSettings
         if (OutputLocation == OutputLocation.Folder && string.IsNullOrWhiteSpace(OutputFolder))
             OutputLocation = OutputLocation.BesideOriginal;
         HiddenOptions = (HiddenOptions ?? []).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct(StringComparer.Ordinal).ToArray();
+        OptionOrder = (OptionOrder ?? []).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct(StringComparer.Ordinal).ToArray();
         RecentFolders = (RecentFolders ?? []).Where(f => !string.IsNullOrWhiteSpace(f)).Distinct(StringComparer.OrdinalIgnoreCase).Take(MaxRecentFolders).ToArray();
     }
 }

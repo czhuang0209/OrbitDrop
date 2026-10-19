@@ -167,7 +167,7 @@ public sealed class GuideStage : Canvas
     public static double DurationOf(GuideScene s) => s switch
     {
         GuideScene.Hero => 9.4, GuideScene.Drag => 5.4, GuideScene.Release => 6.2,
-        GuideScene.Modes => 5.4, GuideScene.Groups => 7.2, GuideScene.Customize => 7.9, _ => 10.6,
+        GuideScene.Modes => 5.4, GuideScene.Groups => 7.2, GuideScene.Customize => 9.4, _ => 10.6,
     };
 
     // ------------------------------------------------------------------ building blocks
@@ -521,34 +521,50 @@ public sealed class GuideStage : Canvas
         _window.Visibility = _tileA.Visibility = _tileB.Visibility = _tileC.Visibility = Visibility.Collapsed;
         _settings.Visibility = Visibility.Visible;
 
-        // The editor shows the same slices as the photo's Convert wheel.
+        // The editor shows the same slices as the photo's Convert wheel: hide BMP and TIFF, drag PDF to the top, Save.
         var full = ConvertIdle;
-        var entries = full.Labels.Select(l => new Settings.WheelEntry(new Settings.WheelChoice($"convert.image.{l.ToLowerInvariant()}", l, null), [])).ToList();
-        (string Label, double At)[] clicks = [("BMP", 1.2), ("TIFF", 2.5)];
-        const double save = 3.9;
+        string Key(string label) => $"convert.image.{label.ToLowerInvariant()}";
+        var entries = full.Labels.Select(l => new Settings.WheelEntry(new Settings.WheelChoice(Key(l), l, null), [])).ToList();
+        (string Label, double At)[] clicks = [("BMP", 1.2), ("TIFF", 2.4)];
+        const double press = 3.5, drop = 4.6, save = 5.8;
+        int pdf = full.Labels.ToList().IndexOf("PDF");
         var savePoint = new Point(22 + GetLeft(_save) + _save.Width / 2, 24 + GetTop(_save) + _save.Height / 2);
 
         Point p = Move(t, 0.2, 1.0, Rest, EditorPoint(full, "BMP"));
-        if (t >= 1.5) p = Move(t, 1.5, 2.3, EditorPoint(full, "BMP"), EditorPoint(full, "TIFF"));
-        if (t >= 2.8) p = Move(t, 2.8, 3.7, EditorPoint(full, "TIFF"), savePoint);
-        bool pressed = clicks.Any(c => t >= c.At && t < c.At + 0.15) || (t >= save && t < save + 0.15);
+        if (t >= 1.4) p = Move(t, 1.4, 2.2, EditorPoint(full, "BMP"), EditorPoint(full, "TIFF"));
+        if (t >= 2.7) p = Move(t, 2.7, 3.3, EditorPoint(full, "TIFF"), EditorPoint(full, "PDF"));
+        if (t >= press) p = Move(t, press + 0.1, drop - 0.1, EditorPoint(full, "PDF"), EditorPoint(full, full.Labels[0]));
+        if (t >= drop + 0.2) p = Move(t, drop + 0.2, save - 0.2, EditorPoint(full, full.Labels[0]), savePoint);
+        bool pressed = clicks.Any(c => t >= c.At && t < c.At + 0.15) || (t >= press && t < drop) || (t >= save && t < save + 0.15);
         SetCursor(p, pressed);
 
-        // In the editor: clicked slices turn into dashed outlines straight away (a draft until Save).
         int off = clicks.Count(c => t >= c.At + 0.1);
-        string[] hidden = clicks.Take(off).Select(c => $"convert.image.{c.Label.ToLowerInvariant()}").ToArray();
-        _editor.SetHover(t < 2.8 ? full.Labels.ToList().IndexOf(t < 1.5 ? "BMP" : "TIFF") : WheelGeometry.HitOutside);
+        string[] hidden = clicks.Take(off).Select(c => Key(c.Label)).ToArray();
+        bool moved = t >= drop;
+        if (moved) { var item = entries[pdf]; entries.RemoveAt(pdf); entries.Insert(0, item); }
         _editor.Show(entries, new HashSet<string>(hidden));
-        _save.Opacity = t >= save ? 0.55 : 1; // saved: nothing left to save
+        if (t >= press + 0.2 && t < drop)
+        {
+            // Mid-drag: the slice follows the pointer round to the top and the others make room.
+            var editorTopLeft = new Point(22 + GetLeft(_editor), 24 + GetTop(_editor));
+            _editor.PreviewDrag(pdf, t >= press + 0.6 ? 0 : pdf, new Point(p.X - editorTopLeft.X, p.Y - editorTopLeft.Y));
+        }
+        else
+        {
+            _editor.EndPreview();
+            _editor.SetHover(t < 2.7 ? full.Labels.ToList().IndexOf(t < 1.4 ? "BMP" : "TIFF") : t < press ? pdf : WheelGeometry.HitOutside);
+        }
+        _save.Opacity = t >= save ? 0.55 : 1;
 
         // The real wheel changes only once saved.
         bool saved = t >= save + 0.1;
-        var wheel = saved ? Shot("cz", new(OperationMode.Convert, PhotoFiles, WheelGeometry.HitOutside, "2.4 MB", "photo.png", Hidden: hidden)) : full;
+        string[] order = moved ? entries.Select(e => e.Choice.Key).ToArray() : [];
+        var wheel = saved ? Shot("cz", new(OperationMode.Convert, PhotoFiles, WheelGeometry.HitOutside, "2.4 MB", "photo.png", Hidden: hidden, Order: order)) : full;
         double since = saved ? Seg(t, save + 0.1, save + 0.35) : 1;
         double open = Seg(t, 0.1, 0.4);
         WheelState(wheel, open * (0.5 + 0.5 * since), (0.4 + 0.6 * Back(open)) * (0.96 + 0.04 * Ease(since)), -10 * (1 - Ease(since)));
-        Caption(t < 0.9 ? "Settings → Wheel" : t < 2.9 ? "Click a slice to hide it" : !saved ? "Then press Save" : $"Saved: {wheel.Labels.Count} options left, bigger targets");
-        FadeOut(t, 7.4, 7.9);
+        Caption(t < 0.9 ? "Settings → Wheel" : t < 2.7 ? "Click a slice to hide it" : t < drop + 0.2 ? "Drag a slice to move it" : !saved ? "Then press Save" : "Saved: your wheel, your way");
+        FadeOut(t, 8.9, 9.4);
     }
 
     /// <summary>Stage position of a slice in the mini editor.</summary>

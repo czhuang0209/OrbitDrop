@@ -76,7 +76,8 @@
         </Grid>
 
         <!-- Text -->
-        <StackPanel Grid.Row="1" Margin="4,22,4,0" MinHeight="128">
+        <!-- Fixed height: steps have different amounts of text, and the window must not resize between them. -->
+        <StackPanel Grid.Row="1" Margin="4,22,4,0" Height="152" ClipToBounds="True">
             <TextBlock x:Name="StepLabel" Style="{StaticResource Orbit.Text.Caption}" FontWeight="SemiBold" />
             <TextBlock x:Name="Heading" Style="{StaticResource Orbit.Text.Title}" FontSize="24" LineHeight="32" Margin="0,4,0,0" TextWrapping="Wrap" />
             <TextBlock x:Name="Body" Style="{StaticResource Orbit.Text.Body}" FontSize="14" LineHeight="21" Margin="0,8,0,0" TextWrapping="Wrap"

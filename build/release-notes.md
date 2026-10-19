@@ -1,4 +1,9 @@
-## What's new in 0.2.6-alpha
+## What's new in 0.2.7-alpha
+
+- **Rearrange your wheel:** in Settings → Wheel, drag a slice around the ring. The others make room as you move, and **Save** puts your order on the real wheel. **Reset** brings back the original wheel.
+- **The guide keeps one size:** the window no longer jumps between steps. Its "Make the wheel yours" demo now shows dragging too.
+
+## In 0.2.6-alpha
 
 - **A simpler Wheel page.** Settings → Wheel now shows your actual wheel. Pick the kind of file and mode at the top, click a slice to hide it (it turns into a dashed outline), click again to bring it back, then press **Save**. **Undo changes** and **Show all** are right there.
 - The guide's "Make the wheel yours" step shows the new page.

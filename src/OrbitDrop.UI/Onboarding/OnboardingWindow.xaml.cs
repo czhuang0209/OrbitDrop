@@ -50,7 +50,7 @@ public partial class OnboardingWindow : Window
             new(GuideScene.Keyboard, "TIP", "Prefer the keyboard? Click instead",
                 "Select files in File Explorer or on the desktop, press Ctrl + Alt + Space, then click an option. For Tools and Actions, click the centre of the wheel (or tap Shift, or press the shortcut again). Esc closes it."),
             new(GuideScene.Customize, "TIP", "Make the wheel yours",
-                "Open Settings → Wheel and you'll see your wheel. Click a slice to hide it (click again to bring it back), then press Save. Fewer slices means bigger, easier targets; Show all brings everything back."),
+                "Open Settings → Wheel and you'll see your wheel. Click a slice to hide it (click again to bring it back), drag a slice to move it, then press Save. Reset brings back the original wheel."),
             new(null, "PRACTICE", "Try it now",
                 $"Drag the photo on the left a little way, tap {triggerKey} while you're still holding it, and let go on JPG. It's a sample file, so nothing of yours is touched."),
         ];
@@ -64,7 +64,8 @@ public partial class OnboardingWindow : Window
         }
         PracticeThumb.ImageSource = GuideStage.Photo(400);
         _frame.Tick += (_, _) => Tick();
-        Loaded += (_, _) => ShowStep(_step);
+        // Size to the content once, then stay put: the window must not jump between steps.
+        Loaded += (_, _) => { SizeToContent = SizeToContent.Manual; ShowStep(_step); };
         Closed += (_, _) => _frame.Stop();
         PreviewKeyDown += (_, e) =>
         {
@@ -130,7 +131,7 @@ public partial class OnboardingWindow : Window
     private static double KeyFrame(GuideScene scene) => scene switch
     {
         GuideScene.Hero => 4.6, GuideScene.Release => 2.6, GuideScene.Drag => 3.4, GuideScene.Modes => 2.5,
-        GuideScene.Groups => 2.7, GuideScene.Customize => 4.4, _ => 3.0,
+        GuideScene.Groups => 2.7, GuideScene.Customize => 4.3, _ => 3.0,
     };
 
     private void Tick()

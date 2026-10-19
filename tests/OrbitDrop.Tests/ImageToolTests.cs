@@ -188,3 +188,25 @@ public class WheelFilterTests
         Assert.Equal("p75", OperationMenu.DefaultFor(flat, header).Id);
     }
 }
+
+public class WheelOrderTests
+{
+    private static OperationDescriptor Op(string id, int order, OperationGroup? g = null) => new(id, "p", OperationMode.Convert, id, null, "%1", id, id, order, Group: g);
+
+    [Fact]
+    public void Arranged_slices_come_first_and_groups_move_together()
+    {
+        var g = new OperationGroup("compress", "Compress", null);
+        var ops = new[] { Op("png", 1), Op("jpg", 2), Op("half", 3, g), Op("p75", 4, g), Op("pdf", 5) };
+        var ordered = WheelOrder.Apply(ops, ["pdf", WheelFilter.GroupKey(g)]);
+        Assert.Equal(["pdf", "half", "p75", "png", "jpg"], ordered.Select(o => o.Id));
+        Assert.Equal(["pdf", "group.compress", "png", "jpg"], OperationMenu.TopLevel(ordered).Select(o => o.Id));
+    }
+
+    [Fact]
+    public void No_arrangement_keeps_the_default_order()
+    {
+        var ops = new[] { Op("a", 1), Op("b", 2) };
+        Assert.Same(ops, WheelOrder.Apply(ops, []));
+    }
+}

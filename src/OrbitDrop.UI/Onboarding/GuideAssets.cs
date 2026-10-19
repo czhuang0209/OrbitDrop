@@ -4,7 +4,7 @@ using OrbitDrop.Core;
 namespace OrbitDrop.UI.Onboarding;
 
 /// <summary>A wheel state to show in the guide: mode, files, highlighted segment, hub text, optional open group.</summary>
-public sealed record WheelShot(OperationMode Mode, string[] Files, int Highlight, string Value, string Detail, string? Group = null, string[]? Hidden = null);
+public sealed record WheelShot(OperationMode Mode, string[] Files, int Highlight, string Value, string Detail, string? Group = null, string[]? Hidden = null, string[]? Order = null);
 
 /// <summary>A rendered wheel plus its segment labels (so the guide can point at "JPG" wherever it is).</summary>
 public sealed record WheelImage(BitmapSource Image, IReadOnlyList<string> Labels);

@@ -115,7 +115,10 @@ public sealed class SettingsViewModel : ObservableObject
     public IReadOnlyList<WheelCategory> WheelCatalog => _host.WheelCatalog;
     public IReadOnlySet<string> HiddenOptions => new HashSet<string>(S.HiddenOptions, StringComparer.Ordinal);
 
-    public void SetHiddenOptions(IEnumerable<string> keys) => Set(s => s.HiddenOptions = keys.ToArray(), nameof(HiddenCount));
+    public IReadOnlyList<string> OptionOrder => S.OptionOrder;
+
+    public void SetWheel(IEnumerable<string> hidden, IEnumerable<string> order) =>
+        Set(s => { s.HiddenOptions = hidden.ToArray(); s.OptionOrder = order.ToArray(); }, nameof(HiddenCount));
 
     public int HiddenCount => S.HiddenOptions.Length;
 

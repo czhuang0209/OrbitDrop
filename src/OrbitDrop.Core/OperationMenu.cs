@@ -59,3 +59,25 @@ public static class WheelFilter
     public static IReadOnlyList<OperationDescriptor> Apply(IReadOnlyList<OperationDescriptor> options, IReadOnlySet<string> hidden) =>
         hidden.Count == 0 ? options : options.Where(o => !IsHidden(o, hidden)).ToList();
 }
+
+/// <summary>The user's slice order (Settings → Wheel): keys of slices in the order they were arranged.</summary>
+public static class WheelOrder
+{
+    /// <summary>The key a whole slice is known by: its group's key, or the option's id.</summary>
+    public static string SlotKey(OperationDescriptor op) => op.Group is { } g ? WheelFilter.GroupKey(g) : op.Id;
+
+    /// <summary>
+    /// Arranged slices first, in the user's order; everything else keeps its default order after them. Options of a
+    /// group share their group's place, so the group stays together.
+    /// </summary>
+    public static IReadOnlyList<OperationDescriptor> Apply(IReadOnlyList<OperationDescriptor> options, IReadOnlyList<string> order)
+    {
+        if (order.Count == 0) return options;
+        var rank = new Dictionary<string, int>(StringComparer.Ordinal);
+        for (int i = 0; i < order.Count; i++) rank.TryAdd(order[i], i);
+        return options.Select((o, i) => (Op: o, Index: i))
+            .OrderBy(x => rank.TryGetValue(SlotKey(x.Op), out int r) ? r : int.MaxValue)
+            .ThenBy(x => x.Index)
+            .Select(x => x.Op).ToList();
+    }
+}
