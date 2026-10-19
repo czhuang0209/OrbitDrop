@@ -14,8 +14,19 @@ public partial class App
     private void RegisterInputs()
     {
         _inputs.Register(MetadataProvider.InfoId, AskMetadataAsync);
+        _inputs.Register(ImageToolsProvider.EditId, AskPhotoEditAsync);
         _inputs.Register(FileActionsProvider.CopyToPrefix + FileActionsProvider.ChooseSuffix, (op, files, _) => AskFolderAsync("Copy to", files));
         _inputs.Register(FileActionsProvider.MoveToPrefix + FileActionsProvider.ChooseSuffix, (op, files, _) => AskFolderAsync("Move to", files));
+    }
+
+    /// <summary>Opens the photo editor; the edited full-resolution bitmap becomes the job's input.</summary>
+    private async Task<(bool, object?)> AskPhotoEditAsync(OperationDescriptor op, FileSet files, Win32.POINT anchor)
+    {
+        var image = OrbitDrop.Conversion.Imaging.WicImageCodec.Load(files[0]); // upright, BGRA32
+        var editor = new OrbitDrop.UI.Editor.PhotoEditorWindow(image, Path.GetFileName(files[0]));
+        ShowInFront(editor);
+        var edited = await editor.Result;
+        return edited is null ? (false, null) : (true, edited);
     }
 
     /// <summary>A folder picker in front of everything; the chosen folder becomes the job's input.</summary>

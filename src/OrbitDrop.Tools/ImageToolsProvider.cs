@@ -13,6 +13,7 @@ namespace OrbitDrop.Tools;
 public sealed class ImageToolsProvider : IOperationProvider
 {
     public const string ProviderId = "image.tools";
+    public const string EditId = "tool.image.edit";
     public string Id => ProviderId;
 
     private static readonly OperationGroup CompressGroup = new("image.compress", "Compress", "");
@@ -66,6 +67,9 @@ public sealed class ImageToolsProvider : IOperationProvider
     {
         if (mode != OperationMode.Tools || !files.All(WicImageCodec.IsSupportedInput)) yield break;
 
+        if (files.Count == 1)
+            yield return new(EditId, ProviderId, OperationMode.Tools, "Edit", "\uE70F", "Crop, adjust, mark up or redact", "",
+                "Saving edits", 90, NeedsInput: true);
         int order = 100;
         foreach (var p in CompressPresets)
             yield return new($"tool.image.compress.{p.Key}", ProviderId, OperationMode.Tools, p.Label, null,
@@ -85,6 +89,8 @@ public sealed class ImageToolsProvider : IOperationProvider
     {
         Func<string, FileOutcome> run = operation.Id switch
         {
+            EditId when context.Input is BitmapSource edited =>
+                file => new(file, OutcomeStatus.Succeeded, WicImageCodec.WriteOutput(edited, file, WicImageCodec.OutputFormatFor(file), "edited", context, ct)),
             var id when id.StartsWith("tool.image.compress.") =>
                 file => Compress(file, CompressPresets.Single(p => id == $"tool.image.compress.{p.Key}"), context, ct),
             var id when id.StartsWith("tool.image.resize.") =>

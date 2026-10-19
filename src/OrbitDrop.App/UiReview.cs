@@ -111,6 +111,23 @@ internal static class UiReview
             RenderElement((FrameworkElement)info.Content, 520, double.NaN, bg, dir, $"info-{t}", ref count);
             info.Close();
 
+            // --- photo editor (markup and crop)
+            foreach (var mode in new[] { "Markup", "Crop" })
+            {
+                var photo = (BitmapSource)Wallpaper(false);
+                var editor = new OrbitDrop.UI.Editor.PhotoEditorWindow(photo, "IMG_2041.jpg");
+                double s = photo.PixelWidth / 356.0;
+                editor.ReviewState(mode, mode == "Crop" ? [] :
+                [
+                    new OrbitDrop.UI.Editor.ArrowMark(Color.FromRgb(0xFF, 0x3B, 0x30), 3 * s, new Point(60 * s, 60 * s), new Point(150 * s, 140 * s)),
+                    new OrbitDrop.UI.Editor.BoxMark(Color.FromRgb(0xFF, 0xCC, 0x00), 3 * s, new Rect(180 * s, 150 * s, 110 * s, 70 * s)),
+                    new OrbitDrop.UI.Editor.TextMark(Colors.White, 0, new Point(40 * s, 250 * s), "Look here", 26 * s),
+                    new OrbitDrop.UI.Editor.RedactMark(new Rect(230 * s, 40 * s, 90 * s, 50 * s), OrbitDrop.UI.Editor.RedactKind.Pixelate),
+                ], mode == "Crop" ? new Rect(40 * s, 30 * s, 260 * s, 260 * s) : null);
+                RenderElement((FrameworkElement)editor.Content, 1120, 780, bg, dir, $"editor-{mode.ToLowerInvariant()}-{t}", ref count, [1.0]);
+                editor.Close();
+            }
+
             // --- tray flyout
             var flyout = new TrayFlyout(new PreviewTray());
             RenderElement(flyout.ContentRoot, 300, double.NaN, bg, dir, $"tray-{t}", ref count);
