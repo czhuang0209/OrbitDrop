@@ -1,4 +1,9 @@
-## What's new in 0.2.5-alpha
+## What's new in 0.2.6-alpha
+
+- **A simpler Wheel page.** Settings → Wheel now shows your actual wheel. Pick the kind of file and mode at the top, click a slice to hide it (it turns into a dashed outline), click again to bring it back, then press **Save**. **Undo changes** and **Show all** are right there.
+- The guide's "Make the wheel yours" step shows the new page.
+
+## In 0.2.5-alpha
 
 - **Make the wheel yours:** Settings → **Wheel** lists everything OrbitDrop can do, by kind of file. Click what you don't use to turn it off: whole groups (like Resize) or single choices (like Compress 25%). The wheel shows only what's left; **Show everything** brings it all back.
 - **Ctrl + Alt + Space, then switch modes:** click the centre of the wheel (it says where it leads, e.g. "Click for Tools"), press the shortcut again, or tap Shift. Esc or a click outside closes it.

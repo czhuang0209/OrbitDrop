@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using OrbitDrop.Core;
 using System.Windows.Media;
 using Microsoft.Win32;
 
@@ -44,88 +45,72 @@ public partial class SettingsWindow : Window
 
     // ------------------------------------------------------------------ Wheel page
 
-    private readonly List<(ToggleButton Chip, string Key, ToggleButton? Parent)> _chips = [];
+    private HashSet<string> _draft = [];
+    private IReadOnlyList<WheelCategory> _catalog = [];
+    private WheelCategory? _kind;
+    private OperationMode _mode = OperationMode.Convert;
 
-    /// <summary>Builds the Wheel page from the catalog: per kind of file, per mode, a chip for every option.</summary>
+    /// <summary>Builds the pickers on first visit; edits go into a draft until Save.</summary>
     private void BuildWheelPage()
     {
-        if (WheelOptions.Children.Count > 0) return;
-        foreach (var category in _vm.WheelCatalog)
+        if (KindPicker.Children.Count > 0) return;
+        _catalog = _vm.WheelCatalog;
+        _draft = new HashSet<string>(_vm.HiddenOptions, StringComparer.Ordinal);
+        foreach (var category in _catalog)
         {
-            var header = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(2, 18, 0, 8) };
-            header.Children.Add(new TextBlock { Text = category.Glyph, Style = (Style)FindResource("Orbit.Glyph"), Margin = new Thickness(0, 0, 10, 0) });
-            header.Children.Add(new TextBlock { Text = category.Title, Style = (Style)FindResource("Orbit.Text.BodyStrong") });
-            WheelOptions.Children.Add(header);
-
-            var card = new Border { Style = (Style)FindResource("Orbit.Card"), Padding = new Thickness(16, 12, 16, 8) };
-            var body = new StackPanel();
-            foreach (var section in category.Modes)
-            {
-                body.Children.Add(new TextBlock
-                {
-                    Text = section.Mode.ToString().ToUpperInvariant(), Style = (Style)FindResource("Orbit.Text.Caption"),
-                    FontWeight = FontWeights.SemiBold, Margin = new Thickness(2, body.Children.Count == 0 ? 0 : 8, 0, 6),
-                });
-                var plain = new WrapPanel();
-                body.Children.Add(plain);
-                foreach (var entry in section.Entries)
-                {
-                    if (entry.Members.Count == 0) { plain.Children.Add(Chip(entry.Choice, null, small: false)); continue; }
-                    // A group: its chip, then its choices (disabled while the whole group is off).
-                    var row = new WrapPanel { Margin = new Thickness(0, 0, 0, 2) };
-                    var groupChip = Chip(entry.Choice, null, small: false, isGroup: true);
-                    row.Children.Add(groupChip);
-                    row.Children.Add(new TextBlock { Text = "›", Style = (Style)FindResource("Orbit.Text.Caption"), Margin = new Thickness(2, 4, 8, 0) });
-                    foreach (var m in entry.Members) row.Children.Add(Chip(m, groupChip, small: true));
-                    body.Children.Add(row);
-                }
-                if (plain.Children.Count == 0) body.Children.Remove(plain);
-            }
-            card.Child = body;
-            WheelOptions.Children.Add(card);
+            var kind = category;
+            var button = new RadioButton { Style = (Style)FindResource("Orbit.Segment"), GroupName = "WheelKind", Content = kind.Title };
+            button.Checked += (_, _) => { _kind = kind; BuildModePicker(); };
+            KindPicker.Children.Add(button);
         }
-        RefreshChips();
-    }
-
-    private ToggleButton Chip(WheelChoice choice, ToggleButton? parent, bool small, bool isGroup = false)
-    {
-        var content = new StackPanel { Orientation = Orientation.Horizontal };
-        var tick = new TextBlock { Text = "", FontFamily = (FontFamily)FindResource("Orbit.Font.Icons"), FontSize = small ? 9 : 10, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 1, 6, 0) };
-        content.Children.Add(tick);
-        if (choice.Glyph is { } g && !small)
-            content.Children.Add(new TextBlock { Text = g, FontFamily = (FontFamily)FindResource("Orbit.Font.Icons"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
-        content.Children.Add(new TextBlock { Text = isGroup ? $"{choice.Label} (all)" : choice.Label, VerticalAlignment = VerticalAlignment.Center });
-        var chip = new ToggleButton { Style = (Style)FindResource("WheelChip"), Content = content };
-        if (small) { chip.Padding = new Thickness(8, 3, 8, 3); chip.FontSize = 11.5; }
-        chip.Tag = tick; // RefreshChips shows the tick only on chips that are on
-        System.Windows.Automation.AutomationProperties.SetName(chip, $"Show {choice.Label} on the wheel");
-        chip.Click += (_, _) =>
+        Editor.Toggled += key =>
         {
-            _vm.SetShown(choice.Key, chip.IsChecked == true);
-            RefreshChips();
+            if (!_draft.Remove(key)) _draft.Add(key);
+            ShowEditor();
         };
-        _chips.Add((chip, choice.Key, parent));
-        return chip;
+        if (KindPicker.Children.Count > 0) ((RadioButton)KindPicker.Children[0]).IsChecked = true;
     }
 
-    /// <summary>Syncs every chip with the settings (the same option can appear under more than one kind of file).</summary>
-    private void RefreshChips()
+    private void BuildModePicker()
     {
-        var hidden = _vm.HiddenOptions;
-        foreach (var (chip, key, parent) in _chips)
+        ModePicker.Children.Clear();
+        if (_kind is null) return;
+        if (!_kind.Modes.Any(m => m.Mode == _mode)) _mode = _kind.Modes[0].Mode;
+        foreach (var section in _kind.Modes)
         {
-            chip.IsChecked = !hidden.Contains(key);
-            ((TextBlock)chip.Tag).Visibility = chip.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-            if (parent is not null) chip.IsEnabled = parent.IsChecked == true;
+            var mode = section.Mode;
+            var button = new RadioButton { Style = (Style)FindResource("Orbit.Segment"), GroupName = "WheelMode", Content = mode.ToString(), IsChecked = mode == _mode };
+            button.Checked += (_, _) => { _mode = mode; ShowEditor(); };
+            ModePicker.Children.Add(button);
         }
-        // Parents first, then members, so a member's IsEnabled sees its parent's final state.
-        foreach (var (chip, _, parent) in _chips) if (parent is not null) chip.IsEnabled = parent.IsChecked == true;
+        ShowEditor();
     }
 
-    private void OnShowEverything(object sender, RoutedEventArgs e)
+    private void ShowEditor()
     {
-        _vm.ShowEverything();
-        RefreshChips();
+        var entries = _kind?.Modes.FirstOrDefault(m => m.Mode == _mode)?.Entries ?? [];
+        Editor.Show(entries, _draft);
+        bool changed = !_draft.SetEquals(_vm.HiddenOptions);
+        UnsavedText.Visibility = changed ? Visibility.Visible : Visibility.Collapsed;
+        SaveWheelButton.IsEnabled = UndoWheelButton.IsEnabled = changed;
+    }
+
+    private void OnSaveWheel(object sender, RoutedEventArgs e)
+    {
+        _vm.SetHiddenOptions(_draft);
+        ShowEditor();
+    }
+
+    private void OnUndoWheel(object sender, RoutedEventArgs e)
+    {
+        _draft = new HashSet<string>(_vm.HiddenOptions, StringComparer.Ordinal);
+        ShowEditor();
+    }
+
+    private void OnShowAll(object sender, RoutedEventArgs e)
+    {
+        _draft.Clear();
+        ShowEditor();
     }
 
     private void OnChooseFolder(object sender, RoutedEventArgs e)

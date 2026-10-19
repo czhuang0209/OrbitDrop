@@ -50,7 +50,7 @@ public partial class OnboardingWindow : Window
             new(GuideScene.Keyboard, "TIP", "Prefer the keyboard? Click instead",
                 "Select files in File Explorer or on the desktop, press Ctrl + Alt + Space, then click an option. For Tools and Actions, click the centre of the wheel (or tap Shift, or press the shortcut again). Esc closes it."),
             new(GuideScene.Customize, "TIP", "Make the wheel yours",
-                "Settings → Wheel lists everything OrbitDrop can do. Click what you don't use to turn it off, and the wheel shows only what's left, with bigger, easier targets. Turn off a whole group or single choices; Show everything brings it all back."),
+                "Open Settings → Wheel and you'll see your wheel. Click a slice to hide it (click again to bring it back), then press Save. Fewer slices means bigger, easier targets; Show all brings everything back."),
             new(null, "PRACTICE", "Try it now",
                 $"Drag the photo on the left a little way, tap {triggerKey} while you're still holding it, and let go on JPG. It's a sample file, so nothing of yours is touched."),
         ];

@@ -24,9 +24,9 @@ public sealed class GuideStage : Canvas
     private readonly IGuideAssets _assets;
     private readonly string _triggerKey;
     private readonly Canvas _content = new() { Width = W, Height = H };
-    private readonly Border _window, _settings;
-    private readonly Dictionary<string, Border> _settingChips = [];
-    private readonly Border _showAll;
+    private readonly Border _window, _settings, _save;
+    private readonly Settings.WheelEditor _editor = new() { Width = EditorSize, Height = EditorSize, IsHitTestVisible = false };
+    private const double EditorSize = 196;
     private readonly Border _tileA, _tileB, _tileC, _ghost;
     private readonly TextBlock _tileBName, _tileCName;
     private readonly Image _wheel = new() { Width = WheelSize, Height = WheelSize };
@@ -83,34 +83,23 @@ public sealed class GuideStage : Canvas
         Place(_window, 22, 24);
         _content.Children.Add(_window);
 
-        // A mini "Settings › Wheel" page for the customization scene (same chip look as the real page).
+        // A mini Settings → Wheel page for the customization scene: the real wheel editor, plus Save.
         var panel = new Canvas { Width = 252, Height = 270 };
         var title = new TextBlock { Text = "Settings  ›  Wheel", FontSize = 12, FontWeight = FontWeights.SemiBold,
             Foreground = (Brush)Application.Current.FindResource("Orbit.TextPrimary") };
-        Place(title, 16, 16);
+        Place(title, 16, 14);
         panel.Children.Add(title);
-        var section = new TextBlock { Text = "PHOTOS · CONVERT", FontSize = 10, FontWeight = FontWeights.SemiBold,
-            Foreground = (Brush)Application.Current.FindResource("Orbit.TextSecondary") };
-        Place(section, 16, 58);
-        panel.Children.Add(section);
-        string[] formats = ["JPG", "BMP", "TIFF", "GIF", "PDF"]; // the demo photo is a PNG, so its wheel has no PNG
-        for (int i = 0; i < formats.Length; i++)
+        Place(_editor, (252 - EditorSize) / 2, 36);
+        panel.Children.Add(_editor);
+        _save = new Border
         {
-            var chip = SettingChip(formats[i]);
-            _settingChips[formats[i]] = chip;
-            Place(chip, 16 + i % 3 * 74, 80 + i / 3 * 40);
-            panel.Children.Add(chip);
-        }
-        _showAll = new Border
-        {
-            Width = 132, Height = 30, CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1),
-            Background = (Brush)Application.Current.FindResource("Orbit.Surface"),
-            BorderBrush = (Brush)Application.Current.FindResource("Orbit.StrokeStrong"),
-            Child = new TextBlock { Text = "Show everything", FontSize = 11.5, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
-                Foreground = (Brush)Application.Current.FindResource("Orbit.TextPrimary") },
+            Width = 96, Height = 28, CornerRadius = new CornerRadius(6),
+            Background = (Brush)Application.Current.FindResource("Orbit.Accent"),
+            Child = new TextBlock { Text = "Save", FontSize = 12, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center, Foreground = (Brush)Application.Current.FindResource("Orbit.OnAccent") },
         };
-        Place(_showAll, 16, 220);
-        panel.Children.Add(_showAll);
+        Place(_save, 252 - 96 - 16, 270 - 28 - 14);
+        panel.Children.Add(_save);
         _settings = new Border
         {
             Width = 252, Height = 270, CornerRadius = new CornerRadius(10), Child = panel,
@@ -178,7 +167,7 @@ public sealed class GuideStage : Canvas
     public static double DurationOf(GuideScene s) => s switch
     {
         GuideScene.Hero => 9.4, GuideScene.Drag => 5.4, GuideScene.Release => 6.2,
-        GuideScene.Modes => 5.4, GuideScene.Groups => 7.2, GuideScene.Customize => 8.6, _ => 10.6,
+        GuideScene.Modes => 5.4, GuideScene.Groups => 7.2, GuideScene.Customize => 7.9, _ => 10.6,
     };
 
     // ------------------------------------------------------------------ building blocks
@@ -206,35 +195,6 @@ public sealed class GuideStage : Canvas
             RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = new ScaleTransform(),
             Effect = ghost ? new DropShadowEffect { BlurRadius = 14, ShadowDepth = 4, Opacity = 0.25 } : null,
         };
-    }
-
-    private static Border SettingChip(string label)
-    {
-        var tick = new TextBlock { Text = "", FontFamily = (FontFamily)Application.Current.FindResource("Orbit.Font.Icons"), FontSize = 9,
-            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 1, 6, 0) };
-        var text = new TextBlock { Text = label, FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
-        return new Border
-        {
-            Width = 66, Height = 30, CornerRadius = new CornerRadius(15), BorderThickness = new Thickness(1),
-            Child = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Children = { tick, text } },
-        };
-    }
-
-    /// <summary>On: tinted with a tick (shown on the wheel). Off: faded outline.</summary>
-    private static void SetChip(Border chip, bool on)
-    {
-        chip.Background = on ? (Brush)Application.Current.FindResource("Orbit.AccentSubtle") : Brushes.Transparent;
-        chip.BorderBrush = (Brush)Application.Current.FindResource(on ? "Orbit.StrokeStrong" : "Orbit.Stroke");
-        var row = (StackPanel)chip.Child;
-        row.Children[0].Visibility = on ? Visibility.Visible : Visibility.Collapsed;
-        ((TextBlock)row.Children[1]).Foreground = (Brush)Application.Current.FindResource(on ? "Orbit.TextPrimary" : "Orbit.TextTertiary");
-    }
-
-    /// <summary>Stage position of a setting chip's centre (the settings panel sits where the Pictures window does).</summary>
-    private Point ChipPoint(string label)
-    {
-        var chip = _settingChips[label];
-        return new Point(22 + GetLeft(chip) + chip.Width / 2, 24 + GetTop(chip) + chip.Height / 2);
     }
 
     private static Border KeyCap(string text) => new()
@@ -328,7 +288,6 @@ public sealed class GuideStage : Canvas
         foreach (var cap in _keyCaps.Values) Press(cap, false);
         _window.Visibility = _tileA.Visibility = _tileB.Visibility = _tileC.Visibility = Visibility.Visible;
         _settings.Visibility = Visibility.Collapsed;
-        foreach (var chip in _settingChips.Values) SetChip(chip, true);
         Caption(null);
     }
 
@@ -562,29 +521,43 @@ public sealed class GuideStage : Canvas
         _window.Visibility = _tileA.Visibility = _tileB.Visibility = _tileC.Visibility = Visibility.Collapsed;
         _settings.Visibility = Visibility.Visible;
 
-        (string Label, double At)[] clicks = [("BMP", 1.2), ("TIFF", 2.5), ("GIF", 3.8)];
-        const double showAll = 6.0;
-        var showAllPoint = new Point(22 + GetLeft(_showAll) + _showAll.Width / 2, 24 + GetTop(_showAll) + _showAll.Height / 2);
+        // The editor shows the same slices as the photo's Convert wheel.
+        var full = ConvertIdle;
+        var entries = full.Labels.Select(l => new Settings.WheelEntry(new Settings.WheelChoice($"convert.image.{l.ToLowerInvariant()}", l, null), [])).ToList();
+        (string Label, double At)[] clicks = [("BMP", 1.2), ("TIFF", 2.5)];
+        const double save = 3.9;
+        var savePoint = new Point(22 + GetLeft(_save) + _save.Width / 2, 24 + GetTop(_save) + _save.Height / 2);
 
-        // The pointer travels chip to chip, then to "Show everything".
-        Point p = Move(t, 0.2, 1.0, Rest, ChipPoint("BMP"));
-        if (t >= 1.5) p = Move(t, 1.5, 2.3, ChipPoint("BMP"), ChipPoint("TIFF"));
-        if (t >= 2.8) p = Move(t, 2.8, 3.6, ChipPoint("TIFF"), ChipPoint("GIF"));
-        if (t >= 4.6) p = Move(t, 4.6, 5.6, ChipPoint("GIF"), showAllPoint);
-        bool pressed = clicks.Any(c => t >= c.At && t < c.At + 0.15) || (t >= showAll && t < showAll + 0.15);
+        Point p = Move(t, 0.2, 1.0, Rest, EditorPoint(full, "BMP"));
+        if (t >= 1.5) p = Move(t, 1.5, 2.3, EditorPoint(full, "BMP"), EditorPoint(full, "TIFF"));
+        if (t >= 2.8) p = Move(t, 2.8, 3.7, EditorPoint(full, "TIFF"), savePoint);
+        bool pressed = clicks.Any(c => t >= c.At && t < c.At + 0.15) || (t >= save && t < save + 0.15);
         SetCursor(p, pressed);
 
-        int off = t >= showAll + 0.1 ? 0 : clicks.Count(c => t >= c.At + 0.1);
-        foreach (var (label, _) in clicks.Take(off)) SetChip(_settingChips[label], false);
-        double lastChange = off > 0 ? clicks[off - 1].At + 0.1 : t >= showAll + 0.1 ? showAll + 0.1 : -10;
-        double since = Seg(t, lastChange, lastChange + 0.25);
-
+        // In the editor: clicked slices turn into dashed outlines straight away (a draft until Save).
+        int off = clicks.Count(c => t >= c.At + 0.1);
         string[] hidden = clicks.Take(off).Select(c => $"convert.image.{c.Label.ToLowerInvariant()}").ToArray();
-        var wheel = Shot($"cz{off}", new(OperationMode.Convert, PhotoFiles, WheelGeometry.HitOutside, "2.4 MB", "photo.png", Hidden: hidden));
+        _editor.SetHover(t < 2.8 ? full.Labels.ToList().IndexOf(t < 1.5 ? "BMP" : "TIFF") : WheelGeometry.HitOutside);
+        _editor.Show(entries, new HashSet<string>(hidden));
+        _save.Opacity = t >= save ? 0.55 : 1; // saved: nothing left to save
+
+        // The real wheel changes only once saved.
+        bool saved = t >= save + 0.1;
+        var wheel = saved ? Shot("cz", new(OperationMode.Convert, PhotoFiles, WheelGeometry.HitOutside, "2.4 MB", "photo.png", Hidden: hidden)) : full;
+        double since = saved ? Seg(t, save + 0.1, save + 0.35) : 1;
         double open = Seg(t, 0.1, 0.4);
-        WheelState(wheel, open * (0.5 + 0.5 * since), (0.4 + 0.6 * Back(open)) * (0.96 + 0.04 * Ease(since)), 0);
-        Caption(t < 1.0 ? "Settings → Wheel" : t < showAll ? (off == 0 ? "Click an option to turn it off" : $"{wheel.Labels.Count} options left: bigger, easier targets") : "Show everything brings them back");
-        FadeOut(t, 8.1, 8.6);
+        WheelState(wheel, open * (0.5 + 0.5 * since), (0.4 + 0.6 * Back(open)) * (0.96 + 0.04 * Ease(since)), -10 * (1 - Ease(since)));
+        Caption(t < 0.9 ? "Settings → Wheel" : t < 2.9 ? "Click a slice to hide it" : !saved ? "Then press Save" : $"Saved: {wheel.Labels.Count} options left, bigger targets");
+        FadeOut(t, 7.4, 7.9);
+    }
+
+    /// <summary>Stage position of a slice in the mini editor.</summary>
+    private Point EditorPoint(WheelImage w, string label)
+    {
+        int i = IndexOf(w, label), n = Math.Max(1, w.Labels.Count);
+        double a = WheelGeometry.MidAngle(i, n) * Math.PI / 180, r = WheelGeometry.LabelR * EditorSize / WheelGeometry.Disc;
+        var c = new Point(22 + GetLeft(_editor) + EditorSize / 2, 24 + GetTop(_editor) + EditorSize / 2);
+        return new Point(c.X + r * Math.Cos(a), c.Y + r * Math.Sin(a));
     }
 
     /// <summary>Renders one frame offscreen (for GIF export).</summary>

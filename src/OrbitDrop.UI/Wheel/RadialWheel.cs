@@ -421,7 +421,7 @@ public sealed class RadialWheel : Window
     // ------------------------------------------------------------------ helpers
 
     /// <summary>Annular sector with rounded corners: inset geometry stroked with a round join.</summary>
-    private static Geometry Sector(double startDeg, double endDeg, double gap)
+    internal static Geometry Sector(double startDeg, double endDeg, double gap)
     {
         double ro = OuterR - Corner / 2, ri = InnerR + Corner / 2;
         double gapOut = gap == 0 ? 0 : (gap / 2 + Corner / 2) / ro * 180 / Math.PI;

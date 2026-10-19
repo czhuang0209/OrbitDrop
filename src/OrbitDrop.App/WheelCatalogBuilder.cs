@@ -33,16 +33,12 @@ internal static class WheelCatalogBuilder
             return p;
         }
 
-        var anyFile = Samples[^1];
-        var generic = Entries(registry, anyFile, Real).SelectMany(m => m.Entries).SelectMany(Keys).ToHashSet(StringComparer.Ordinal);
+        // Each kind of file gets its whole wheel (as Settings → Wheel shows it); an option shared by several kinds is
+        // one setting, so hiding it in one place hides it everywhere.
         var result = new List<WheelCategory>();
         foreach (var sample in Samples)
         {
             var modes = Entries(registry, sample, Real);
-            // Options every file has (actions, Info) are listed once, under "Any file".
-            if (sample != anyFile)
-                modes = modes.Select(m => m with { Entries = m.Entries.Select(e => Without(e, generic)).OfType<WheelEntry>().ToList() })
-                             .Where(m => m.Entries.Count > 0).ToList();
             if (modes.Count > 0) result.Add(new WheelCategory(sample.Title, sample.Glyph, modes));
         }
         return result;
@@ -74,13 +70,4 @@ internal static class WheelCatalogBuilder
         return modes;
     }
 
-    private static IEnumerable<string> Keys(WheelEntry e) => e.Members.Select(m => m.Key).Prepend(e.Choice.Key);
-
-    /// <summary>The entry without what "Any file" already lists; null if nothing is left.</summary>
-    private static WheelEntry? Without(WheelEntry e, HashSet<string> generic)
-    {
-        var members = e.Members.Where(m => !generic.Contains(m.Key)).ToList();
-        if (generic.Contains(e.Choice.Key) && members.Count == 0) return null;
-        return e with { Members = members };
-    }
 }
