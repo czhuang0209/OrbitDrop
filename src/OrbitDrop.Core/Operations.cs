@@ -12,6 +12,7 @@ public enum OperationMode { Convert, Tools, Actions }
 /// <param name="DropText">Native drag tooltip, with %1 replaced by <paramref name="DropInsert"/> ("Convert to %1").</param>
 /// <param name="ProgressTitle">Toast title while running ("Converting to PNG").</param>
 /// <param name="NeedsInput">The app asks for choices first (a window or picker) and passes them as <see cref="OperationContext.Input"/>.</param>
+/// <param name="DoneTitle">Toast title when an action finishes ("Copied to Desktop"); defaults to the label.</param>
 public sealed record OperationDescriptor(
     string Id,
     string ProviderId,
@@ -24,7 +25,8 @@ public sealed record OperationDescriptor(
     int Order,
     bool MirrorGlyph = false,
     OperationGroup? Group = null,
-    bool NeedsInput = false)
+    bool NeedsInput = false,
+    string? DoneTitle = null)
 {
     public const string GroupPrefix = "group.";
 
@@ -72,6 +74,9 @@ public interface IShellIntegration
 {
     void SetClipboardText(string text);
     void Reveal(IReadOnlyList<string> paths);
+
+    /// <summary>Opens the Windows share window (Nearby Share, Mail, apps …) for the files.</summary>
+    void Share(IReadOnlyList<string> paths) => throw new NotSupportedException("Sharing isn't available here.");
 }
 
 /// <summary>

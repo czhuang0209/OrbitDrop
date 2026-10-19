@@ -452,7 +452,27 @@ public sealed class RadialWheel : Window
                 if (x * x + y * y <= maxShift * maxShift) shifts.Add(new Vector(x, y));
         shifts.Sort((a, b) => a.LengthSquared.CompareTo(b.LengthSquared));
 
-        for (double w = maxWidth; w >= 40; w -= 4)
+        // Narrower wraps first; if even that fails, a slightly smaller font. Never wrap inside a word ("Downloa/ds").
+        double baseSize = label.FontSize;
+        foreach (double scale in new[] { 1.0, 0.93, 0.86, 0.8 })
+        {
+            label.FontSize = baseSize * scale;
+            double minWidth = Math.Max(40, WidestWord(label));
+            for (double w = maxWidth; w >= minWidth; w -= 4)
+            {
+                var fit = TryFit(w);
+                if (fit is { } c) return c;
+            }
+            if (TryFit(Math.Ceiling(minWidth)) is { } tight) return tight;
+        }
+        label.FontSize = baseSize;
+        label.MaxWidth = maxWidth; // nothing fits (very long text): keep the original layout
+        label.InvalidateMeasure();
+        stack.InvalidateMeasure();
+        stack.Measure(inf);
+        return center;
+
+        Point? TryFit(double w)
         {
             label.MaxWidth = w;
             // Not in the visual tree yet, so a repeat Measure with the same size would return the cached result.
@@ -468,12 +488,21 @@ public sealed class RadialWheel : Window
                 var c = center + s;
                 if (LabelFits(c.X - Extent / 2, c.Y + below - Extent / 2, lw, lh)) return c;
             }
+            return null;
         }
-        label.MaxWidth = maxWidth; // nothing fits (very long text): keep the original layout
-        label.InvalidateMeasure();
-        stack.InvalidateMeasure();
-        stack.Measure(inf);
-        return center;
+    }
+
+    /// <summary>Width of the label's longest word at its current font, so wrapping never splits a word.</summary>
+    private static double WidestWord(TextBlock label)
+    {
+        double widest = 0;
+        foreach (var word in label.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var probe = new TextBlock { Text = word, FontFamily = label.FontFamily, FontSize = label.FontSize, FontWeight = label.FontWeight };
+            probe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            widest = Math.Max(widest, probe.DesiredSize.Width);
+        }
+        return widest;
     }
 
     private TextBlock HubText(double size, FontWeight weight, double opacity) => new()

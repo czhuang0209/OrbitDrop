@@ -98,7 +98,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
 
         ThemeManager.Current.Apply(_settings.Theme, _settings.UseWindowsAccent, _settings.ReduceMotion);
 
-        _registry = BuildRegistry();
+        _registry = BuildRegistry(new FileActionsProvider(() => _settings.RecentFolders, RememberFolder));
         var jobs = new JobQueue(_registry, maxConcurrentJobs: 2);
         _shell = new ShellIntegration(Dispatcher);
         _toasts = new ToastManager { NotifyOnCompletion = () => _settings.ShowCompletionNotifications };
@@ -141,8 +141,9 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         Log.Info("Ready");
     }
 
-    private static OperationRegistry BuildRegistry() =>
-        new([new ImageConversionProvider(), new MediaFoundationProvider(), new ImageToolsProvider(), new MetadataProvider(), new FileActionsProvider()]);
+    private static OperationRegistry BuildRegistry(FileActionsProvider? actions = null) =>
+        new([new ImageConversionProvider(), new MediaFoundationProvider(), new ImageToolsProvider(), new MetadataProvider(),
+             actions ?? new FileActionsProvider()]);
 
     private OperationContext CreateContext() => new()
     {

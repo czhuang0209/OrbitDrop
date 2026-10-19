@@ -103,7 +103,7 @@ public sealed class ToastManager
         if (failed == 0 && ok > 0)
         {
             if (job.Operation.Mode == OperationMode.Actions)
-                return (ToastKind.Success, job.Operation.Label, ok == 1 ? Path.GetFileName(job.Files[0]) : $"{ok} files");
+                return (ToastKind.Success, job.Operation.DoneTitle ?? job.Operation.Label, ok == 1 ? Path.GetFileName(job.Files[0]) : $"{ok} files");
             string? folder = outputs.Count > 0 ? Path.GetFileName(Path.GetDirectoryName(outputs[0])?.TrimEnd('\\')) : null;
             string where = folder is { Length: > 0 } ? $"In {folder}" : "";
             string title = outputs.Count == 1 ? $"Saved {Path.GetFileName(outputs[0])}" : $"{outputs.Count} files saved";

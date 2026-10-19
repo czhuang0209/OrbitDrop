@@ -13,6 +13,7 @@ public enum TriggerKey { Shift, Ctrl }
 public sealed class AppSettings
 {
     public const int CurrentSchemaVersion = 1;
+    public const int MaxRecentFolders = 4;
 
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
 
@@ -43,6 +44,9 @@ public sealed class AppSettings
     public bool CheckForUpdates { get; set; } = true;
     public DateTimeOffset? LastUpdateCheck { get; set; }
 
+    // Actions: the last few folders used with Copy to / Move to (most recent first).
+    public string[] RecentFolders { get; set; } = [];
+
     public AppSettings Clone() => (AppSettings)MemberwiseClone();
 
     /// <summary>Clamps values that may have been hand-edited into an invalid range.</summary>
@@ -54,5 +58,6 @@ public sealed class AppSettings
         if (!Enum.IsDefined(TriggerKey)) TriggerKey = TriggerKey.Shift;
         if (OutputLocation == OutputLocation.Folder && string.IsNullOrWhiteSpace(OutputFolder))
             OutputLocation = OutputLocation.BesideOriginal;
+        RecentFolders = (RecentFolders ?? []).Where(f => !string.IsNullOrWhiteSpace(f)).Distinct(StringComparer.OrdinalIgnoreCase).Take(MaxRecentFolders).ToArray();
     }
 }
