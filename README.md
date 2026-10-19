@@ -5,11 +5,11 @@
 
 ## Download
 
-**[⬇ Download OrbitDrop for Windows (installer)](https://github.com/i3sam/OrbitDrop/releases/download/v0.2.0-alpha/OrbitDrop-Setup.exe)** · [portable .zip](https://github.com/i3sam/OrbitDrop/releases/download/v0.2.0-alpha/OrbitDrop-Portable.zip) · [all releases](https://github.com/i3sam/OrbitDrop/releases)
+**[⬇ Download OrbitDrop for Windows (installer)](https://github.com/i3sam/OrbitDrop/releases/download/v0.2.1-alpha/OrbitDrop-Setup.exe)** · [portable .zip](https://github.com/i3sam/OrbitDrop/releases/download/v0.2.1-alpha/OrbitDrop-Portable.zip) · [all releases](https://github.com/i3sam/OrbitDrop/releases)
 
 Run the installer: no admin rights or .NET needed. This alpha isn't code-signed yet, so if Windows shows "Windows protected your PC", click **More info → Run anyway**.
 
-> **Status: 0.2.0-alpha.** The core gesture is validated on Windows 11 (single monitor, 100% scale). Multi-monitor, mixed-DPI and Windows 10 sign-off are still pending; see [the feasibility report](docs/research/02-feasibility-report.md).
+> **Status: 0.2.1-alpha.** The core gesture is validated on Windows 11 (single monitor, 100% scale). Multi-monitor, mixed-DPI and Windows 10 sign-off are still pending; see [the feasibility report](docs/research/02-feasibility-report.md).
 
 ## How it works
 
@@ -21,11 +21,13 @@ Tap Shift again to switch **Convert → Tools → Actions**. Release on the cent
 
 | Mode | 0.2 capabilities |
 |---|---|
-| Convert | **Images:** PNG, JPG, BMP, TIFF, GIF, PDF (reads WebP, HEIC, AVIF, JPEG XL and camera RAW when Windows has the codec) · **PDF:** pages to PNG or JPG · **Video:** MP4, WMV, or extract audio as MP3 / M4A / WAV / WMA / FLAC · **Audio:** MP3, M4A, WAV, WMA, FLAC |
-| Tools | **Images:** edit (crop, adjust, markup, redact), compress (by % or under 1 MB / 500 KB / 200 KB), resize, rotate & flip, grayscale, copy text (OCR), combine into PDF · **Video:** compress (720p / 1080p / 480p / half size), remove audio, snapshot, join · **Audio:** compress, mono / stereo · **Archives:** extract ZIP, TAR, TAR.GZ, GZ · **Any file:** info, edit details, remove metadata or location |
+| Convert | **Images:** PNG, JPG, BMP, TIFF, GIF, PDF (reads WebP, HEIC, AVIF, JPEG XL and camera RAW when Windows has the codec) · **PDF:** pages to PNG or JPG · **Video:** MP4, WMV, animated GIF, or extract audio as MP3 / M4A / WAV / WMA / FLAC · **Audio:** MP3, M4A, WAV, WMA, FLAC |
+| Tools | **Images:** edit (crop, adjust, markup, redact), compress (by % or under 1 MB / 500 KB / 200 KB), resize, rotate & flip, grayscale, copy text (OCR), combine into PDF · **Video:** compress (720p / 1080p / 480p / half size), remove audio, snapshot, join · **Audio:** compress, normalize, mono / stereo · **Archives:** extract ZIP, TAR, TAR.GZ, GZ · **Any file:** info, edit details, remove metadata or location |
 | Actions | Copy path or name, show in folder, copy to / move to (recent and common folders), share (Nearby Share), zip, terminal, set as wallpaper. Works on folders too |
 
 Related options are grouped: rest on a segment with dots (for example **Compress**) to open its choices, rest on the centre to go back, or drop straight on it for the most common choice.
+
+**No drag needed:** select files in File Explorer or on the desktop and press **Ctrl + Alt + Space**, then click an option.
 
 **Private by design:** everything runs locally. No uploads, no account, no telemetry. The only network request is an optional once-a-day update check against GitHub Releases (Settings → About; turn it off any time).
 

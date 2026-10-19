@@ -1,4 +1,10 @@
-## What's new in 0.2.0-alpha
+## What's new in 0.2.1-alpha
+
+- **Ctrl + Alt + Space**: select files in File Explorer or on the desktop, press the shortcut, and click an option in the wheel. No dragging needed. Turn it off in Settings → Shortcuts.
+- **Video to GIF**: a looping animated GIF of the first 10 seconds.
+- **Normalize audio**: makes quiet recordings as loud as they can be without clipping.
+
+## In 0.2.0-alpha
 
 The biggest update yet: OrbitDrop now does a lot more than convert.
 
