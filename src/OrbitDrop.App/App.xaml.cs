@@ -8,6 +8,7 @@ using OrbitDrop.Core;
 using OrbitDrop.Infrastructure;
 using OrbitDrop.Jobs;
 using OrbitDrop.Tools;
+using OrbitDrop.Tools.Metadata;
 using OrbitDrop.UI;
 using OrbitDrop.UI.Onboarding;
 using OrbitDrop.UI.Settings;
@@ -112,6 +113,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
 
         var wheel = new RadialWheel();
         wheel.Prewarm();
+        RegisterInputs();
         _interaction = new InteractionController(wheel, _detector, _registry, jobs, _toasts, () => _settings, CreateContext, _shell, _inputs.AskAsync);
 
         var iconStream = GetResourceStream(new Uri("pack://application:,,,/OrbitDrop.UI;component/Assets/orbitdrop.ico"))!.Stream;
@@ -140,7 +142,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
     }
 
     private static OperationRegistry BuildRegistry() =>
-        new([new ImageConversionProvider(), new MediaFoundationProvider(), new ImageToolsProvider(), new FileActionsProvider()]);
+        new([new ImageConversionProvider(), new MediaFoundationProvider(), new ImageToolsProvider(), new MetadataProvider(), new FileActionsProvider()]);
 
     private OperationContext CreateContext() => new()
     {

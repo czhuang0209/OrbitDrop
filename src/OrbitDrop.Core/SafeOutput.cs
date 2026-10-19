@@ -31,16 +31,18 @@ public static class SafeOutput
     /// Same guarantees as <see cref="Write"/>, for engines that must open the output themselves (e.g. Media Foundation).
     /// <paramref name="writeToTemp"/> receives the path of an existing, empty temp file to fill. Set <paramref name="hideWhileWriting"/>
     /// to false for Windows storage APIs, which refuse to open hidden files; the file is hidden as soon as it is written.
+    /// Set <paramref name="tempKeepsExtension"/> when the writer needs the real extension (e.g. Windows property handlers).
     /// </summary>
     public static string WriteToPath(string source, OutputOptions options, string? newExtension, string? suffix,
         Action<string> writeToTemp, Func<string, string?> validate, CancellationToken cancellationToken = default,
-        bool hideWhileWriting = true)
+        bool hideWhileWriting = true, bool tempKeepsExtension = false)
     {
         string dir = options.DirectoryFor(source);
         Directory.CreateDirectory(dir);
         string ext = newExtension ?? Path.GetExtension(source);
         string baseName = Path.GetFileNameWithoutExtension(source) + (suffix is null ? "" : $" ({suffix})");
-        string temp = Path.Combine(dir, $"{TempPrefix}{Guid.NewGuid():N}.tmp");
+        // Windows picks property handlers by extension, so metadata edits need the temp to keep the real one.
+        string temp = Path.Combine(dir, $"{TempPrefix}{Guid.NewGuid():N}{(tempKeepsExtension ? ext : ".tmp")}");
 
         try
         {
@@ -84,5 +86,5 @@ public static class SafeOutput
     }
 
     public static IEnumerable<string> LeftoverTemps(string directory) =>
-        Directory.EnumerateFiles(directory, $"{TempPrefix}*.tmp");
+        Directory.EnumerateFiles(directory, $"{TempPrefix}*");
 }

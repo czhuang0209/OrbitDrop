@@ -92,6 +92,24 @@ internal static class UiReview
                 onboarding.Close();
             }
 
+            // --- Info window (sample photo)
+            var info = new OrbitDrop.UI.Metadata.MetadataWindow(new MetadataSnapshot(@"C:\Users\You\Pictures\IMG_2041.jpg", "Image",
+                [
+                    new("Type", "JPG image"), new("Size", "3.4 MB"), new("Dimensions", "4032 × 3024"),
+                    new("Camera", "Apple iPhone 15 Pro"), new("Taken", "Saturday, 14 June 2026 18:42"),
+                    new("Exposure", "1/120 s · ƒ/1.8 · ISO 64 · 7 mm"), new("Location", "51.50735, -0.12776"),
+                    new("Modified", "Saturday, 14 June 2026 18:42"), new("Folder", @"C:\Users\You\Pictures"),
+                ],
+                [
+                    new("System.Title", "Title", MetadataFieldKind.Text, "Golden hour"),
+                    new("System.Author", "Authors", MetadataFieldKind.List, null, "Separate with ;"),
+                    new("System.Keywords", "Tags", MetadataFieldKind.List, "london; summer"),
+                    new("System.Rating", "Rating", MetadataFieldKind.Rating, "4"),
+                    new("System.Comment", "Comments", MetadataFieldKind.MultiLine, null),
+                ], HasLocation: true));
+            RenderElement((FrameworkElement)info.Content, 520, double.NaN, bg, dir, $"info-{t}", ref count);
+            info.Close();
+
             // --- tray flyout
             var flyout = new TrayFlyout(new PreviewTray());
             RenderElement(flyout.ContentRoot, 300, double.NaN, bg, dir, $"tray-{t}", ref count);
