@@ -1,4 +1,9 @@
-## What's new in 0.2.1-alpha
+## What's new in 0.2.2-alpha
+
+- **Trim** video and audio: drag the start and end of the part to keep, play it, save a copy.
+- **Float**: park files on a small always-on-top shelf and drag them out later, one at a time or all at once (great for email attachments and uploads). Drop more files on it any time.
+
+## In 0.2.1-alpha
 
 - **Ctrl + Alt + Space**: select files in File Explorer or on the desktop, press the shortcut, and click an option in the wheel. No dragging needed. Turn it off in Settings → Shortcuts.
 - **Video to GIF**: a looping animated GIF of the first 10 seconds.
