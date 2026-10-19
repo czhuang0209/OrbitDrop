@@ -374,6 +374,9 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         else _ = _updates.CheckAsync(manual: true);
     }
 
+    private IReadOnlyList<OrbitDrop.UI.Settings.WheelCategory>? _wheelCatalog;
+    public IReadOnlyList<OrbitDrop.UI.Settings.WheelCategory> WheelCatalog => _wheelCatalog ??= WheelCatalogBuilder.Build(_registry);
+
     public bool UpdateAvailable => _updates?.Available is not null;
 
     public string UpdateMenuText => _updates?.Available is { } r

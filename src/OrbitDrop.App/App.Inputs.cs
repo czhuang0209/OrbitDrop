@@ -98,6 +98,7 @@ public partial class App
     private void OnHotkey()
     {
         if (Paused) return;
+        if (_interaction?.CycleIfOpenFromKeyboard() == true) return; // pressed again: next mode
         var files = ExplorerSelection.FromForegroundWindow();
         if (files.Count == 0)
         {

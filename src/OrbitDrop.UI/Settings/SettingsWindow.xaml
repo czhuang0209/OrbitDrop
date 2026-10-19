@@ -17,6 +17,39 @@
             <Setter Property="Margin" Value="0,0,16,0" />
             <Setter Property="Width" Value="20" />
         </Style>
+        <!-- Wheel page: an option chip. On = shown on the wheel (tinted, with a tick); off = faded outline. -->
+        <Style x:Key="WheelChip" TargetType="ToggleButton">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource Orbit.FocusVisual}" />
+            <Setter Property="FontFamily" Value="{StaticResource Orbit.Font.Text}" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="Foreground" Value="{DynamicResource Orbit.TextTertiary}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Chip" CornerRadius="14" Padding="{TemplateBinding Padding}" BorderThickness="1"
+                                Background="Transparent" BorderBrush="{DynamicResource Orbit.Stroke}">
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Chip" Property="Background" Value="{DynamicResource Orbit.AccentSubtle}" />
+                                <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource Orbit.StrokeStrong}" />
+                                <Setter Property="Foreground" Value="{DynamicResource Orbit.TextPrimary}" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource Orbit.TextSecondary}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="Page" TargetType="StackPanel">
             <Setter Property="Margin" Value="32,24,32,32" />
             <Setter Property="MaxWidth" Value="760" />
@@ -41,6 +74,7 @@
                 <ListBoxItem Tag="General"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Orbit.Glyph}" Text="&#xE713;" Margin="0,0,14,0" /><TextBlock Text="General" Style="{StaticResource Orbit.Text.Body}" /></StackPanel></ListBoxItem>
                 <ListBoxItem Tag="Appearance"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Orbit.Glyph}" Text="&#xE790;" Margin="0,0,14,0" /><TextBlock Text="Appearance" Style="{StaticResource Orbit.Text.Body}" /></StackPanel></ListBoxItem>
                 <ListBoxItem Tag="Shortcuts"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Orbit.Glyph}" Text="&#xE765;" Margin="0,0,14,0" /><TextBlock Text="Shortcuts" Style="{StaticResource Orbit.Text.Body}" /></StackPanel></ListBoxItem>
+                <ListBoxItem Tag="Wheel"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Orbit.Glyph}" Text="&#xE7F4;" Margin="0,0,14,0" /><TextBlock Text="Wheel" Style="{StaticResource Orbit.Text.Body}" /></StackPanel></ListBoxItem>
                 <ListBoxItem Tag="Conversions"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Orbit.Glyph}" Text="&#xE8AB;" Margin="0,0,14,0" /><TextBlock Text="Conversions" Style="{StaticResource Orbit.Text.Body}" /></StackPanel></ListBoxItem>
                 <ListBoxItem Tag="Advanced"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Orbit.Glyph}" Text="&#xE90F;" Margin="0,0,14,0" /><TextBlock Text="Advanced" Style="{StaticResource Orbit.Text.Body}" /></StackPanel></ListBoxItem>
                 <ListBoxItem Tag="About"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Orbit.Glyph}" Text="&#xE946;" Margin="0,0,14,0" /><TextBlock Text="About" Style="{StaticResource Orbit.Text.Body}" /></StackPanel></ListBoxItem>
@@ -218,9 +252,21 @@
                             <TextBlock Grid.Row="4" Style="{StaticResource Orbit.Text.BodyStrong}" Margin="0,4" Text="Esc" />
                             <TextBlock Grid.Row="4" Grid.Column="1" Style="{StaticResource Orbit.Text.Body}" Margin="0,4" Text="Cancel the drag and close the wheel" />
                             <TextBlock Grid.Row="5" Style="{StaticResource Orbit.Text.BodyStrong}" Margin="0,4" Text="Ctrl + Alt + Space" />
-                            <TextBlock Grid.Row="5" Grid.Column="1" Style="{StaticResource Orbit.Text.Body}" Margin="0,4" Text="Open the wheel for files selected in File Explorer, then click" />
+                            <TextBlock Grid.Row="5" Grid.Column="1" Style="{StaticResource Orbit.Text.Body}" Margin="0,4" Text="Open the wheel for selected files; click the centre for Tools and Actions" />
                         </Grid>
                     </Border>
+                </StackPanel>
+
+                <!-- Wheel: choose what appears -->
+                <StackPanel x:Name="Wheel" Style="{StaticResource Page}">
+                    <DockPanel Margin="2,0,0,6">
+                        <Button DockPanel.Dock="Right" Content="Show everything" Style="{StaticResource Orbit.Button.Standard}"
+                                Click="OnShowEverything" VerticalAlignment="Center" />
+                        <TextBlock Text="Wheel" Style="{StaticResource Orbit.Text.Subtitle}" />
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource Orbit.Text.Caption}" Margin="2,0,0,14" TextWrapping="Wrap"
+                               Text="Choose what appears on the wheel. Click an option to turn it off (or back on). Options with dots are groups: turn the whole group off, or just some of its choices. Nothing is deleted, and turned-off options can come back any time." />
+                    <StackPanel x:Name="WheelOptions" />
                 </StackPanel>
 
                 <!-- Conversions -->

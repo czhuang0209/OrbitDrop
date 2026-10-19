@@ -8,7 +8,7 @@ using OrbitDrop.UI.Wheel;
 
 namespace OrbitDrop.UI.Onboarding;
 
-public enum GuideScene { Hero, Drag, Release, Modes, Groups, Keyboard }
+public enum GuideScene { Hero, Drag, Release, Modes, Groups, Keyboard, Customize }
 
 /// <summary>
 /// The guide's animated demonstrations: a little desktop with a Pictures window, a pointer, the real OrbitDrop
@@ -24,6 +24,9 @@ public sealed class GuideStage : Canvas
     private readonly IGuideAssets _assets;
     private readonly string _triggerKey;
     private readonly Canvas _content = new() { Width = W, Height = H };
+    private readonly Border _window, _settings;
+    private readonly Dictionary<string, Border> _settingChips = [];
+    private readonly Border _showAll;
     private readonly Border _tileA, _tileB, _tileC, _ghost;
     private readonly TextBlock _tileBName, _tileCName;
     private readonly Image _wheel = new() { Width = WheelSize, Height = WheelSize };
@@ -36,6 +39,8 @@ public sealed class GuideStage : Canvas
     private readonly System.Windows.Shapes.Ellipse _ripple = new() { StrokeThickness = 2 };
     private readonly System.Windows.Shapes.Path _dwell = new() { StrokeThickness = 3, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
     private readonly StackPanel _keys = new() { Orientation = Orientation.Horizontal };
+    private readonly Border _caption = new() { CornerRadius = new CornerRadius(14), Padding = new Thickness(12, 5, 12, 6) };
+    private readonly TextBlock _captionText = new() { FontSize = 12.5, FontWeight = FontWeights.SemiBold };
     private readonly Dictionary<string, Border> _keyCaps = [];
     private readonly Dictionary<string, WheelImage> _shots = [];
     private readonly Dictionary<string, BitmapSource> _toasts = [];
@@ -60,7 +65,7 @@ public sealed class GuideStage : Canvas
         Children.Add(_content);
 
         // A small File Explorer-like "Pictures" window.
-        var window = new Border
+        _window = new Border
         {
             Width = 252, Height = 270, CornerRadius = new CornerRadius(10),
             Background = (Brush)Application.Current.FindResource("Orbit.Surface"),
@@ -74,9 +79,47 @@ public sealed class GuideStage : Canvas
         bar.Children.Add(dots);
         bar.Children.Add(new TextBlock { Text = "Pictures", FontSize = 11.5, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center,
             Foreground = (Brush)Application.Current.FindResource("Orbit.TextPrimary") });
-        window.Child = new StackPanel { Children = { bar } };
-        Place(window, 22, 24);
-        _content.Children.Add(window);
+        _window.Child = new StackPanel { Children = { bar } };
+        Place(_window, 22, 24);
+        _content.Children.Add(_window);
+
+        // A mini "Settings › Wheel" page for the customization scene (same chip look as the real page).
+        var panel = new Canvas { Width = 252, Height = 270 };
+        var title = new TextBlock { Text = "Settings  ›  Wheel", FontSize = 12, FontWeight = FontWeights.SemiBold,
+            Foreground = (Brush)Application.Current.FindResource("Orbit.TextPrimary") };
+        Place(title, 16, 16);
+        panel.Children.Add(title);
+        var section = new TextBlock { Text = "PHOTOS · CONVERT", FontSize = 10, FontWeight = FontWeights.SemiBold,
+            Foreground = (Brush)Application.Current.FindResource("Orbit.TextSecondary") };
+        Place(section, 16, 58);
+        panel.Children.Add(section);
+        string[] formats = ["JPG", "BMP", "TIFF", "GIF", "PDF"]; // the demo photo is a PNG, so its wheel has no PNG
+        for (int i = 0; i < formats.Length; i++)
+        {
+            var chip = SettingChip(formats[i]);
+            _settingChips[formats[i]] = chip;
+            Place(chip, 16 + i % 3 * 74, 80 + i / 3 * 40);
+            panel.Children.Add(chip);
+        }
+        _showAll = new Border
+        {
+            Width = 132, Height = 30, CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1),
+            Background = (Brush)Application.Current.FindResource("Orbit.Surface"),
+            BorderBrush = (Brush)Application.Current.FindResource("Orbit.StrokeStrong"),
+            Child = new TextBlock { Text = "Show everything", FontSize = 11.5, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+                Foreground = (Brush)Application.Current.FindResource("Orbit.TextPrimary") },
+        };
+        Place(_showAll, 16, 220);
+        panel.Children.Add(_showAll);
+        _settings = new Border
+        {
+            Width = 252, Height = 270, CornerRadius = new CornerRadius(10), Child = panel,
+            Background = (Brush)Application.Current.FindResource("Orbit.Surface"),
+            BorderBrush = (Brush)Application.Current.FindResource("Orbit.Stroke"), BorderThickness = new Thickness(1),
+            Effect = new DropShadowEffect { BlurRadius = 18, ShadowDepth = 4, Direction = 270, Opacity = 0.12 },
+        };
+        Place(_settings, 22, 24);
+        _content.Children.Add(_settings);
 
         _tileA = Tile("photo.png", out _);
         _tileB = Tile("photo.jpg", out _tileBName);
@@ -109,6 +152,12 @@ public sealed class GuideStage : Canvas
         }
         _content.Children.Add(_keys);
 
+        // A caption chip above the wheel that says what the next click does (keyboard scene).
+        _caption.Background = (Brush)Application.Current.FindResource("Orbit.Accent");
+        _captionText.Foreground = (Brush)Application.Current.FindResource("Orbit.OnAccent");
+        _caption.Child = _captionText;
+        _content.Children.Add(_caption);
+
         var accent = (Brush)Application.Current.FindResource("Orbit.Accent");
         _ripple.Stroke = accent;
         _dwell.Stroke = accent;
@@ -129,7 +178,7 @@ public sealed class GuideStage : Canvas
     public static double DurationOf(GuideScene s) => s switch
     {
         GuideScene.Hero => 9.4, GuideScene.Drag => 5.4, GuideScene.Release => 6.2,
-        GuideScene.Modes => 5.4, GuideScene.Groups => 7.2, _ => 7.2,
+        GuideScene.Modes => 5.4, GuideScene.Groups => 7.2, GuideScene.Customize => 8.6, _ => 10.6,
     };
 
     // ------------------------------------------------------------------ building blocks
@@ -157,6 +206,35 @@ public sealed class GuideStage : Canvas
             RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = new ScaleTransform(),
             Effect = ghost ? new DropShadowEffect { BlurRadius = 14, ShadowDepth = 4, Opacity = 0.25 } : null,
         };
+    }
+
+    private static Border SettingChip(string label)
+    {
+        var tick = new TextBlock { Text = "", FontFamily = (FontFamily)Application.Current.FindResource("Orbit.Font.Icons"), FontSize = 9,
+            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 1, 6, 0) };
+        var text = new TextBlock { Text = label, FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
+        return new Border
+        {
+            Width = 66, Height = 30, CornerRadius = new CornerRadius(15), BorderThickness = new Thickness(1),
+            Child = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Children = { tick, text } },
+        };
+    }
+
+    /// <summary>On: tinted with a tick (shown on the wheel). Off: faded outline.</summary>
+    private static void SetChip(Border chip, bool on)
+    {
+        chip.Background = on ? (Brush)Application.Current.FindResource("Orbit.AccentSubtle") : Brushes.Transparent;
+        chip.BorderBrush = (Brush)Application.Current.FindResource(on ? "Orbit.StrokeStrong" : "Orbit.Stroke");
+        var row = (StackPanel)chip.Child;
+        row.Children[0].Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        ((TextBlock)row.Children[1]).Foreground = (Brush)Application.Current.FindResource(on ? "Orbit.TextPrimary" : "Orbit.TextTertiary");
+    }
+
+    /// <summary>Stage position of a setting chip's centre (the settings panel sits where the Pictures window does).</summary>
+    private Point ChipPoint(string label)
+    {
+        var chip = _settingChips[label];
+        return new Point(22 + GetLeft(chip) + chip.Width / 2, 24 + GetTop(chip) + chip.Height / 2);
     }
 
     private static Border KeyCap(string text) => new()
@@ -209,6 +287,10 @@ public sealed class GuideStage : Canvas
     private WheelImage CompressGroup => Shot("cg", new(OperationMode.Tools, PhotoFiles, WheelGeometry.HitOutside, "Compress", "Rest on the centre to go back", "image.compress"));
     private WheelImage Compress1Mb => Shot("c1", new(OperationMode.Tools, PhotoFiles, IndexOf(CompressGroup, "1 MB"), "1 MB", "Compress to under 1 MB", "image.compress"));
     private WheelImage ActionsIdle => Shot("ai", new(OperationMode.Actions, PhotoFiles, WheelGeometry.HitOutside, "2.4 MB", "photo.png"));
+    // Keyboard flow: the centre says where a click leads.
+    private WheelImage ConvertClick => Shot("kc", new(OperationMode.Convert, PhotoFiles, WheelGeometry.HitHub, "2.4 MB", "Click for Tools"));
+    private WheelImage ToolsClick => Shot("kt", new(OperationMode.Tools, PhotoFiles, WheelGeometry.HitHub, "2.4 MB", "Click for Actions"));
+    private WheelImage ActionsClick => Shot("ka", new(OperationMode.Actions, PhotoFiles, WheelGeometry.HitHub, "2.4 MB", "Click for Convert"));
 
     private static int IndexOf(WheelImage w, string label) => Math.Max(0, w.Labels.ToList().IndexOf(label));
 
@@ -244,6 +326,10 @@ public sealed class GuideStage : Canvas
         Dwell(0, Center);
         Keys([]);
         foreach (var cap in _keyCaps.Values) Press(cap, false);
+        _window.Visibility = _tileA.Visibility = _tileB.Visibility = _tileC.Visibility = Visibility.Visible;
+        _settings.Visibility = Visibility.Collapsed;
+        foreach (var chip in _settingChips.Values) SetChip(chip, true);
+        Caption(null);
     }
 
     private void SetCursor(Point p, bool pressed)
@@ -322,6 +408,15 @@ public sealed class GuideStage : Canvas
 
     private void PressWindow(string key, double t, double from, double to) => Press(_keyCaps[key], t >= from && t < to);
 
+    private void Caption(string? text)
+    {
+        _caption.Visibility = text is null ? Visibility.Collapsed : Visibility.Visible;
+        if (text is null) return;
+        _captionText.Text = text;
+        _caption.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        Place(_caption, Center.X - _caption.DesiredSize.Width / 2, Center.Y - WheelSize / 2 - 4 - _caption.DesiredSize.Height);
+    }
+
     private void FadeOut(double t, double from, double to) => _content.Opacity = 1 - Seg(t, from, to);
 
     // ------------------------------------------------------------------ scenes
@@ -341,6 +436,7 @@ public sealed class GuideStage : Canvas
             case GuideScene.Modes: ModesScene(t); break;
             case GuideScene.Groups: GroupsScene(t); break;
             case GuideScene.Keyboard: KeyboardScene(t); break;
+            case GuideScene.Customize: CustomizeScene(t); break;
         }
     }
 
@@ -420,18 +516,75 @@ public sealed class GuideStage : Canvas
     {
         Keys(["Ctrl", "Alt", "Space"]);
         Select(true);
-        PressWindow("Ctrl", t, 0.6, 1.5);
-        PressWindow("Alt", t, 0.8, 1.5);
-        PressWindow("Space", t, 1.0, 1.4);
+        PressWindow("Ctrl", t, 0.5, 1.4);
+        PressWindow("Alt", t, 0.7, 1.4);
+        PressWindow("Space", t, 0.9, 1.3);
+
+        // Clicking the centre switches Convert → Tools → Actions → Convert, then pick JPG and click.
+        double[] centreClicks = [2.2, 3.4, 4.6];
+        const double pick = 6.4;
         var target = SegmentPoint(ConvertIdle, "JPG");
-        var p = Move(t, 1.8, 2.5, Center, target);
-        SetCursor(p, t >= 2.9 && t < 3.05);
-        Ripple(Seg(t, 2.9, 3.4), target);
-        double open = Seg(t, 1.1, 1.4), pop = Seg(t, 3.05, 3.25);
-        WheelState(t >= 2.3 ? ConvertJpg : ConvertIdle, open * (1 - pop), (0.4 + 0.6 * Back(open)) * (1 + 0.05 * pop), 0);
-        Tile(_tileB, Seg(t, 3.3, 3.65));
-        ToastState(ToastImage("Saved photo.jpg", "In Pictures"), Seg(t, 3.5, 3.85));
-        FadeOut(t, 6.7, 7.2);
+        var p = Move(t, 5.1, 5.9, Center, target);
+        bool clicking = centreClicks.Any(c => t >= c && t < c + 0.15) || (t >= pick && t < pick + 0.15);
+        SetCursor(p, clicking);
+        double lastCentre = centreClicks.LastOrDefault(c => t >= c, -10);
+        Ripple(t >= pick ? Seg(t, pick, pick + 0.5) : Seg(t, lastCentre, lastCentre + 0.5), t >= pick ? target : Center);
+
+        int stage = centreClicks.Count(c => t >= c + 0.05);
+        WheelImage image = stage switch
+        {
+            0 => ConvertClick,
+            1 => ToolsClick,
+            2 => ActionsClick,
+            _ => t >= 5.6 ? ConvertJpg : ConvertIdle,
+        };
+        double open = Seg(t, 1.0, 1.3), pop = Seg(t, pick + 0.15, pick + 0.35);
+        double since = stage == 0 ? 1 : Seg(t, centreClicks[stage - 1] + 0.05, centreClicks[stage - 1] + 0.25);
+        WheelState(image, open * (0.4 + 0.6 * since) * (1 - pop), (0.4 + 0.6 * Back(open)) * (1 + 0.05 * pop), -14 * (1 - Ease(since)));
+        Caption(t < 1.4 || t >= pick ? null : stage switch
+        {
+            0 => "Click the centre for Tools",
+            1 => "Click again for Actions",
+            2 => "And again to go back to Convert",
+            _ => "Then click an option",
+        });
+        Tile(_tileB, Seg(t, pick + 0.4, pick + 0.75));
+        ToastState(ToastImage("Saved photo.jpg", "In Pictures"), Seg(t, pick + 0.6, pick + 0.95));
+        FadeOut(t, 10.1, 10.6);
+    }
+
+    /// <summary>
+    /// Settings → Wheel: click BMP, TIFF and GIF off and the wheel shows only what's left; "Show everything" brings
+    /// them back.
+    /// </summary>
+    private void CustomizeScene(double t)
+    {
+        _window.Visibility = _tileA.Visibility = _tileB.Visibility = _tileC.Visibility = Visibility.Collapsed;
+        _settings.Visibility = Visibility.Visible;
+
+        (string Label, double At)[] clicks = [("BMP", 1.2), ("TIFF", 2.5), ("GIF", 3.8)];
+        const double showAll = 6.0;
+        var showAllPoint = new Point(22 + GetLeft(_showAll) + _showAll.Width / 2, 24 + GetTop(_showAll) + _showAll.Height / 2);
+
+        // The pointer travels chip to chip, then to "Show everything".
+        Point p = Move(t, 0.2, 1.0, Rest, ChipPoint("BMP"));
+        if (t >= 1.5) p = Move(t, 1.5, 2.3, ChipPoint("BMP"), ChipPoint("TIFF"));
+        if (t >= 2.8) p = Move(t, 2.8, 3.6, ChipPoint("TIFF"), ChipPoint("GIF"));
+        if (t >= 4.6) p = Move(t, 4.6, 5.6, ChipPoint("GIF"), showAllPoint);
+        bool pressed = clicks.Any(c => t >= c.At && t < c.At + 0.15) || (t >= showAll && t < showAll + 0.15);
+        SetCursor(p, pressed);
+
+        int off = t >= showAll + 0.1 ? 0 : clicks.Count(c => t >= c.At + 0.1);
+        foreach (var (label, _) in clicks.Take(off)) SetChip(_settingChips[label], false);
+        double lastChange = off > 0 ? clicks[off - 1].At + 0.1 : t >= showAll + 0.1 ? showAll + 0.1 : -10;
+        double since = Seg(t, lastChange, lastChange + 0.25);
+
+        string[] hidden = clicks.Take(off).Select(c => $"convert.image.{c.Label.ToLowerInvariant()}").ToArray();
+        var wheel = Shot($"cz{off}", new(OperationMode.Convert, PhotoFiles, WheelGeometry.HitOutside, "2.4 MB", "photo.png", Hidden: hidden));
+        double open = Seg(t, 0.1, 0.4);
+        WheelState(wheel, open * (0.5 + 0.5 * since), (0.4 + 0.6 * Back(open)) * (0.96 + 0.04 * Ease(since)), 0);
+        Caption(t < 1.0 ? "Settings → Wheel" : t < showAll ? (off == 0 ? "Click an option to turn it off" : $"{wheel.Labels.Count} options left: bigger, easier targets") : "Show everything brings them back");
+        FadeOut(t, 8.1, 8.6);
     }
 
     /// <summary>Renders one frame offscreen (for GIF export).</summary>

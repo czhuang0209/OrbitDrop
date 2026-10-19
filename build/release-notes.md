@@ -1,4 +1,11 @@
-## What's new in 0.2.4-alpha
+## What's new in 0.2.5-alpha
+
+- **Make the wheel yours:** Settings → **Wheel** lists everything OrbitDrop can do, by kind of file. Click what you don't use to turn it off: whole groups (like Resize) or single choices (like Compress 25%). The wheel shows only what's left; **Show everything** brings it all back.
+- **Ctrl + Alt + Space, then switch modes:** click the centre of the wheel (it says where it leads, e.g. "Click for Tools"), press the shortcut again, or tap Shift. Esc or a click outside closes it.
+- **The guide** shows both: the keyboard step now demonstrates switching modes, and a new step shows customizing the wheel.
+- Fix: in the guide, the option under the pointer now lights up correctly (white in dark mode).
+
+## In 0.2.4-alpha
 
 - **Automatic updates.** OrbitDrop now downloads updates quietly, checks them against their published checksum, and installs them the next time you're not using it (no wheel open, nothing converting, no OrbitDrop windows open). It restarts in a few seconds with your settings. Prefer to be asked? Turn off **Install updates automatically** in Settings → About.
 - Update checks no longer fail when GitHub limits requests from your network (common on shared office or school connections).

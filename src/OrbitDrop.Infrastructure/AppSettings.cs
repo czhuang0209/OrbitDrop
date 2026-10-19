@@ -48,6 +48,9 @@ public sealed class AppSettings
     /// <summary>Download and install updates without asking, at a moment OrbitDrop isn't in use.</summary>
     public bool AutoInstallUpdates { get; set; } = true;
 
+    // Wheel: options and groups the user turned off (see WheelFilter).
+    public string[] HiddenOptions { get; set; } = [];
+
     // Actions: the last few folders used with Copy to / Move to (most recent first).
     public string[] RecentFolders { get; set; } = [];
 
@@ -62,6 +65,7 @@ public sealed class AppSettings
         if (!Enum.IsDefined(TriggerKey)) TriggerKey = TriggerKey.Shift;
         if (OutputLocation == OutputLocation.Folder && string.IsNullOrWhiteSpace(OutputFolder))
             OutputLocation = OutputLocation.BesideOriginal;
+        HiddenOptions = (HiddenOptions ?? []).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct(StringComparer.Ordinal).ToArray();
         RecentFolders = (RecentFolders ?? []).Where(f => !string.IsNullOrWhiteSpace(f)).Distinct(StringComparer.OrdinalIgnoreCase).Take(MaxRecentFolders).ToArray();
     }
 }

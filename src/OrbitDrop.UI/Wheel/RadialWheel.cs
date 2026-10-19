@@ -258,14 +258,15 @@ public sealed class RadialWheel : Window
         _hubDetail.Text = detail;
     }
 
-    public void SetHighlight(int index)
+    /// <param name="animate">False for offscreen renders (guide, film): a colour fade wouldn't have started yet.</param>
+    public void SetHighlight(int index, bool animate = true)
     {
         if (index == _highlight) return;
         var previous = _highlight >= 0 && _highlight < _visuals.Count ? _visuals[_highlight] : null;
         _highlight = index;
         var current = index >= 0 && index < _visuals.Count ? _visuals[index] : null;
-        if (previous is not null) Paint(previous, null, animate: true);
-        if (current is not null) Paint(current, current, animate: true);
+        if (previous is not null) Paint(previous, null, animate);
+        if (current is not null) Paint(current, current, animate);
     }
 
     private void Paint(SegmentVisual v, SegmentVisual? highlighted, bool animate = false)

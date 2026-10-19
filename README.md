@@ -12,11 +12,11 @@
 
 ## Download
 
-**[⬇ Download OrbitDrop for Windows (installer)](https://github.com/i3sam/OrbitDrop/releases/download/v0.2.4-alpha/OrbitDrop-Setup.exe)** · [portable .zip](https://github.com/i3sam/OrbitDrop/releases/download/v0.2.4-alpha/OrbitDrop-Portable.zip) · [all releases](https://github.com/i3sam/OrbitDrop/releases)
+**[⬇ Download OrbitDrop for Windows (installer)](https://github.com/i3sam/OrbitDrop/releases/download/v0.2.5-alpha/OrbitDrop-Setup.exe)** · [portable .zip](https://github.com/i3sam/OrbitDrop/releases/download/v0.2.5-alpha/OrbitDrop-Portable.zip) · [all releases](https://github.com/i3sam/OrbitDrop/releases)
 
 Run the installer: no admin rights or .NET needed. This alpha isn't code-signed yet, so if Windows shows "Windows protected your PC", click **More info → Run anyway**.
 
-> **Status: 0.2.4-alpha.** The core gesture is validated on Windows 11 (single monitor, 100% scale). Multi-monitor, mixed-DPI and Windows 10 sign-off are still pending; see [the feasibility report](docs/research/02-feasibility-report.md).
+> **Status: 0.2.5-alpha.** The core gesture is validated on Windows 11 (single monitor, 100% scale). Multi-monitor, mixed-DPI and Windows 10 sign-off are still pending; see [the feasibility report](docs/research/02-feasibility-report.md).
 
 ## How it works
 
@@ -36,9 +36,13 @@ Run the installer: no admin rights or .NET needed. This alpha isn't code-signed 
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/guide/guide-groups-dark.gif"><img src="docs/guide/guide-groups.gif" width="600" alt="Resting on Compress opens sizes; choosing 1 MB saves a compressed copy"></picture>
 
-**No dragging?** Select files, press **Ctrl + Alt + Space** and click an option.
+**No dragging?** Select files, press **Ctrl + Alt + Space** and click an option. Click the centre of the wheel (or tap Shift, or press the shortcut again) for **Tools** and **Actions**; **Esc** closes it.
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/guide/guide-keyboard-dark.gif"><img src="docs/guide/guide-keyboard.gif" width="600" alt="With a file selected, Ctrl+Alt+Space opens the wheel and a click converts it"></picture>
+
+**Make it yours.** Settings → **Wheel** lists everything OrbitDrop can do. Turn off what you don't use (whole groups or single choices) and the wheel shows only what's left.
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/guide/guide-customize-dark.gif"><img src="docs/guide/guide-customize.gif" width="600" alt="In Settings, turning off BMP, TIFF and GIF leaves a wheel with just JPG and PDF"></picture>
 
 The app includes the same guide with a hands-on practice step (tray menu → **How to use OrbitDrop**). These animations are rendered from the real app: `OrbitDrop.exe --render-guide <folder>`.
 

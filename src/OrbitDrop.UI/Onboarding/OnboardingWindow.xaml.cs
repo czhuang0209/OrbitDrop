@@ -47,8 +47,10 @@ public partial class OnboardingWindow : Window
                 $"Each tap switches the wheel: Convert (PNG, JPG, PDF, MP3…), Tools (edit, compress, resize, trim…) and Actions (copy to, share, zip, float…)."),
             new(GuideScene.Groups, "TIP", "Options with dots open into more choices",
                 "Rest on one for a moment and its choices appear; rest on the centre to go back. In a hurry? Let go on it straight away for the most common choice."),
-            new(GuideScene.Keyboard, "TIP", "Prefer the keyboard?",
-                "Select files in File Explorer or on the desktop, press Ctrl + Alt + Space, then click an option. Handy on a trackpad."),
+            new(GuideScene.Keyboard, "TIP", "Prefer the keyboard? Click instead",
+                "Select files in File Explorer or on the desktop, press Ctrl + Alt + Space, then click an option. For Tools and Actions, click the centre of the wheel (or tap Shift, or press the shortcut again). Esc closes it."),
+            new(GuideScene.Customize, "TIP", "Make the wheel yours",
+                "Settings → Wheel lists everything OrbitDrop can do. Click what you don't use to turn it off, and the wheel shows only what's left, with bigger, easier targets. Turn off a whole group or single choices; Show everything brings it all back."),
             new(null, "PRACTICE", "Try it now",
                 $"Drag the photo on the left a little way, tap {triggerKey} while you're still holding it, and let go on JPG. It's a sample file, so nothing of yours is touched."),
         ];
@@ -128,7 +130,7 @@ public partial class OnboardingWindow : Window
     private static double KeyFrame(GuideScene scene) => scene switch
     {
         GuideScene.Hero => 4.6, GuideScene.Release => 2.6, GuideScene.Drag => 3.4, GuideScene.Modes => 2.5,
-        GuideScene.Groups => 2.7, _ => 2.4,
+        GuideScene.Groups => 2.7, GuideScene.Customize => 4.4, _ => 3.0,
     };
 
     private void Tick()

@@ -211,7 +211,13 @@ internal static class UiReview
 
     private sealed class PreviewHost(OperationRegistry registry) : ISettingsHost
     {
-        public AppSettings Settings { get; } = new() { OutputFolder = @"C:\Users\You\Pictures\Converted" };
+        public AppSettings Settings { get; } = new()
+        {
+            OutputFolder = @"C:\Users\You\Pictures\Converted",
+            // A few options turned off, so the Wheel page shows both chip states.
+            HiddenOptions = ["convert.image.bmp", "convert.image.tiff", "tool.image.compress.p25", "group:image.resize"],
+        };
+        public IReadOnlyList<WheelCategory> WheelCatalog { get; } = WheelCatalogBuilder.Build(registry);
         public void Update(Action<AppSettings> change) => change(Settings);
         public bool LaunchAtStartup { get; set; } = true;
         public bool AccentFallbackActive => false;

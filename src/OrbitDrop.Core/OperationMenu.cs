@@ -41,3 +41,21 @@ public static class OperationMenu
             NeedsInput = first.NeedsInput,
         };
 }
+
+/// <summary>
+/// The user's wheel customization: options (by id) and whole groups (by <see cref="GroupKey"/>) they turned off.
+/// Options whose id carries a parameter (e.g. a folder in "action.copy-to|C:\…") can only be hidden via their group.
+/// </summary>
+public static class WheelFilter
+{
+    public static string GroupKey(OperationGroup group) => "group:" + group.Id;
+
+    /// <summary>The key a single option is hidden by, or null when it can only be hidden with its group.</summary>
+    public static string? OptionKey(OperationDescriptor op) => op.Id.Contains('|') ? null : op.Id;
+
+    public static bool IsHidden(OperationDescriptor op, IReadOnlySet<string> hidden) =>
+        (op.Group is { } g && hidden.Contains(GroupKey(g))) || (OptionKey(op) is { } k && hidden.Contains(k));
+
+    public static IReadOnlyList<OperationDescriptor> Apply(IReadOnlyList<OperationDescriptor> options, IReadOnlySet<string> hidden) =>
+        hidden.Count == 0 ? options : options.Where(o => !IsHidden(o, hidden)).ToList();
+}

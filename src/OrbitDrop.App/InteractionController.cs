@@ -110,6 +110,24 @@ public sealed class InteractionController : IDropSink, IDisposable
     }
 
     /// <summary>Next mode that has options for these files (empty modes are skipped once the files are known).</summary>
+    /// <summary>What the wheel offers for these files: the registry's options minus the ones the user turned off.</summary>
+    private IReadOnlyList<OperationDescriptor> Options(FileSet files, OperationMode mode) =>
+        WheelFilter.Apply(_registry.Query(files, mode), new HashSet<string>(_settings().HiddenOptions, StringComparer.Ordinal));
+
+    /// <summary>"Tools" / "Actions" / "Convert": what the next switch leads to (for the centre's hint).</summary>
+    private string NextModeLabel(Session s) => NextMode(s, s.Mode, includeCurrent: false).ToString();
+
+    /// <summary>Another mode has options for these files (otherwise switching does nothing).</summary>
+    private bool HasOtherMode(Session s) => NextMode(s, s.Mode, includeCurrent: false) != s.Mode;
+
+    /// <summary>The keyboard shortcut pressed again while its wheel is open: switch to the next mode.</summary>
+    public bool CycleIfOpenFromKeyboard()
+    {
+        if (_session is not { ClickMode: true }) return false;
+        CycleMode();
+        return true;
+    }
+
     private void CycleMode()
     {
         if (_session is not { } s) return;
@@ -125,7 +143,7 @@ public sealed class InteractionController : IDropSink, IDisposable
         for (int i = includeCurrent ? 0 : 1; i <= 3; i++)
         {
             var m = (OperationMode)(((int)from + i) % 3);
-            if (!s.EnterSeen || _registry.Query(s.Files, m).Count > 0) return m;
+            if (!s.EnterSeen || Options(s.Files, m).Count > 0) return m;
         }
         return includeCurrent ? from : (OperationMode)(((int)from + 1) % 3); // nothing anywhere
     }
@@ -133,7 +151,7 @@ public sealed class InteractionController : IDropSink, IDisposable
     private void Refresh(bool animate)
     {
         if (_session is not { } s) return;
-        s.Flat = _registry.Query(s.Files, s.Mode);
+        s.Flat = Options(s.Files, s.Mode);
         s.Items = s.OpenGroup is { } g ? OperationMenu.Members(s.Flat, g.Group!.Id) : OperationMenu.TopLevel(s.Flat);
         s.LastHit = WheelGeometry.HitOutside;
         _dwell.Stop();
@@ -233,7 +251,7 @@ public sealed class InteractionController : IDropSink, IDisposable
         {
             _wheel.SetHub(value, (s.OpenGroup is null, s.ClickMode) switch
             {
-                (true, true) => "Click to close",
+                (true, true) => HasOtherMode(s) ? $"Click for {NextModeLabel(s)}" : "Esc to close",
                 (true, false) => "Release to cancel",
                 (false, true) => "Click to go back",
                 _ => "Going back…",
@@ -365,7 +383,9 @@ public sealed class InteractionController : IDropSink, IDisposable
             s.OpenGroup = null;
             Refresh(animate: true);
         }
-        else Dismiss(confirmed: false, hit == WheelGeometry.HitHub ? "clicked centre" : "clicked outside");
+        else if (hit == WheelGeometry.HitHub && HasOtherMode(s)) CycleMode(); // the centre switches Convert → Tools → Actions
+        else if (hit == WheelGeometry.HitHub) Dismiss(confirmed: false, "clicked centre");
+        else Dismiss(confirmed: false, "clicked outside");
     }
 
     // ------------------------------------------------------------------ preview (Settings → Appearance)
@@ -375,7 +395,7 @@ public sealed class InteractionController : IDropSink, IDisposable
     {
         Dismiss(false, "preview");
         var sample = new FileSet([Path.Combine(Path.GetTempPath(), "sample.jpg")]);
-        var flat = _registry.Query(sample, OperationMode.Convert);
+        var flat = Options(sample, OperationMode.Convert);
         var items = OperationMenu.TopLevel(flat);
         _session = new Session { Files = sample, Flat = flat, Items = items, EnterSeen = true, Anchor = ScreenInfo.CursorPosition };
         _detector.SessionOpen = true;

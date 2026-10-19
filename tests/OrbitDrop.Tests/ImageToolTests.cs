@@ -157,3 +157,34 @@ public class WicCodecTests
         File.WriteAllText(Path.Combine(Path.GetTempPath(), "orbitdrop-wic.txt"), string.Join(" ", exts.Order()));
     }
 }
+
+public class WheelFilterTests
+{
+    private static readonly OperationGroup Compress = new("image.compress", "Compress", null);
+    private static OperationDescriptor Op(string id, OperationGroup? g = null) => new(id, "p", OperationMode.Tools, id, null, "%1", id, id, 0, Group: g);
+
+    [Fact]
+    public void Hides_single_options_and_whole_groups()
+    {
+        var ops = new[] { Op("a"), Op("half", Compress), Op("p25", Compress), Op("b") };
+        Assert.Equal(["a", "half", "b"], WheelFilter.Apply(ops, new HashSet<string> { "p25" }).Select(o => o.Id));
+        Assert.Equal(["a", "b"], WheelFilter.Apply(ops, new HashSet<string> { WheelFilter.GroupKey(Compress) }).Select(o => o.Id));
+    }
+
+    [Fact]
+    public void Options_carrying_a_folder_can_only_be_hidden_with_their_group()
+    {
+        var copyTo = new OperationGroup("actions.copy-to", "Copy to", null);
+        var desktop = Op(@"action.copy-to|C:\Users\You\Desktop", copyTo);
+        Assert.Null(WheelFilter.OptionKey(desktop));
+        Assert.True(WheelFilter.IsHidden(desktop, new HashSet<string> { WheelFilter.GroupKey(copyTo) }));
+    }
+
+    [Fact]
+    public void A_drop_on_a_group_uses_its_first_visible_choice()
+    {
+        var flat = WheelFilter.Apply([Op("half", Compress), Op("p75", Compress), Op("p25", Compress)], new HashSet<string> { "half" });
+        var header = OperationMenu.TopLevel(flat)[0];
+        Assert.Equal("p75", OperationMenu.DefaultFor(flat, header).Id);
+    }
+}

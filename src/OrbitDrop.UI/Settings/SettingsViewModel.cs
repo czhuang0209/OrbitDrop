@@ -26,6 +26,8 @@ public interface ISettingsHost
     string UpdateButtonText => "Check now";
     bool UpdateBusy => false;
     bool KeyboardShortcutAvailable => true;
+    /// <summary>Every option OrbitDrop has, for the Wheel page (built by the app from the live registry).</summary>
+    IReadOnlyList<WheelCategory> WheelCatalog => [];
     void UpdateButtonClicked() { }
 }
 
@@ -80,7 +82,7 @@ public sealed class SettingsViewModel : ObservableObject
     public string TriggerName => S.TriggerKey == TriggerKey.Ctrl ? "Ctrl" : "Shift";
     public bool KeyboardShortcut { get => S.KeyboardShortcut; set => Set(s => s.KeyboardShortcut = value, nameof(KeyboardShortcut), nameof(KeyboardShortcutHint)); }
     public string KeyboardShortcutHint => _host.KeyboardShortcutAvailable
-        ? "Select files in File Explorer or on the desktop, press it, then click an option."
+        ? "Select files in File Explorer or on the desktop, press it, then click an option. Click the centre (or press it again) for Tools and Actions."
         : "Another app is using this shortcut, so OrbitDrop couldn't claim it.";
     private void SetTrigger(TriggerKey k) => Set(s => s.TriggerKey = k, nameof(TriggerShift), nameof(TriggerCtrl), nameof(TriggerName));
 
@@ -108,6 +110,17 @@ public sealed class SettingsViewModel : ObservableObject
     public bool DetailedLogging { get => S.DetailedLogging; set => Set(s => s.DetailedLogging = value, nameof(DetailedLogging)); }
     public string SettingsPath => _host.SettingsPath;
     public string LogsPath => _host.LogsPath;
+
+    // ---- Wheel (customization)
+    public IReadOnlyList<WheelCategory> WheelCatalog => _host.WheelCatalog;
+    public IReadOnlySet<string> HiddenOptions => new HashSet<string>(S.HiddenOptions, StringComparer.Ordinal);
+
+    public void SetShown(string key, bool shown) =>
+        Set(s => s.HiddenOptions = shown ? s.HiddenOptions.Where(k => k != key).ToArray() : [.. s.HiddenOptions, key], nameof(HiddenCount));
+
+    public void ShowEverything() => Set(s => s.HiddenOptions = [], nameof(HiddenCount));
+
+    public int HiddenCount => S.HiddenOptions.Length;
 
     // ---- About
     public string VersionText => _host.VersionText;

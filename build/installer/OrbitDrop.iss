@@ -2,10 +2,10 @@
 ; Built by build/package.ps1, which passes AppVersion, NumericVersion, SourceDir and OutputDir.
 
 #ifndef AppVersion
-  #define AppVersion "0.2.4-alpha"
+  #define AppVersion "0.2.5-alpha"
 #endif
 #ifndef NumericVersion
-  #define NumericVersion "0.2.4.0"
+  #define NumericVersion "0.2.5.0"
 #endif
 #ifndef SourceDir
   #define SourceDir "..\..\artifacts\publish\win-x64"

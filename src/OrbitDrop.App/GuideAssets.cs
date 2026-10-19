@@ -24,11 +24,11 @@ internal sealed class GuideAssets(OperationRegistry registry) : IGuideAssets
         _wheel ??= new RadialWheel();
         _backdrop ??= Backdrop();
         var files = new FileSet(shot.Files.Select(f => Path.Combine(Path.GetTempPath(), f)));
-        var flat = registry.Query(files, shot.Mode);
+        var flat = WheelFilter.Apply(registry.Query(files, shot.Mode), new HashSet<string>(shot.Hidden ?? [], StringComparer.Ordinal));
         var items = shot.Group is null ? OperationMenu.TopLevel(flat) : OperationMenu.Members(flat, shot.Group);
         _wheel.ApplyTheme();
         _wheel.SetContent(shot.Mode, items, shot.Value, shot.Detail, animate: false);
-        _wheel.SetHighlight(shot.Highlight);
+        _wheel.SetHighlight(shot.Highlight, animate: false);
         var image = _wheel.RenderPreview(_backdrop, Scale, wallpaperBehind: false);
         return new WheelImage(image, items.Select(i => i.Label).ToList());
     }
