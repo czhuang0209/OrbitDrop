@@ -1,4 +1,11 @@
-## What's new in 0.2.3-alpha
+## What's new in 0.2.4-alpha
+
+- **Automatic updates.** OrbitDrop now downloads updates quietly, checks them against their published checksum, and installs them the next time you're not using it (no wheel open, nothing converting, no OrbitDrop windows open). It restarts in a few seconds with your settings. Prefer to be asked? Turn off **Install updates automatically** in Settings → About.
+- Update checks no longer fail when GitHub limits requests from your network (common on shared office or school connections).
+
+> Coming from 0.2.3 or earlier: click **Install** on the update card once. From then on, updates install themselves.
+
+## In 0.2.3-alpha
 
 - **A brand-new guide** (tray menu → How to use OrbitDrop, or Settings → General): animated, step-by-step demonstrations built from the real wheel, covering dragging and tapping Shift, choosing an option, switching modes, grouped options and the Ctrl + Alt + Space shortcut. It ends with a **hands-on practice**: drag a sample photo, tap Shift, let go on JPG, and the guide confirms when you've done it.
 - You can now tap Shift while dragging files **out of the Float shelf** too.

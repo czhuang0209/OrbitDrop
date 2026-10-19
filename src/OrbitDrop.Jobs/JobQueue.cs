@@ -102,6 +102,10 @@ public sealed class JobQueue
     private readonly OperationRegistry _registry;
     private readonly SemaphoreSlim _slots;
     private int _nextId;
+    private int _active;
+
+    /// <summary>Jobs queued or running (e.g. so an automatic update waits until work is finished).</summary>
+    public int ActiveJobs => Volatile.Read(ref _active);
 
     public JobQueue(OperationRegistry registry, int maxConcurrentJobs = 2)
     {
@@ -114,6 +118,8 @@ public sealed class JobQueue
     public Job Enqueue(OperationDescriptor operation, FileSet files, OperationContext context)
     {
         var job = new Job(Interlocked.Increment(ref _nextId), operation, files);
+        Interlocked.Increment(ref _active);
+        _ = job.Completion.ContinueWith(_ => Interlocked.Decrement(ref _active), TaskScheduler.Default);
         var provider = _registry.ProviderFor(operation);
         JobStarted?.Invoke(job);
         _ = Task.Run(() => RunAsync(job, provider, context));

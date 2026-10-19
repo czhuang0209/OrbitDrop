@@ -80,6 +80,9 @@ public sealed class InteractionController : IDropSink, IDisposable
         _detector.DragButtonReleased += OnDragButtonReleased;
     }
 
+    /// <summary>A wheel is open (dragging, keyboard flow or preview).</summary>
+    public bool IsActive => _session is not null;
+
     /// <summary>Every finished job: (input files, files written). Used by the guide's practice step.</summary>
     public event Action<IReadOnlyList<string>, IReadOnlyList<string>>? JobFinished;
 

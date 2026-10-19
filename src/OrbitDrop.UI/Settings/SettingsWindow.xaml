@@ -361,7 +361,17 @@
                             <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding CheckForUpdates}" AutomationProperties.Name="Check for updates automatically" />
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="Check for updates automatically" Style="{StaticResource RowTitle}" />
-                                <TextBlock Text="Once a day, OrbitDrop asks GitHub whether a newer version exists. Nothing about you or your files is sent, and nothing installs without your click." Style="{StaticResource RowHint}" />
+                                <TextBlock Text="Every few hours, OrbitDrop asks GitHub whether a newer version exists. Nothing about you or your files is sent." Style="{StaticResource RowHint}" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Orbit.Card}">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE896;" />
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding AutoInstallUpdates}" AutomationProperties.Name="Install updates automatically" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Install updates automatically" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="Updates download quietly, are checked against their published checksum, and install the next time you're not using OrbitDrop. It restarts in a few seconds with your settings. Turn off to be asked first." Style="{StaticResource RowHint}" />
                             </StackPanel>
                         </DockPanel>
                     </Border>

@@ -40,6 +40,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
     private OnboardingWindow? _onboarding;
     private DispatcherTimer? _saveDebounce;
     private UpdateManager? _updates;
+    private JobQueue? _jobs;
     private readonly InputBroker _inputs = new();
     private GlobalHotkey? _hotkey;
     private SettingsViewModel? _settingsVm;
@@ -112,7 +113,8 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         ThemeManager.Current.Apply(_settings.Theme, _settings.UseWindowsAccent, _settings.ReduceMotion);
 
         _registry = BuildRegistry(new FileActionsProvider(() => _settings.RecentFolders, RememberFolder));
-        var jobs = new JobQueue(_registry, maxConcurrentJobs: 2);
+        _jobs = new JobQueue(_registry, maxConcurrentJobs: 2);
+        var jobs = _jobs;
         _shell = new ShellIntegration(Dispatcher) { FloatHandler = ShowShelf };
         _toasts = new ToastManager { NotifyOnCompletion = () => _settings.ShowCompletionNotifications };
 
@@ -136,7 +138,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         _tray.ContextMenuRequested += pt => ShowTrayMenu(pt);
         _tray.Show();
 
-        _updates = new UpdateManager(_toasts, () => _settings, Update, () => _instance?.ReleaseOwnership(), Quit);
+        _updates = new UpdateManager(_toasts, () => _settings, Update, () => _instance?.ReleaseOwnership(), Quit, IsInUse);
         _updates.Changed += () => _settingsVm?.RefreshUpdates();
         _updates.Start();
 
@@ -341,6 +343,8 @@ public partial class App : Application, ISettingsHost, ITrayCommands
             return _updates.State switch
             {
                 UpdateState.Checking => "Checking GitHub for a newer version…",
+                UpdateState.Ready when _updates.Available is { } r =>
+                    $"OrbitDrop {r.Version} is downloaded and installs by itself the next time you're not using OrbitDrop.",
                 UpdateState.Available or UpdateState.Downloading or UpdateState.Installing when _updates.Available is { } r =>
                     UpdateManager.IsInstalled ? $"OrbitDrop {r.Version} is available. Installing takes a few seconds and keeps your settings."
                                               : $"OrbitDrop {r.Version} is available. This is the portable copy, so download it from GitHub.",
@@ -357,6 +361,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         UpdateState.Downloading => "Downloading…",
         UpdateState.Installing => "Installing…",
         UpdateState.Available => UpdateManager.IsInstalled ? "Install update" : "Download",
+        UpdateState.Ready => "Install now",
         _ => "Check now",
     };
 
@@ -365,7 +370,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
     public void UpdateButtonClicked()
     {
         if (_updates is null) return;
-        if (_updates.State == UpdateState.Available) _ = _updates.InstallAsync();
+        if (_updates.State is UpdateState.Available or UpdateState.Ready) _ = _updates.InstallAsync();
         else _ = _updates.CheckAsync(manual: true);
     }
 
@@ -376,6 +381,18 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         : "Check for updates";
 
     public void UpdateMenuClicked() => UpdateButtonClicked();
+
+    /// <summary>
+    /// OrbitDrop is in use: the wheel is open, something is converting, or one of its windows (Settings, editor,
+    /// guide, Float shelf, a picker…) is open. Automatic updates wait for none of these to be true.
+    /// </summary>
+    private bool IsInUse()
+    {
+        if (_interaction?.IsActive == true || (_jobs?.ActiveJobs ?? 0) > 0) return true;
+        foreach (Window w in Windows)
+            if (w.IsVisible && w is not ToastWindow && w is not RadialWheel) return true;
+        return false;
+    }
 
     private static string Ago(DateTimeOffset t)
     {

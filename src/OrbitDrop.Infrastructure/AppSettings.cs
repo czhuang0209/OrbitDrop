@@ -45,6 +45,8 @@ public sealed class AppSettings
     // Updates: one anonymous request to GitHub Releases at most once a day, only while this is on.
     public bool CheckForUpdates { get; set; } = true;
     public DateTimeOffset? LastUpdateCheck { get; set; }
+    /// <summary>Download and install updates without asking, at a moment OrbitDrop isn't in use.</summary>
+    public bool AutoInstallUpdates { get; set; } = true;
 
     // Actions: the last few folders used with Copy to / Move to (most recent first).
     public string[] RecentFolders { get; set; } = [];

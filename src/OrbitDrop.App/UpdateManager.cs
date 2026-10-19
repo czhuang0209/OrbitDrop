@@ -7,16 +7,23 @@ using OrbitDrop.Windows.Shell;
 
 namespace OrbitDrop.App;
 
-public enum UpdateState { Idle, Checking, UpToDate, Available, Downloading, Installing, Failed }
+public enum UpdateState { Idle, Checking, UpToDate, Available, Downloading, Ready, Installing, Failed }
 
 /// <summary>
-/// Finds, downloads and installs new OrbitDrop releases. Automatic checks run at most once a day and only while
-/// "Check for updates automatically" is on; manual checks always run. Installed copies update in place via the
-/// silent installer (which relaunches OrbitDrop); portable copies open the release page instead.
+/// Finds, downloads and installs new OrbitDrop releases.
+/// <list type="bullet">
+/// <item>Automatic checks run every few hours while "Check for updates automatically" is on; manual checks always run.</item>
+/// <item>With "Install updates automatically" on, an update found by an automatic check is downloaded quietly,
+/// verified, and installed the next time OrbitDrop is idle (no wheel, no jobs, no OrbitDrop windows). Otherwise the
+/// user gets a card with an Install button.</item>
+/// <item>Installed copies update in place via the silent installer, which relaunches OrbitDrop; portable copies open
+/// the release page instead.</item>
+/// </list>
 /// </summary>
 public sealed class UpdateManager
 {
-    private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(24);
+    private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(6);
+    private static readonly TimeSpan IdlePoll = TimeSpan.FromSeconds(30);
 
     private readonly UpdateService _service = new();
     private readonly ToastManager _toasts;
@@ -24,17 +31,24 @@ public sealed class UpdateManager
     private readonly Action<Action<AppSettings>> _update;
     private readonly Action _quit;
     private readonly Action _releaseInstance;
+    private readonly Func<bool> _busy;
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromHours(1) };
+    private readonly DispatcherTimer _idleWait = new() { Interval = IdlePoll };
     private string? _notified;
+    private string? _downloaded; // verified installer waiting for an idle moment
 
-    public UpdateManager(ToastManager toasts, Func<AppSettings> settings, Action<Action<AppSettings>> update, Action releaseInstance, Action quit)
+    /// <param name="busy">True while OrbitDrop is in use (wheel open, jobs running, windows open); automatic installs wait.</param>
+    public UpdateManager(ToastManager toasts, Func<AppSettings> settings, Action<Action<AppSettings>> update,
+        Action releaseInstance, Action quit, Func<bool> busy)
     {
         _toasts = toasts;
         _settings = settings;
         _update = update;
         _quit = quit;
         _releaseInstance = releaseInstance;
+        _busy = busy;
         _timer.Tick += (_, _) => _ = CheckIfDueAsync();
+        _idleWait.Tick += (_, _) => TryInstallWhenIdle();
     }
 
     public UpdateState State { get; private set; } = UpdateState.Idle;
@@ -55,7 +69,11 @@ public sealed class UpdateManager
         first.Start();
     }
 
-    public void Stop() => _timer.Stop();
+    public void Stop()
+    {
+        _timer.Stop();
+        _idleWait.Stop();
+    }
 
     private Task CheckIfDueAsync()
     {
@@ -65,10 +83,12 @@ public sealed class UpdateManager
         return CheckAsync(manual: false);
     }
 
+    private bool AutoInstall => IsInstalled && _settings().AutoInstallUpdates;
+
     /// <summary>Asks GitHub for a newer release. Manual checks report every outcome; automatic ones only a new version.</summary>
     public async Task CheckAsync(bool manual)
     {
-        if (State is UpdateState.Checking or UpdateState.Downloading or UpdateState.Installing) return;
+        if (State is UpdateState.Checking or UpdateState.Downloading or UpdateState.Ready or UpdateState.Installing) return;
         Set(UpdateState.Checking);
         try
         {
@@ -79,13 +99,16 @@ public sealed class UpdateManager
             Set(release is null ? UpdateState.UpToDate : UpdateState.Available);
             Log.Info(release is null ? $"Update check: {Current} is current" : $"Update check: {release.Version} available");
 
-            if (release is not null && (manual || _notified != release.Tag))
+            if (release is null)
+            {
+                if (manual) _toasts.ShowMessage(ToastKind.Success, "You're up to date", $"OrbitDrop {Current} is the latest version.", ScreenInfo.CursorPosition);
+            }
+            else if (!manual && AutoInstall) await DownloadInBackgroundAsync(release);
+            else if (manual || _notified != release.Tag)
             {
                 _notified = release.Tag;
                 OfferUpdate(release);
             }
-            else if (manual)
-                _toasts.ShowMessage(ToastKind.Success, "You're up to date", $"OrbitDrop {Current} is the latest version.", ScreenInfo.CursorPosition);
         }
         catch (Exception ex)
         {
@@ -105,7 +128,43 @@ public sealed class UpdateManager
             IsInstalled ? "Install" : "Download", () => _ = InstallAsync(), ScreenInfo.CursorPosition, TimeSpan.FromSeconds(20));
     }
 
-    /// <summary>Downloads and verifies the installer, then hands over to it and quits so it can replace the app.</summary>
+    // ------------------------------------------------------------------ automatic
+
+    /// <summary>Quiet download and verification; installation then waits for an idle moment.</summary>
+    private async Task DownloadInBackgroundAsync(ReleaseInfo release)
+    {
+        Set(UpdateState.Downloading);
+        try
+        {
+            _downloaded = await _service.DownloadAsync(release);
+            Set(UpdateState.Ready);
+            Log.Info($"Update {release.Version} downloaded and verified; installing when OrbitDrop is idle");
+            TryInstallWhenIdle();
+        }
+        catch (Exception ex)
+        {
+            // Fall back to asking: the card's Install button retries the download with progress shown.
+            Error = Plain(ex);
+            Set(UpdateState.Available);
+            Log.Error("Background update download failed", ex);
+            if (_notified != release.Tag) { _notified = release.Tag; OfferUpdate(release); }
+        }
+    }
+
+    /// <summary>Installs the waiting update now if OrbitDrop isn't in use; otherwise looks again shortly.</summary>
+    private void TryInstallWhenIdle()
+    {
+        if (State != UpdateState.Ready || _downloaded is null || Available is null) { _idleWait.Stop(); return; }
+        if (!_settings().AutoInstallUpdates) { _idleWait.Stop(); OfferUpdate(Available); return; }
+        if (_busy()) { _idleWait.Start(); return; }
+        _idleWait.Stop();
+        var toast = _toasts.ShowProgress(ScreenInfo.CursorPosition);
+        RunInstaller(Available, _downloaded, toast);
+    }
+
+    // ------------------------------------------------------------------ manual
+
+    /// <summary>Downloads (with progress) and verifies the installer, then hands over to it and quits so it can replace the app.</summary>
     public async Task InstallAsync()
     {
         if (Available is not { } release || State is UpdateState.Downloading or UpdateState.Installing) return;
@@ -115,8 +174,15 @@ public sealed class UpdateManager
             return;
         }
 
-        Set(UpdateState.Downloading);
         var toast = _toasts.ShowProgress(ScreenInfo.CursorPosition);
+        if (State == UpdateState.Ready && _downloaded is not null && File.Exists(_downloaded))
+        {
+            _idleWait.Stop();
+            RunInstaller(release, _downloaded, toast);
+            return;
+        }
+
+        Set(UpdateState.Downloading);
         toast.SetRunning($"Downloading OrbitDrop {release.Version}", "Verifying as it arrives", 0, indeterminate: true);
         var progress = new Progress<double>(f => toast.SetRunning($"Downloading OrbitDrop {release.Version}", $"{f:P0}", f, indeterminate: false));
         string setup;
@@ -132,9 +198,13 @@ public sealed class UpdateManager
             toast.SetResult(ToastKind.Error, "The update didn't download", Error, canShow: false, TimeSpan.FromSeconds(12));
             return;
         }
+        RunInstaller(release, setup, toast);
+    }
 
+    private async void RunInstaller(ReleaseInfo release, string setup, ToastWindow toast)
+    {
         Set(UpdateState.Installing);
-        toast.SetRunning($"Installing OrbitDrop {release.Version}", "OrbitDrop will reopen in a moment", 1, indeterminate: true);
+        toast.SetRunning($"Updating OrbitDrop to {release.Version}", "OrbitDrop will reopen in a moment", 1, indeterminate: true);
         Log.Info($"Installing update {release.Version} from {setup}");
         // The installer refuses to run while the single-instance mutex is held (Inno AppMutex), so let go of it first.
         _releaseInstance();
@@ -155,7 +225,7 @@ public sealed class UpdateManager
             toast.SetResult(ToastKind.Error, "The update couldn't start", Error, canShow: false, TimeSpan.FromSeconds(12));
             return;
         }
-        await Task.Delay(400); // let the toast paint before the app goes away
+        await Task.Delay(1200); // let the card be read before the app goes away
         _quit();
     }
 

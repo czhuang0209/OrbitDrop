@@ -112,6 +112,7 @@ public sealed class SettingsViewModel : ObservableObject
     // ---- About
     public string VersionText => _host.VersionText;
     public bool CheckForUpdates { get => S.CheckForUpdates; set => Set(s => s.CheckForUpdates = value, nameof(CheckForUpdates)); }
+    public bool AutoInstallUpdates { get => S.AutoInstallUpdates; set => Set(s => s.AutoInstallUpdates = value, nameof(AutoInstallUpdates)); }
     public string UpdateStatusText => _host.UpdateStatusText;
     public string UpdateButtonText => _host.UpdateButtonText;
     public bool UpdateButtonEnabled => !_host.UpdateBusy;
