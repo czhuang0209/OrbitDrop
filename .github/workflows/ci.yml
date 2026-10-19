@@ -24,6 +24,20 @@ jobs:
       - name: Test
         run: dotnet test tests/OrbitDrop.Tests -c Release --no-build --logger "trx;LogFileName=results.trx"
 
+      # Failed tests become annotations, which show on the run page (and in the public API) without opening logs.
+      - name: Report failed tests
+        if: failure()
+        shell: pwsh
+        run: |
+          $trx = Get-ChildItem -Recurse -Filter results.trx | Select-Object -First 1
+          if ($trx) {
+            [xml]$x = Get-Content $trx.FullName
+            $x.TestRun.Results.UnitTestResult | Where-Object outcome -eq 'Failed' | ForEach-Object {
+              $msg = ("$($_.Output.ErrorInfo.Message)" -replace "`r?`n", ' ').Trim()
+              Write-Output "::error title=$($_.testName)::$msg"
+            }
+          }
+
       - name: Probe self-test (regression, diagnostic)
         continue-on-error: true
         shell: pwsh

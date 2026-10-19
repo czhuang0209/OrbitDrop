@@ -337,10 +337,10 @@ public partial class PhotoEditorWindow : Window
                 return r;
             case Drag.CropNew:
                 return Constrain(_start, p);
-            case Drag.N: r = new Rect(c.Left, Math.Min(c.Bottom - min, c.Top + d.Y), c.Width, 0); r.Height = c.Bottom - r.Top; return Clip(r);
-            case Drag.S: return Clip(new Rect(c.Left, c.Top, c.Width, Math.Max(min, c.Height + d.Y)));
-            case Drag.W: r = new Rect(Math.Min(c.Right - min, c.Left + d.X), c.Top, 0, c.Height); r.Width = c.Right - r.Left; return Clip(r);
-            case Drag.E: return Clip(new Rect(c.Left, c.Top, Math.Max(min, c.Width + d.X), c.Height));
+            case Drag.N: r = new Rect(c.Left, Math.Min(c.Bottom - min, c.Top + d.Y), c.Width, 0); r.Height = c.Bottom - r.Top; return ClipToImage(r);
+            case Drag.S: return ClipToImage(new Rect(c.Left, c.Top, c.Width, Math.Max(min, c.Height + d.Y)));
+            case Drag.W: r = new Rect(Math.Min(c.Right - min, c.Left + d.X), c.Top, 0, c.Height); r.Width = c.Right - r.Left; return ClipToImage(r);
+            case Drag.E: return ClipToImage(new Rect(c.Left, c.Top, Math.Max(min, c.Width + d.X), c.Height));
             default:
             {
                 // Corners: the opposite corner stays put.
@@ -366,7 +366,7 @@ public partial class PhotoEditorWindow : Window
         return new Rect(sx > 0 ? anchor.X : anchor.X - w, sy > 0 ? anchor.Y : anchor.Y - h, w, h);
     }
 
-    private Rect Clip(Rect r)
+    private Rect ClipToImage(Rect r)
     {
         r.Intersect(new Rect(0, 0, _w, _h));
         return r.IsEmpty ? _crop : r;
