@@ -72,7 +72,7 @@ public sealed class UpdateService
     public const string ChecksumsAsset = "SHA256SUMS.txt";
 
     private readonly HttpClient _http;
-    private readonly string _releasesApi;
+    private readonly string _releasesApi, _releasesFeed, _downloadBase;
 
     public UpdateService(HttpClient? http = null, string owner = "i3sam", string repo = "OrbitDrop")
     {
@@ -80,6 +80,8 @@ public sealed class UpdateService
         if (!_http.DefaultRequestHeaders.UserAgent.Any())
             _http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("OrbitDrop", Current.ToString()));
         _releasesApi = $"https://api.github.com/repos/{owner}/{repo}/releases?per_page=20";
+        _releasesFeed = $"https://github.com/{owner}/{repo}/releases.atom";
+        _downloadBase = $"https://github.com/{owner}/{repo}/releases/download";
     }
 
     public static SemVersion Current
@@ -92,7 +94,47 @@ public sealed class UpdateService
     }
 
     /// <summary>The newest published release that is newer than <paramref name="current"/>, or null.</summary>
+    /// <remarks>
+    /// Uses the GitHub API, and falls back to the public releases feed when the API refuses: anonymous API calls are
+    /// limited to 60 an hour per network, which a shared office or school connection can use up.
+    /// </remarks>
     public async Task<ReleaseInfo?> CheckAsync(SemVersion current, CancellationToken ct = default)
+    {
+        try
+        {
+            return await CheckApiAsync(current, ct).ConfigureAwait(false);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode is System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.TooManyRequests)
+        {
+            return await CheckFeedAsync(current, ct).ConfigureAwait(false);
+        }
+    }
+
+    private async Task<ReleaseInfo?> CheckFeedAsync(SemVersion current, CancellationToken ct)
+    {
+        string feed = await _http.GetStringAsync(_releasesFeed, ct).ConfigureAwait(false);
+        var latest = PickLatestFromFeed(feed, _downloadBase, includePrereleases: current.Pre is not null);
+        return latest is not null && latest.Version > current ? latest : null;
+    }
+
+    /// <summary>
+    /// Newest release in the Atom feed (github.com/…/releases.atom). The feed has no asset list, so the standard
+    /// asset URLs are assumed; a missing checksum file makes the download fail safely. Pure: unit-tested.
+    /// </summary>
+    public static ReleaseInfo? PickLatestFromFeed(string atom, string downloadBase, bool includePrereleases = true)
+    {
+        ReleaseInfo? best = null;
+        foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(atom, "href=\"(?<page>[^\"]*/releases/tag/(?<tag>[^\"]+))\""))
+        {
+            string tag = Uri.UnescapeDataString(m.Groups["tag"].Value);
+            if (!SemVersion.TryParse(tag, out var v) || (!includePrereleases && v.Pre is not null)) continue;
+            if (best is null || v > best.Version)
+                best = new ReleaseInfo(v, tag, $"{downloadBase}/{tag}/{SetupAsset}", $"{downloadBase}/{tag}/{ChecksumsAsset}", m.Groups["page"].Value);
+        }
+        return best;
+    }
+
+    private async Task<ReleaseInfo?> CheckApiAsync(SemVersion current, CancellationToken ct)
     {
         using var req = new HttpRequestMessage(HttpMethod.Get, _releasesApi);
         req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));

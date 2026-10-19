@@ -167,6 +167,8 @@ public sealed class UpdateManager
 
     private static string Plain(Exception ex) => ex switch
     {
+        // A status code means GitHub answered: it's busy or limiting requests, not that the PC is offline.
+        System.Net.Http.HttpRequestException { StatusCode: not null } => "GitHub didn't answer the update check just now. OrbitDrop will try again later.",
         System.Net.Http.HttpRequestException or TaskCanceledException => "OrbitDrop couldn't reach GitHub. Check your connection and try again.",
         _ => ex.Message,
     };
