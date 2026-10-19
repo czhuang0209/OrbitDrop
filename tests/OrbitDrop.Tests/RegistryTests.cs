@@ -40,9 +40,10 @@ public class RegistryTests
     }
 
     [Fact]
-    public void Tools_have_glyphs_and_formats_do_not()
+    public void Top_level_tools_have_glyphs_and_formats_do_not()
     {
-        Assert.All(Registry.Query(Files("a.png"), OperationMode.Tools), d => Assert.NotNull(d.Glyph));
+        // Inside a group, size presets ("50%", "1 MB") are text like formats; the segments you see first all have icons.
+        Assert.All(OperationMenu.TopLevel(Registry.Query(Files("a.png"), OperationMode.Tools)), d => Assert.NotNull(d.Glyph));
         Assert.All(Registry.Query(Files("a.png"), OperationMode.Convert), d => Assert.Null(d.Glyph));
     }
 
