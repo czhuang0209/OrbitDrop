@@ -30,11 +30,38 @@ public static class WicImageCodec
         [".bmp"] = Bmp, [".dib"] = Bmp, [".tif"] = Tiff, [".tiff"] = Tiff, [".gif"] = Gif,
     };
 
-    public static ImageFormat? FormatOf(string path) => InputByExtension.GetValueOrDefault(Path.GetExtension(path));
+    /// <summary>
+    /// Formats Windows can read only through optional codecs (Microsoft Store extensions, camera RAW). They're accepted
+    /// as input when this PC has the codec; nothing is ever written in them.
+    /// </summary>
+    private static readonly Dictionary<string, ImageFormat> OptionalInputs = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [".webp"] = new("WEBP", ".webp", true), [".heic"] = new("HEIC", ".heic", false), [".heif"] = new("HEIC", ".heif", false),
+        [".avif"] = new("AVIF", ".avif", true), [".jxl"] = new("JXL", ".jxl", true), [".jxr"] = new("JXR", ".jxr", true),
+        [".wdp"] = new("JXR", ".wdp", true), [".dng"] = new("RAW", ".dng", false), [".cr2"] = new("RAW", ".cr2", false),
+        [".cr3"] = new("RAW", ".cr3", false), [".nef"] = new("RAW", ".nef", false), [".arw"] = new("RAW", ".arw", false),
+        [".orf"] = new("RAW", ".orf", false), [".rw2"] = new("RAW", ".rw2", false), [".raf"] = new("RAW", ".raf", false),
+        [".ico"] = new("ICO", ".ico", true),
+    };
 
-    public static bool IsSupportedInput(string path) => InputByExtension.ContainsKey(Path.GetExtension(path));
+    public static ImageFormat? FormatOf(string path)
+    {
+        string ext = Path.GetExtension(path);
+        if (InputByExtension.TryGetValue(ext, out var f)) return f;
+        return OptionalInputs.TryGetValue(ext, out var o) && WicCodecs.DecoderExtensions.Contains(ext) ? o : null;
+    }
 
-    public static IEnumerable<string> InputExtensions => InputByExtension.Keys;
+    public static bool IsSupportedInput(string path) => FormatOf(path) is not null;
+
+    public static IEnumerable<string> InputExtensions =>
+        InputByExtension.Keys.Concat(OptionalInputs.Keys.Where(WicCodecs.DecoderExtensions.Contains));
+
+    /// <summary>The format a tool writes for <paramref name="path"/>: its own, or PNG/JPG for formats Windows can't write.</summary>
+    public static ImageFormat OutputFormatFor(string path)
+    {
+        var f = FormatOf(path) ?? throw new NotSupportedException(Path.GetExtension(path));
+        return OutputFormats.Contains(f) ? f : f.SupportsAlpha ? Png : Jpg;
+    }
 
     /// <summary>
     /// Decodes the first frame, applies the EXIF orientation (so phone photos come out upright) and normalises to

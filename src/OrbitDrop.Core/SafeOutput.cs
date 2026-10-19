@@ -79,6 +79,43 @@ public static class SafeOutput
         }
     }
 
+    /// <summary>
+    /// The folder equivalent of <see cref="WriteToPath"/>: <paramref name="fill"/> populates a hidden temp folder in
+    /// the destination, which is then renamed to <paramref name="folderName"/> (or "name (2)" …). Nothing partial is
+    /// ever visible, and an existing folder is never merged into or replaced.
+    /// </summary>
+    public static string WriteFolder(string source, OutputOptions options, string folderName, Action<string> fill,
+        CancellationToken cancellationToken = default)
+    {
+        string dir = options.DirectoryFor(source);
+        Directory.CreateDirectory(dir);
+        string temp = Path.Combine(dir, $"{TempPrefix}{Guid.NewGuid():N}");
+        try
+        {
+            var info = Directory.CreateDirectory(temp);
+            info.Attributes |= FileAttributes.Hidden;
+            fill(temp);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!Directory.EnumerateFileSystemEntries(temp).Any()) throw new IOException("Nothing was produced.");
+
+            for (int n = 1; n <= MaxAttempts; n++)
+            {
+                string candidate = Path.Combine(dir, n == 1 ? folderName : $"{folderName} ({n})");
+                if (File.Exists(candidate) || Directory.Exists(candidate)) continue;
+                try { Directory.Move(temp, candidate); }
+                catch (IOException) when (Directory.Exists(candidate) || File.Exists(candidate)) { continue; }
+                var published = new DirectoryInfo(candidate);
+                published.Attributes &= ~FileAttributes.Hidden;
+                return candidate;
+            }
+            throw new IOException("No free folder name was found.");
+        }
+        finally
+        {
+            try { if (Directory.Exists(temp)) Directory.Delete(temp, recursive: true); } catch { /* best effort */ }
+        }
+    }
+
     public static string Sha256(string path)
     {
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);

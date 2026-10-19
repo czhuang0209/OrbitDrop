@@ -144,3 +144,16 @@ public class ImageToolTests
         Assert.Equal((20, 40), Size(path));
     }
 }
+
+public class WicCodecTests
+{
+    [Fact]
+    public void Wic_reports_the_built_in_decoders()
+    {
+        var exts = OrbitDrop.Conversion.Imaging.WicCodecs.DecoderExtensions;
+        Assert.Null(OrbitDrop.Conversion.Imaging.WicCodecs.LastError);
+        Assert.Contains(".png", exts);
+        Assert.Contains(".jpg", exts);
+        File.WriteAllText(Path.Combine(Path.GetTempPath(), "orbitdrop-wic.txt"), string.Join(" ", exts.Order()));
+    }
+}

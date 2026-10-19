@@ -109,7 +109,7 @@ public sealed class ImageToolsProvider : IOperationProvider
     private static FileOutcome Apply(string file, Transform tool, OperationContext context, CancellationToken ct)
     {
         var result = tool.Apply(WicImageCodec.Load(file));
-        return new(file, OutcomeStatus.Succeeded, WicImageCodec.WriteOutput(result, file, WicImageCodec.FormatOf(file)!, tool.Suffix, context, ct));
+        return new(file, OutcomeStatus.Succeeded, WicImageCodec.WriteOutput(result, file, WicImageCodec.OutputFormatFor(file), tool.Suffix, context, ct));
     }
 
     private static FileOutcome Resize(string file, ResizePreset preset, OperationContext context, CancellationToken ct)
@@ -121,7 +121,7 @@ public sealed class ImageToolsProvider : IOperationProvider
         if (size is not { } s)
             return new(file, OutcomeStatus.Skipped, Message: $"Already within {preset.Label} ({image.PixelWidth}×{image.PixelHeight})");
         var resized = WicImageCodec.Resize(image, s.W, s.H);
-        return new(file, OutcomeStatus.Succeeded, WicImageCodec.WriteOutput(resized, file, WicImageCodec.FormatOf(file)!, "resized", context, ct));
+        return new(file, OutcomeStatus.Succeeded, WicImageCodec.WriteOutput(resized, file, WicImageCodec.OutputFormatFor(file), "resized", context, ct));
     }
 
     private static FileOutcome Compress(string file, CompressPreset preset, OperationContext context, CancellationToken ct)

@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFramework>$(OrbitWindowsTfm)</TargetFramework>
     <UseWPF>true</UseWPF>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../OrbitDrop.Core/OrbitDrop.Core.csproj" />
