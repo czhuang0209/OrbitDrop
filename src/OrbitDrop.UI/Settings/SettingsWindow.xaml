@@ -384,7 +384,7 @@
                             </StackPanel>
                         </DockPanel>
                     </Border>
-                    <Border Style="{StaticResource Orbit.Card}">
+                    <Border Style="{StaticResource Orbit.Card}" Visibility="{Binding UpdateSwitchesVisibility}">
                         <DockPanel>
                             <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE823;" />
                             <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding CheckForUpdates}" AutomationProperties.Name="Check for updates automatically" />
@@ -394,7 +394,7 @@
                             </StackPanel>
                         </DockPanel>
                     </Border>
-                    <Border Style="{StaticResource Orbit.Card}">
+                    <Border Style="{StaticResource Orbit.Card}" Visibility="{Binding UpdateSwitchesVisibility}">
                         <DockPanel>
                             <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE896;" />
                             <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding AutoInstallUpdates}" AutomationProperties.Name="Install updates automatically" />

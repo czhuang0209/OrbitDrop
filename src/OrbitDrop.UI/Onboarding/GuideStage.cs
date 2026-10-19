@@ -45,6 +45,12 @@ public sealed class GuideStage : Canvas
     private readonly Dictionary<string, WheelImage> _shots = [];
     private readonly Dictionary<string, BitmapSource> _toasts = [];
 
+    /// <summary>Show the guide's caption chips (off for Store art, which has its own headlines).</summary>
+    public bool Captions { get; set; } = true;
+
+    /// <summary>Show the pointer and the dragged file (Store art hides them where they would cover the wheel's labels).</summary>
+    public bool Pointer { get; set; } = true;
+
     /// <param name="flatBackground">Plain background instead of the soft gradient (GIF export: gradients bloat GIFs).</param>
     public GuideStage(IGuideAssets assets, string triggerKey, bool flatBackground = false)
     {
@@ -258,8 +264,10 @@ public sealed class GuideStage : Canvas
     private static Point SegmentPoint(WheelImage w, string label)
     {
         int i = IndexOf(w, label), n = Math.Max(1, w.Labels.Count);
-        double a = WheelGeometry.MidAngle(i, n) * Math.PI / 180, r = WheelGeometry.LabelR * WheelSize / WheelGeometry.Extent * 0.92;
-        return new Point(Center.X + r * Math.Cos(a), Center.Y + r * Math.Sin(a));
+        double a = WheelGeometry.MidAngle(i, n) * Math.PI / 180, r = WheelGeometry.LabelR * WheelSize / WheelGeometry.Extent * 1.22;
+        // Out past the label and to its right: the pointer and the dragged file hang down-right, clear of the text.
+        double dx = (0.012 * label.Length + 0.025) * WheelSize;
+        return new Point(Center.X + r * Math.Cos(a) + dx, Center.Y + r * Math.Sin(a));
     }
 
     // ------------------------------------------------------------------ timeline helpers
@@ -369,6 +377,7 @@ public sealed class GuideStage : Canvas
 
     private void Caption(string? text)
     {
+        if (!Captions) text = null;
         _caption.Visibility = text is null ? Visibility.Collapsed : Visibility.Visible;
         if (text is null) return;
         _captionText.Text = text;
@@ -535,6 +544,7 @@ public sealed class GuideStage : Canvas
         if (t >= 2.7) p = Move(t, 2.7, 3.3, EditorPoint(full, "TIFF"), EditorPoint(full, "PDF"));
         if (t >= press) p = Move(t, press + 0.1, drop - 0.1, EditorPoint(full, "PDF"), EditorPoint(full, full.Labels[0]));
         if (t >= drop + 0.2) p = Move(t, drop + 0.2, save - 0.2, EditorPoint(full, full.Labels[0]), savePoint);
+        if (t >= save + 0.5) p = Move(t, save + 0.5, save + 1.2, savePoint, new Point(savePoint.X + 70, savePoint.Y + 26)); // off the button
         bool pressed = clicks.Any(c => t >= c.At && t < c.At + 0.15) || (t >= press && t < drop) || (t >= save && t < save + 0.15);
         SetCursor(p, pressed);
 
@@ -580,6 +590,8 @@ public sealed class GuideStage : Canvas
     public BitmapSource Render(GuideScene scene, double t, double scale)
     {
         Apply(scene, t);
+        _cursor.Opacity = Pointer ? 1 : 0;
+        if (!Pointer) _ghost.Opacity = 0;
         Measure(new Size(W, H));
         Arrange(new Rect(0, 0, W, H));
         UpdateLayout();

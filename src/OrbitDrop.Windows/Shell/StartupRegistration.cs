@@ -12,6 +12,7 @@ public static class StartupRegistration
     {
         get
         {
+            if (AppPackage.IsPackaged) return AppPackage.StartupEnabled; // Store version: the package's startup task
             using var key = Registry.CurrentUser.OpenSubKey(RunKey);
             return key?.GetValue(ValueName) is string s && s.Contains(ExecutablePath, StringComparison.OrdinalIgnoreCase);
         }
@@ -21,6 +22,7 @@ public static class StartupRegistration
 
     public static void Set(bool enabled)
     {
+        if (AppPackage.IsPackaged) { AppPackage.SetStartup(enabled); return; }
         using var key = Registry.CurrentUser.CreateSubKey(RunKey, writable: true);
         if (enabled) key.SetValue(ValueName, $"\"{ExecutablePath}\" --background");
         else if (key.GetValue(ValueName) is not null) key.DeleteValue(ValueName);

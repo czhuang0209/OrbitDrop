@@ -1,4 +1,11 @@
-## What's new in 0.2.7-alpha
+## What's new in 0.2.8-alpha
+
+- **Trimming works on more PCs:** if your graphics hardware can't encode the video, OrbitDrop now finishes the trim in software instead of failing.
+- **The guide's demos are easier to read:** the pointer now rests beside each option instead of on top of its label.
+- Getting ready for the **Microsoft Store**: the same app can now run as a Store package, where the Store keeps it up to date and Windows' Startup apps handle "Start OrbitDrop when I sign in". The GitHub version works as before.
+- A [privacy policy](https://github.com/i3sam/OrbitDrop/blob/main/docs/PRIVACY.md): your files never leave your PC, and OrbitDrop collects no personal data.
+
+## In 0.2.7-alpha
 
 - **Rearrange your wheel:** in Settings → Wheel, drag a slice around the ring. The others make room as you move, and **Save** puts your order on the real wheel. **Reset** brings back the original wheel.
 - **The guide keeps one size:** the window no longer jumps between steps. Its "Make the wheel yours" demo now shows dragging too.

@@ -1,3 +1,4 @@
+using System.Windows;
 using OrbitDrop.Core;
 using OrbitDrop.Infrastructure;
 using OrbitDrop.UI.Common;
@@ -26,6 +27,8 @@ public interface ISettingsHost
     string UpdateButtonText => "Check now";
     bool UpdateBusy => false;
     bool KeyboardShortcutAvailable => true;
+    /// <summary>The Store version: the Microsoft Store handles updates, so the update switches are hidden.</summary>
+    bool StoreManagedUpdates => false;
     /// <summary>Every option OrbitDrop has, for the Wheel page (built by the app from the live registry).</summary>
     IReadOnlyList<WheelCategory> WheelCatalog => [];
     void UpdateButtonClicked() { }
@@ -124,6 +127,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     // ---- About
     public string VersionText => _host.VersionText;
+    public Visibility UpdateSwitchesVisibility => _host.StoreManagedUpdates ? Visibility.Collapsed : Visibility.Visible;
     public bool CheckForUpdates { get => S.CheckForUpdates; set => Set(s => s.CheckForUpdates = value, nameof(CheckForUpdates)); }
     public bool AutoInstallUpdates { get => S.AutoInstallUpdates; set => Set(s => s.AutoInstallUpdates = value, nameof(AutoInstallUpdates)); }
     public string UpdateStatusText => _host.UpdateStatusText;

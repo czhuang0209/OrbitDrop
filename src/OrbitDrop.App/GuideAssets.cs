@@ -13,9 +13,10 @@ namespace OrbitDrop.App;
 /// Renders the guide's visuals with the real wheel, real options (from the live registry) and the real notification,
 /// in the current theme. Renders are offscreen; nothing is shown or captured from the screen.
 /// </summary>
-internal sealed class GuideAssets(OperationRegistry registry) : IGuideAssets
+internal sealed class GuideAssets(OperationRegistry registry, double scale = 2.0) : IGuideAssets
 {
-    private const double Scale = 2.0;
+    /// <summary>Render scale of wheels and notifications (2× for the guide; higher for Store artwork).</summary>
+    private double Scale { get; } = scale;
     private RadialWheel? _wheel;
     private ImageSource? _backdrop;
 

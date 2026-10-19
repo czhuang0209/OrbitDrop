@@ -64,6 +64,17 @@ public partial class App : Application, ISettingsHost, ITrayCommands
             return;
         }
 
+        int store = Array.IndexOf(args, "--render-store");
+        if (store >= 0)
+        {
+            string dir = store + 1 < args.Length ? args[store + 1] : Path.Combine(Environment.CurrentDirectory, "store-art");
+            int code;
+            try { code = StoreArt.Run(dir, BuildRegistry()); }
+            catch (Exception ex) { Directory.CreateDirectory(dir); File.WriteAllText(Path.Combine(dir, "error.txt"), ex.ToString()); code = 1; }
+            Shutdown(code);
+            return;
+        }
+
         int guide = Array.IndexOf(args, "--render-guide");
         if (guide >= 0)
         {
@@ -140,14 +151,14 @@ public partial class App : Application, ISettingsHost, ITrayCommands
 
         _updates = new UpdateManager(_toasts, () => _settings, Update, () => _instance?.ReleaseOwnership(), Quit, IsInUse);
         _updates.Changed += () => _settingsVm?.RefreshUpdates();
-        _updates.Start();
+        if (!AppPackage.IsPackaged) _updates.Start(); // the Store version is updated by the Microsoft Store
 
         ApplyHotkey();
         _instance.ListenForActivation(() => Dispatcher.BeginInvoke(() => OpenSettings()));
 
         // The silent installer relaunches with --updated after an in-app update.
         bool updated = args.Contains("--updated");
-        bool background = args.Contains("--background") || updated;
+        bool background = args.Contains("--background") || updated || AppPackage.LaunchedAtSignIn;
         if (updated)
             _toasts.ShowMessage(ToastKind.Success, "OrbitDrop updated", $"You're now on version {UpdateManager.Current}. Your settings were kept.", ScreenInfo.CursorPosition);
         else if (!_settings.OnboardingCompleted && !background) ShowOnboarding();
@@ -338,6 +349,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
     {
         get
         {
+            if (AppPackage.IsPackaged) return $"You have version {UpdateManager.Current}. The Microsoft Store keeps OrbitDrop up to date.";
             if (_updates is null) return "";
             string last = _settings.LastUpdateCheck is { } t ? $" · checked {Ago(t)}" : "";
             return _updates.State switch
@@ -355,7 +367,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         }
     }
 
-    public string UpdateButtonText => _updates?.State switch
+    public string UpdateButtonText => AppPackage.IsPackaged ? "Open Store" : _updates?.State switch
     {
         UpdateState.Checking => "Checking…",
         UpdateState.Downloading => "Downloading…",
@@ -367,8 +379,12 @@ public partial class App : Application, ISettingsHost, ITrayCommands
 
     public bool UpdateBusy => _updates?.State is UpdateState.Checking or UpdateState.Downloading or UpdateState.Installing;
 
+    /// <summary>The Store version has no updater of its own: these open the Store's Downloads page.</summary>
+    public bool StoreManagedUpdates => AppPackage.IsPackaged;
+
     public void UpdateButtonClicked()
     {
+        if (AppPackage.IsPackaged) { UpdateManager.OpenUrl("ms-windows-store://downloadsandupdates"); return; }
         if (_updates is null) return;
         if (_updates.State is UpdateState.Available or UpdateState.Ready) _ = _updates.InstallAsync();
         else _ = _updates.CheckAsync(manual: true);
