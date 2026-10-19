@@ -192,11 +192,21 @@
                             </StackPanel>
                         </DockPanel>
                     </Border>
+                    <Border Style="{StaticResource Orbit.Card}">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE92E;" />
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding KeyboardShortcut}" AutomationProperties.Name="Keyboard shortcut" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Ctrl + Alt + Space" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="{Binding KeyboardShortcutHint}" Style="{StaticResource RowHint}" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
                     <TextBlock Text="How it works" Style="{StaticResource Orbit.SectionHeader}" />
                     <Border Style="{StaticResource Orbit.Card}" Padding="16,14">
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="170" /><ColumnDefinition /></Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
+                            <Grid.RowDefinitions><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
                             <TextBlock Grid.Row="0" Style="{StaticResource Orbit.Text.BodyStrong}" Margin="0,4"><Run Text="Drag + tap " /><Run Text="{Binding TriggerName, Mode=OneWay}" /></TextBlock>
                             <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource Orbit.Text.Body}" Margin="0,4" Text="Open the wheel around the pointer" />
                             <TextBlock Grid.Row="1" Style="{StaticResource Orbit.Text.BodyStrong}" Margin="0,4"><Run Text="Tap " /><Run Text="{Binding TriggerName, Mode=OneWay}" /><Run Text=" again" /></TextBlock>
@@ -207,6 +217,8 @@
                             <TextBlock Grid.Row="3" Grid.Column="1" Style="{StaticResource Orbit.Text.Body}" Margin="0,4" Text="Cancel without doing anything" />
                             <TextBlock Grid.Row="4" Style="{StaticResource Orbit.Text.BodyStrong}" Margin="0,4" Text="Esc" />
                             <TextBlock Grid.Row="4" Grid.Column="1" Style="{StaticResource Orbit.Text.Body}" Margin="0,4" Text="Cancel the drag and close the wheel" />
+                            <TextBlock Grid.Row="5" Style="{StaticResource Orbit.Text.BodyStrong}" Margin="0,4" Text="Ctrl + Alt + Space" />
+                            <TextBlock Grid.Row="5" Grid.Column="1" Style="{StaticResource Orbit.Text.Body}" Margin="0,4" Text="Open the wheel for files selected in File Explorer, then click" />
                         </Grid>
                     </Border>
                 </StackPanel>

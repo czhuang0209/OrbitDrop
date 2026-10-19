@@ -26,6 +26,8 @@ public sealed class InteractionController : IDropSink, IDisposable
         public IReadOnlyList<OperationDescriptor> Flat = [];
         public IReadOnlyList<OperationDescriptor> Items = [];
         public OperationDescriptor? OpenGroup;
+        /// <summary>Opened from the keyboard on selected files: the pointer hovers and clicks instead of dragging.</summary>
+        public bool ClickMode;
         public int LastHit = WheelGeometry.HitOutside;
         public bool EnterSeen, OverWheel, Dropped;
         /// <summary>Set when Convert had nothing for these files and the wheel opened in another mode.</summary>
@@ -46,6 +48,7 @@ public sealed class InteractionController : IDropSink, IDisposable
     private Session? _session;
     private DispatcherTimer? _deferredDismiss;
     private DispatcherTimer? _previewTimer;
+    private readonly DispatcherTimer _hover = new() { Interval = TimeSpan.FromMilliseconds(30) };
     private readonly DispatcherTimer _dwell = new() { Interval = TimeSpan.FromMilliseconds(DwellMs) };
     private readonly Func<OperationDescriptor, FileSet, Win32.POINT, Task<(bool Ok, object? Input)>> _askInput;
 
@@ -58,6 +61,7 @@ public sealed class InteractionController : IDropSink, IDisposable
     {
         _askInput = askInput;
         _dwell.Tick += (_, _) => OnDwell();
+        _hover.Tick += (_, _) => { if (_session is { ClickMode: true }) OnDragOver(ScreenInfo.CursorPosition); };
         _wheel = wheel;
         _detector = detector;
         _registry = registry;
@@ -134,7 +138,7 @@ public sealed class InteractionController : IDropSink, IDisposable
     private (string Value, string Detail) Summary(Session s)
     {
         if (!s.EnterSeen) return ("Move here", "");
-        if (s.OpenGroup is { } g) return (g.Label, "Rest on the centre to go back");
+        if (s.OpenGroup is { } g) return (g.Label, s.ClickMode ? "Click the centre to go back" : "Rest on the centre to go back");
         if (s.Files.IsEmpty) return ("No files", "Only files can be dropped here");
         if (s.Items.Count == 0) return ("Not supported", $"{KindSummary(s.Files)} isn't supported yet");
         if (s.Files.Count > 1) return ($"{s.Files.Count} files", s.UnsupportedNote ?? KindSummary(s.Files));
@@ -146,6 +150,7 @@ public sealed class InteractionController : IDropSink, IDisposable
     private void OnDragButtonReleased()
     {
         if (_session is not { } s) return;
+        if (s.ClickMode) { OnClick(s); return; }
         // If the pointer is over the wheel, OLE's Drop may still be on its way: wait briefly for it.
         if (s.OverWheel && !s.Dropped)
         {
@@ -161,6 +166,7 @@ public sealed class InteractionController : IDropSink, IDisposable
     {
         _deferredDismiss?.Stop();
         _dwell.Stop();
+        _hover.Stop();
         if (_session is null && !_wheel.IsVisible) return;
         _session = null;
         _detector.SessionOpen = false;
@@ -208,7 +214,7 @@ public sealed class InteractionController : IDropSink, IDisposable
             if (item.IsGroupHeader)
             {
                 var first = OperationMenu.DefaultFor(s.Flat, item);
-                _wheel.SetHub(item.Label, $"Hold for options · drop: {first.Label}");
+                _wheel.SetHub(item.Label, s.ClickMode ? "Click for options" : $"Hold for options · drop: {first.Label}");
                 return new(true, first.DropText, first.DropInsert);
             }
             // Formats read "Convert to PNG"; tools and actions already say what they do, so show the file instead.
@@ -219,7 +225,13 @@ public sealed class InteractionController : IDropSink, IDisposable
         var (value, detail) = Summary(s);
         if (hit == WheelGeometry.HitHub && s.Items.Count > 0)
         {
-            _wheel.SetHub(value, s.OpenGroup is null ? "Release to cancel" : "Going back…");
+            _wheel.SetHub(value, (s.OpenGroup is null, s.ClickMode) switch
+            {
+                (true, true) => "Click to close",
+                (true, false) => "Release to cancel",
+                (false, true) => "Click to go back",
+                _ => "Going back…",
+            });
             return new(false, "Cancel", null);
         }
         _wheel.SetHub(value, detail);
@@ -300,6 +312,53 @@ public sealed class InteractionController : IDropSink, IDisposable
             var outputs = j.Outcomes.Where(o => o.Output is not null).Select(o => o.Output!).ToList();
             if (_settings().RevealWhenDone && outputs.Count > 0) _shell.Reveal(outputs);
         };
+    }
+
+    // ------------------------------------------------------------------ keyboard flow (selected files + shortcut)
+
+    /// <summary>
+    /// Opens the wheel at the pointer for files selected in File Explorer. The pointer hovers, a click picks;
+    /// clicking a group opens it, clicking the centre goes back (or closes); Shift switches mode, Esc closes.
+    /// </summary>
+    public void OpenForSelection(FileSet files)
+    {
+        Dismiss(false, "reopen");
+        var cursor = ScreenInfo.CursorPosition;
+        var s = new Session { Files = files, EnterSeen = true, ClickMode = true, OverWheel = true, Anchor = cursor, OpenedAt = Stopwatch.GetTimestamp() };
+        _session = s;
+        s.Mode = NextMode(s, OperationMode.Convert, includeCurrent: true);
+        if (s.Mode != OperationMode.Convert) s.UnsupportedNote = $"No conversions for {KindSummary(files)} yet";
+        _detector.SessionOpen = true;
+        _detector.EnsurePolling();
+        Refresh(animate: false);
+        _wheel.Open(cursor, WheelGeometry.SizeFactor(_settings().WheelSize), animate: true);
+        _hover.Start();
+        Log.Info($"Wheel opened from the keyboard for {files.Count} item(s)");
+    }
+
+    private void OnClick(Session s)
+    {
+        var at = ScreenInfo.CursorPosition;
+        int hit = _wheel.HitTest(at);
+        if (hit >= 0 && hit < s.Items.Count)
+        {
+            var item = s.Items[hit];
+            if (item.IsGroupHeader)
+            {
+                s.OpenGroup = item;
+                Refresh(animate: true);
+                return;
+            }
+            Dismiss(confirmed: true, "clicked");
+            if (item.NeedsInput) _ = RunWithInputAsync(item, s.Files, s.Anchor);
+            else Run(item, s.Files, s.Anchor, null);
+        }
+        else if (hit == WheelGeometry.HitHub && s.OpenGroup is not null)
+        {
+            s.OpenGroup = null;
+            Refresh(animate: true);
+        }
+        else Dismiss(confirmed: false, hit == WheelGeometry.HitHub ? "clicked centre" : "clicked outside");
     }
 
     // ------------------------------------------------------------------ preview (Settings → Appearance)

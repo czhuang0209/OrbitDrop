@@ -25,6 +25,7 @@ public interface ISettingsHost
     string UpdateStatusText => "You're up to date";
     string UpdateButtonText => "Check now";
     bool UpdateBusy => false;
+    bool KeyboardShortcutAvailable => true;
     void UpdateButtonClicked() { }
 }
 
@@ -77,6 +78,10 @@ public sealed class SettingsViewModel : ObservableObject
     public bool TriggerShift { get => S.TriggerKey == TriggerKey.Shift; set { if (value) SetTrigger(TriggerKey.Shift); } }
     public bool TriggerCtrl { get => S.TriggerKey == TriggerKey.Ctrl; set { if (value) SetTrigger(TriggerKey.Ctrl); } }
     public string TriggerName => S.TriggerKey == TriggerKey.Ctrl ? "Ctrl" : "Shift";
+    public bool KeyboardShortcut { get => S.KeyboardShortcut; set => Set(s => s.KeyboardShortcut = value, nameof(KeyboardShortcut), nameof(KeyboardShortcutHint)); }
+    public string KeyboardShortcutHint => _host.KeyboardShortcutAvailable
+        ? "Select files in File Explorer or on the desktop, press it, then click an option."
+        : "Another app is using this shortcut, so OrbitDrop couldn't claim it.";
     private void SetTrigger(TriggerKey k) => Set(s => s.TriggerKey = k, nameof(TriggerShift), nameof(TriggerCtrl), nameof(TriggerName));
 
     // ---- Conversions

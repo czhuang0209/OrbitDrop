@@ -30,6 +30,8 @@ public sealed class AppSettings
 
     // Shortcuts
     public TriggerKey TriggerKey { get; set; } = TriggerKey.Shift;
+    /// <summary>Ctrl+Alt+Space opens the wheel for the files selected in File Explorer.</summary>
+    public bool KeyboardShortcut { get; set; } = true;
 
     // Conversions
     public OutputLocation OutputLocation { get; set; } = OutputLocation.BesideOriginal;

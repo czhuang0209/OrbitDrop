@@ -41,6 +41,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
     private DispatcherTimer? _saveDebounce;
     private UpdateManager? _updates;
     private readonly InputBroker _inputs = new();
+    private GlobalHotkey? _hotkey;
     private SettingsViewModel? _settingsVm;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -127,6 +128,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         _updates.Changed += () => _settingsVm?.RefreshUpdates();
         _updates.Start();
 
+        ApplyHotkey();
         _instance.ListenForActivation(() => Dispatcher.BeginInvoke(() => OpenSettings()));
 
         // The silent installer relaunches with --updated after an in-app update.
@@ -220,6 +222,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         _saveDebounce?.Stop();
         _updates?.Stop();
         if (_store is not null && _instance?.IsFirst == true) SaveNow();
+        _hotkey?.Dispose();
         _interaction?.Dispose();
         _detector?.Dispose();
         _tray?.Dispose();
@@ -242,6 +245,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
 
         if (before.Theme != _settings.Theme || before.UseWindowsAccent != _settings.UseWindowsAccent || before.ReduceMotion != _settings.ReduceMotion)
             ApplyAppearance();
+        if (before.KeyboardShortcut != _settings.KeyboardShortcut) ApplyHotkey();
         if (before.TriggerKey != _settings.TriggerKey || before.ExtendedDragDetection != _settings.ExtendedDragDetection)
         {
             ApplyInteractionSettings();

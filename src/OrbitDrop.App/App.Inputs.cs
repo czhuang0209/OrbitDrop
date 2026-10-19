@@ -5,6 +5,7 @@ using OrbitDrop.Tools;
 using OrbitDrop.Tools.Metadata;
 using OrbitDrop.UI.Metadata;
 using OrbitDrop.Windows.Interop;
+using OrbitDrop.Windows.Shell;
 
 namespace OrbitDrop.App;
 
@@ -50,6 +51,33 @@ public partial class App
             return Task.FromResult<(bool, object?)>(dialog.ShowDialog(owner) == true ? (true, dialog.FolderName) : (false, null));
         }
         finally { owner.Close(); }
+    }
+
+    // ------------------------------------------------------------------ keyboard flow
+
+    /// <summary>Claims (or releases) Ctrl+Alt+Space according to the setting.</summary>
+    private void ApplyHotkey()
+    {
+        _hotkey?.Dispose();
+        _hotkey = null;
+        if (!_settings.KeyboardShortcut || _messages is null) return;
+        _hotkey = new GlobalHotkey(_messages, GlobalHotkey.MOD_CONTROL | GlobalHotkey.MOD_ALT, GlobalHotkey.VK_SPACE, OnHotkey);
+        Log.Info(_hotkey.Registered ? "Keyboard shortcut Ctrl+Alt+Space ready" : "Ctrl+Alt+Space is taken by another app");
+    }
+
+    public bool KeyboardShortcutAvailable => _hotkey?.Registered ?? true;
+
+    private void OnHotkey()
+    {
+        if (Paused) return;
+        var files = ExplorerSelection.FromForegroundWindow();
+        if (files.Count == 0)
+        {
+            _toasts.ShowMessage(OrbitDrop.UI.Toasts.ToastKind.Info, "Select files first",
+                "Select files in File Explorer or on the desktop, then press Ctrl+Alt+Space.", ScreenInfo.CursorPosition);
+            return;
+        }
+        _interaction?.OpenForSelection(new FileSet(files));
     }
 
     /// <summary>Puts a Copy to / Move to destination at the top of the recent folders.</summary>
