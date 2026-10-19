@@ -102,7 +102,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
 
         _registry = BuildRegistry(new FileActionsProvider(() => _settings.RecentFolders, RememberFolder));
         var jobs = new JobQueue(_registry, maxConcurrentJobs: 2);
-        _shell = new ShellIntegration(Dispatcher);
+        _shell = new ShellIntegration(Dispatcher) { FloatHandler = ShowShelf };
         _toasts = new ToastManager { NotifyOnCompletion = () => _settings.ShowCompletionNotifications };
 
         _messages = new MessageWindow();

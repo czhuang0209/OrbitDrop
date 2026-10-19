@@ -29,7 +29,7 @@ public class RegistryTests
     {
         Assert.Empty(Registry.Query(Files("a.jpg", "c.pdf"), OperationMode.Convert));
         Assert.Empty(Registry.Query(Files("a.jpg", "c.pdf"), OperationMode.Tools));
-        Assert.Equal(["Copy path", "Show in folder", "Copy to", "Move to", "Share", "Terminal"],
+        Assert.Equal(["Copy path", "Show in folder", "Copy to", "Move to", "Float", "Share", "Terminal"],
             OperationMenu.TopLevel(Registry.Query(Files("a.jpg", "c.pdf"), OperationMode.Actions)).Select(d => d.Label));
     }
 

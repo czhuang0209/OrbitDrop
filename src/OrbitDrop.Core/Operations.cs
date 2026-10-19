@@ -77,6 +77,9 @@ public interface IShellIntegration
 
     /// <summary>Opens the Windows share window (Nearby Share, Mail, apps …) for the files.</summary>
     void Share(IReadOnlyList<string> paths) => throw new NotSupportedException("Sharing isn't available here.");
+
+    /// <summary>Parks the files on the floating shelf to drag out later.</summary>
+    void Float(IReadOnlyList<string> paths) => throw new NotSupportedException("The shelf isn't available here.");
 }
 
 /// <summary>

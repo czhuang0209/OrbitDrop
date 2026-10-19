@@ -18,6 +18,11 @@ public sealed class ShellIntegration(Dispatcher dispatcher) : IShellIntegration
         }
     });
 
+    /// <summary>Shows the floating shelf (set by the app, which owns the window).</summary>
+    public Action<IReadOnlyList<string>>? FloatHandler { get; set; }
+
+    public void Float(IReadOnlyList<string> paths) => dispatcher.Invoke(() => (FloatHandler ?? throw new NotSupportedException())(paths));
+
     /// <summary>Opens the Windows share window at the pointer.</summary>
     public void Share(IReadOnlyList<string> paths) => dispatcher.Invoke(() => ShareSheet.Show(paths, ScreenInfo.CursorPosition));
 

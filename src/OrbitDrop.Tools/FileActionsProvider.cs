@@ -35,6 +35,8 @@ public sealed class FileActionsProvider(Func<IReadOnlyList<string>>? recentFolde
         foreach (var op in Destinations(CopyToPrefix, "Copy", "Copying", "Copied", CopyToGroup, 210)) yield return op;
         foreach (var op in Destinations(MoveToPrefix, "Move", "Moving", "Moved", MoveToGroup, 220)) yield return op;
 
+        yield return new("action.float", ProviderId, OperationMode.Actions, "Float", "\uE718",
+            "Keep on a shelf to drag out later", "", "Floating", 225, DoneTitle: "On the shelf");
         yield return new("action.share", ProviderId, OperationMode.Actions, "Share", "\uE72D",
             "%1", "Share", "Opening Share", 230, DoneTitle: "Share opened");
         yield return new("action.terminal", ProviderId, OperationMode.Actions, "Terminal", "\uE756",
@@ -83,6 +85,9 @@ public sealed class FileActionsProvider(Func<IReadOnlyList<string>>? recentFolde
                 break;
             case "action.reveal":
                 context.Shell.Reveal(files);
+                break;
+            case "action.float":
+                context.Shell.Float(files);
                 break;
             case "action.share":
                 context.Shell.Share(files);

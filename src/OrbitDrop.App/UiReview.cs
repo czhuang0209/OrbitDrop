@@ -134,7 +134,22 @@ internal static class UiReview
             RenderElement((FrameworkElement)trim.Content, 920, 640, bg, dir, $"trim-{t}", ref count, [1.0]);
             trim.Close();
 
-            // --- TRAY FLYOUT
+            // --- Float shelf (real sample files in the review folder)
+            string samplePhoto = Path.Combine(dir, "Sunset.png"), sampleDoc = Path.Combine(dir, "Quarterly report.txt");
+            if (!File.Exists(samplePhoto))
+            {
+                var enc = new PngBitmapEncoder();
+                enc.Frames.Add(BitmapFrame.Create((BitmapSource)Wallpaper(false)));
+                using var fs = File.Create(samplePhoto);
+                enc.Save(fs);
+            }
+            if (!File.Exists(sampleDoc)) File.WriteAllText(sampleDoc, new string('x', 48_000));
+            var shelf = new OrbitDrop.UI.Shelf.ShelfWindow();
+            shelf.Add([samplePhoto, sampleDoc, dir], show: false);
+            RenderElement((FrameworkElement)shelf.Content, 268, double.NaN, bg, dir, $"shelf-{t}", ref count);
+            shelf.Close();
+
+            // --- tray flyout
             var flyout = new TrayFlyout(new PreviewTray());
             RenderElement(flyout.ContentRoot, 300, double.NaN, bg, dir, $"tray-{t}", ref count);
             flyout.Close();

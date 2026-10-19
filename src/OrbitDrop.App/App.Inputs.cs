@@ -65,6 +65,22 @@ public partial class App
         finally { owner.Close(); }
     }
 
+    // ------------------------------------------------------------------ Float shelf
+
+    private OrbitDrop.UI.Shelf.ShelfWindow? _shelf;
+
+    /// <summary>One shelf at a time: floating more files adds them to the open one.</summary>
+    private void ShowShelf(IReadOnlyList<string> paths)
+    {
+        if (_shelf is null)
+        {
+            _shelf = new OrbitDrop.UI.Shelf.ShelfWindow();
+            _shelf.Closed += (_, _) => _shelf = null;
+        }
+        _shelf.Add(paths);
+        Log.Info($"Floated {paths.Count} item(s)");
+    }
+
     // ------------------------------------------------------------------ keyboard flow
 
     /// <summary>Claims (or releases) Ctrl+Alt+Space according to the setting.</summary>
