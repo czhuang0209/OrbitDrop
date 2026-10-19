@@ -228,10 +228,27 @@ public sealed class MediaFoundationProvider : IOperationProvider
         }
         else (profile, extension) = SameKindAudio(file, lossyOnly: false);
         string output = await Task.Run(() => SafeOutput.WriteToPath(file, context.Output, extension, "trimmed",
-            writeToTemp: temp => TranscodeAsync(file, temp, profile, context.ReportFileFraction, ct, range, duration).GetAwaiter().GetResult(),
+            writeToTemp: temp => TrimWithFallback(file, temp, profile, context.ReportFileFraction, ct, range, duration),
             validate: temp => ValidateContainer(temp, extension),
             ct, hideWhileWriting: false), ct);
         return new FileOutcome(file, OutcomeStatus.Succeeded, output);
+    }
+
+    /// <summary>
+    /// Trims with hardware encoding, and if the graphics driver can't do it (no GPU, as on servers, or a broken driver:
+    /// a generic E_FAIL), once more with Windows' software encoder. The file-based transcode overwrites the output.
+    /// </summary>
+    private static void TrimWithFallback(string file, string temp, MediaEncodingProfile profile, Action<double>? fraction,
+        CancellationToken ct, TrimRange range, TimeSpan duration)
+    {
+        try
+        {
+            TranscodeAsync(file, temp, profile, fraction, ct, range, duration).GetAwaiter().GetResult();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException && ex.HResult == unchecked((int)0x80004005))
+        {
+            TranscodeAsync(file, temp, profile, fraction, ct, range, duration, hardware: false).GetAwaiter().GetResult();
+        }
     }
 
     /// <summary>Peak target for Normalize: −1 dBFS leaves headroom for lossy encoders.</summary>
@@ -305,7 +322,7 @@ public sealed class MediaFoundationProvider : IOperationProvider
     }
 
     private static async Task TranscodeAsync(string file, string destinationPath, MediaEncodingProfile profile,
-        Action<double>? fraction, CancellationToken ct, TrimRange? trim = null, TimeSpan duration = default)
+        Action<double>? fraction, CancellationToken ct, TrimRange? trim = null, TimeSpan duration = default, bool hardware = true)
     {
         var source = await StorageFile.GetFileFromPathAsync(file);
         var destination = await StorageFile.GetFileFromPathAsync(destinationPath);
@@ -314,7 +331,7 @@ public sealed class MediaFoundationProvider : IOperationProvider
         // the files itself.
         using IRandomAccessStream? input = trim is null ? await source.OpenAsync(FileAccessMode.Read) : null;
         using IRandomAccessStream? output = trim is null ? await destination.OpenAsync(FileAccessMode.ReadWrite) : null;
-        var transcoder = new MediaTranscoder { HardwareAccelerationEnabled = true };
+        var transcoder = new MediaTranscoder { HardwareAccelerationEnabled = hardware };
         if (trim is not null)
         {
             // Both are positions in the source: output starts at TrimStartTime and stops at TrimStopTime.
