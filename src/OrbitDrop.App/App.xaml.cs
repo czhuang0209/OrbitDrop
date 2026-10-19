@@ -144,7 +144,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
 
     private static OperationRegistry BuildRegistry(FileActionsProvider? actions = null) =>
         new([new ImageConversionProvider(), new PdfProvider(), new MediaFoundationProvider(), new MediaEditingProvider(),
-             new ImageToolsProvider(), new ArchiveProvider(), new MetadataProvider(), actions ?? new FileActionsProvider()]);
+             new ImageToolsProvider(), new ImageTextProvider(), new ArchiveProvider(), new MetadataProvider(), actions ?? new FileActionsProvider()]);
 
     private OperationContext CreateContext() => new()
     {
