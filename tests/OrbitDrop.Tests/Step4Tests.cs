@@ -164,3 +164,26 @@ public class VideoEditingTests
         Assert.True(new FileInfo(joined).Length > new FileInfo(a).Length / 2);
     }
 }
+
+public class GifTests
+{
+    [MediaFact]
+    public async Task Video_becomes_a_looping_gif()
+    {
+        using var t = new TempFolder();
+        string clip = t.File("clip.mp4");
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "testpattern.mp4"), clip);
+        var o = Assert.Single(await Runner.Run(new MediaEditingProvider(), "convert.video.gif", clip));
+        Assert.True(o.Status == OutcomeStatus.Succeeded, o.Message);
+        Assert.Equal(t.File("clip.gif"), o.Output);
+        byte[] gif = File.ReadAllBytes(o.Output!);
+        Assert.True(gif.AsSpan().IndexOf("NETSCAPE2.0"u8) > 0);
+
+        // Graphic Control Extensions (21 F9 04 …) carry each frame's delay in hundredths of a second.
+        var delays = new List<int>();
+        for (int i = 0; i + 6 < gif.Length; i++)
+            if (gif[i] == 0x21 && gif[i + 1] == 0xF9 && gif[i + 2] == 0x04) delays.Add(gif[i + 4] | gif[i + 5] << 8);
+        Assert.InRange(delays.Count, 10, 25); // a 2 s clip at 10 fps (a few unreadable samples may be skipped)
+        Assert.All(delays, d => Assert.Equal(10, d));
+    }
+}

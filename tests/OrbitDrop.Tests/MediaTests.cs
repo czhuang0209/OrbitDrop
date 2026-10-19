@@ -17,9 +17,9 @@ public class MediaRegistryTests
 {
     private static readonly MediaFoundationProvider Provider = new();
     private static FileSet Files(params string[] n) => new(n.Select(x => Path.Combine(@"C:\x", x)));
-    private static List<string> Labels(FileSet f, OperationMode m) => Provider.GetOperations(f, m).Select(d => d.Label).ToList();
+    private static List<string> Labels(FileSet f, OperationMode m) => Provider.GetOperations(f, m).OrderBy(d => d.Order).Select(d => d.Label).ToList();
     /// <summary>What the wheel shows: groups collapsed to one segment.</summary>
-    private static List<string> Wheel(FileSet f, OperationMode m) => OperationMenu.TopLevel(Provider.GetOperations(f, m).ToList()).Select(d => d.Label).ToList();
+    private static List<string> Wheel(FileSet f, OperationMode m) => OperationMenu.TopLevel(Provider.GetOperations(f, m).OrderBy(d => d.Order).ToList()).Select(d => d.Label).ToList();
 
     [Fact]
     public void Mp4_offers_wmv_and_audio_extraction_but_not_mp4()
@@ -33,8 +33,8 @@ public class MediaRegistryTests
     {
         Assert.Equal(["Compress", "Remove audio"], Wheel(Files("a.mov"), OperationMode.Tools));
         Assert.Equal(["720p", "1080p", "480p", "Half size", "Remove audio"], Labels(Files("a.mov"), OperationMode.Tools));
-        Assert.Equal(["Compress", "Channels"], Wheel(Files("a.mp3"), OperationMode.Tools));
-        Assert.Equal(["128 kbps", "96 kbps", "64 kbps", "Mono", "Stereo"], Labels(Files("a.mp3"), OperationMode.Tools));
+        Assert.Equal(["Compress", "Normalize", "Channels"], Wheel(Files("a.mp3"), OperationMode.Tools));
+        Assert.Equal(["128 kbps", "96 kbps", "64 kbps", "Normalize", "Mono", "Stereo"], Labels(Files("a.mp3"), OperationMode.Tools));
     }
 
     [Fact]
@@ -177,5 +177,54 @@ public class AudioToolTests
         Assert.Equal(t.File("testpattern (compressed).m4a"), small.Output);
         Assert.Equal(t.File("testpattern (mono).m4a"), mono.Output);
         Assert.Null(MediaFoundationProvider.ValidateContainer(flac.Output!, ".flac"));
+    }
+}
+
+public class NormalizeTests
+{
+    private static byte[] Tone(double amplitude, int seconds = 1, int rate = 44100)
+    {
+        int samples = rate * seconds;
+        var data = new byte[samples * 2];
+        for (int i = 0; i < samples; i++)
+            System.Buffers.Binary.BinaryPrimitives.WriteInt16LittleEndian(data.AsSpan(i * 2), (short)(Math.Sin(i * 2 * Math.PI * 440 / rate) * amplitude * 32767));
+        using var ms = new MemoryStream();
+        using var w = new BinaryWriter(ms);
+        w.Write("RIFF"u8); w.Write(36 + data.Length); w.Write("WAVE"u8);
+        w.Write("fmt "u8); w.Write(16); w.Write((short)1); w.Write((short)1); w.Write(rate); w.Write(rate * 2); w.Write((short)2); w.Write((short)16);
+        w.Write("data"u8); w.Write(data.Length); w.Write(data);
+        return ms.ToArray();
+    }
+
+    [Fact]
+    public void Gain_brings_the_peak_to_the_target()
+    {
+        var wav = Tone(0.25);
+        double gain = WavPcm.NormalizeGain(wav, 0.891);
+        Assert.InRange(gain, 3.5, 3.6);
+        WavPcm.ApplyGain(wav, gain);
+        Assert.InRange(WavPcm.NormalizeGain(wav, 0.891), 0.99, 1.01);
+    }
+
+    [MediaFact]
+    public async Task Quiet_audio_is_normalized_and_loud_audio_is_skipped()
+    {
+        using var t = new TempFolder();
+        string quiet = t.File("quiet.wav");
+        File.WriteAllBytes(quiet, Tone(0.2));
+        var provider = new MediaFoundationProvider();
+        var op = provider.GetOperations(new FileSet([quiet]), OperationMode.Tools).Single(o => o.Id == "tool.audio.normalize");
+        var c = new Collector();
+        await provider.ExecuteAsync(op, new FileSet([quiet]), Ctx.Default(), c, CancellationToken.None);
+        var o = Assert.Single(c.Outcomes);
+        Assert.True(o.Status == OutcomeStatus.Succeeded, o.Message);
+        Assert.Equal(t.File("quiet (normalized).wav"), o.Output);
+        Assert.InRange(WavPcm.NormalizeGain(File.ReadAllBytes(o.Output!), MediaFoundationProvider.NormalizePeak), 0.97, 1.03);
+
+        string loud = t.File("loud.wav");
+        File.WriteAllBytes(loud, Tone(0.95));
+        var c2 = new Collector();
+        await provider.ExecuteAsync(op, new FileSet([loud]), Ctx.Default(), c2, CancellationToken.None);
+        Assert.Equal(OutcomeStatus.Skipped, Assert.Single(c2.Outcomes).Status);
     }
 }

@@ -18,9 +18,15 @@ public sealed class MediaEditingProvider : IOperationProvider
     public const string ProviderId = "media.editing";
     public string Id => ProviderId;
 
+    /// <summary>GIFs cover the first <see cref="GifSeconds"/> s at <see cref="GifFps"/> fps, at most <see cref="GifSide"/> px.</summary>
+    public const int GifSeconds = 10, GifFps = 10, GifSide = 480;
+
     public IEnumerable<OperationDescriptor> GetOperations(FileSet files, OperationMode mode)
     {
-        if (mode != OperationMode.Tools || !files.All(MediaFoundationProvider.IsVideo)) yield break;
+        if (!files.All(MediaFoundationProvider.IsVideo)) yield break;
+        if (mode == OperationMode.Convert)
+            yield return new("convert.video.gif", ProviderId, OperationMode.Convert, "GIF", null, "Animated %1 (first 10 s)", "GIF", "Making GIF", 23);
+        if (mode != OperationMode.Tools) yield break;
         yield return new("tool.video.snapshot", ProviderId, OperationMode.Tools, "Snapshot", "",
             "Save the middle frame as PNG", "", "Taking a snapshot", 135);
         if (files.Count > 1)
@@ -49,7 +55,11 @@ public sealed class MediaEditingProvider : IOperationProvider
         foreach (var file in files)
         {
             ct.ThrowIfCancellationRequested();
-            try { progress.Report(new FileOutcome(file, OutcomeStatus.Succeeded, await SnapshotAsync(file, context, ct))); }
+            try
+            {
+                string output = operation.Id == "convert.video.gif" ? await GifAsync(file, context, ct) : await SnapshotAsync(file, context, ct);
+                progress.Report(new FileOutcome(file, OutcomeStatus.Succeeded, output));
+            }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex) { progress.Report(new FileOutcome(file, OutcomeStatus.Failed, Message: Friendly(ex))); }
         }
@@ -79,6 +89,61 @@ public sealed class MediaEditingProvider : IOperationProvider
             output = WicImageCodec.WriteOutput(image, file, WicImageCodec.Png, $"frame {Stamp(at)}", context, ct);
         }, "OrbitDrop snapshot");
         return output;
+    }
+
+    /// <summary>Samples frames with the composition's thumbnail engine and writes a looping animated GIF.</summary>
+    private static async Task<string> GifAsync(string file, OperationContext context, CancellationToken ct)
+    {
+        var storage = await StorageFile.GetFileFromPathAsync(file);
+        var props = await storage.Properties.GetVideoPropertiesAsync();
+        var composition = new MediaComposition();
+        var clip = await MediaClip.CreateFromFileAsync(storage);
+        composition.Clips.Add(clip);
+        double seconds = Math.Min(GifSeconds, clip.OriginalDuration.TotalSeconds);
+        int count = Math.Max(1, (int)Math.Floor(seconds * GifFps));
+        var times = Enumerable.Range(0, count).Select(i => TimeSpan.FromMilliseconds(i * 1000.0 / GifFps)).ToList();
+        var (w, h) = MediaFoundationProvider.FitWithin(props.Width > 0 ? props.Width : 640, props.Height > 0 ? props.Height : 360, GifSide, GifSide);
+
+        var frames = new List<byte[]>();
+        var thumbs = await composition.GetThumbnailsAsync(times, (int)w, (int)h, VideoFramePrecision.NearestFrame).AsTask(ct);
+        foreach (var thumb in thumbs)
+        {
+            using (thumb)
+            using (var s = thumb.AsStreamForRead())
+            using (var ms = new MemoryStream())
+            {
+                await s.CopyToAsync(ms, ct);
+                frames.Add(ms.ToArray());
+            }
+            context.ReportFileFraction?.Invoke(frames.Count * 0.8 / count);
+        }
+
+        byte[] gif = [];
+        await StaWorker.RunAsync(() =>
+        {
+            var encoder = new GifBitmapEncoder();
+            foreach (var data in frames)
+            {
+                BitmapFrame frame;
+                try
+                {
+                    using var ms = new MemoryStream(data);
+                    frame = BitmapDecoder.Create(ms, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad).Frames[0];
+                }
+                catch (Exception) { continue; } // an empty sample (e.g. past the last frame): skip it
+                // GIF is 8-bit: give each frame its own 256-colour palette computed from that frame.
+                BitmapSource rgb = new FormatConvertedBitmap(frame, PixelFormats.Bgr32, null, 0);
+                var indexed = new FormatConvertedBitmap(rgb, PixelFormats.Indexed8, new BitmapPalette(rgb, 256), 0);
+                encoder.Frames.Add(BitmapFrame.Create(indexed)); // timing is added afterwards: WPF ignores GIF frame metadata
+            }
+            if (encoder.Frames.Count < 2) throw new InvalidDataException("Windows couldn't read enough frames from this video to make a GIF.");
+            using var output = new MemoryStream();
+            encoder.Save(output);
+            gif = GifLoop.AddTimingAndLoop(output.ToArray(), 100 / GifFps);
+        }, "OrbitDrop GIF");
+
+        return SafeOutput.Write(file, context.Output, ".gif", null, s => s.Write(gif),
+            temp => File.ReadAllBytes(temp) is var b && b.Length > 6 && b[0] == 'G' && b[1] == 'I' && b[2] == 'F' ? null : "the GIF is invalid", ct);
     }
 
     private static string Stamp(TimeSpan t) => t.TotalHours >= 1 ? t.ToString(@"h\.mm\.ss") : t.ToString(@"m\.ss");

@@ -75,7 +75,7 @@ public sealed class MediaFoundationProvider : IOperationProvider
             foreach (var p in VideoPresets)
                 yield return new($"tool.video.compress.{p.Key}", ProviderId, OperationMode.Tools, p.Label, null,
                     p.Hint, "", "Compressing video", o++, Group: VideoCompress);
-            yield return new("tool.video.mute", ProviderId, OperationMode.Tools, "Remove audio", "",
+            yield return new("tool.video.mute", ProviderId, OperationMode.Tools, "Remove audio", "î",
                 "%1", "Remove audio", "Removing audio", 130);
         }
         else if (mode == OperationMode.Tools)
@@ -86,6 +86,7 @@ public sealed class MediaFoundationProvider : IOperationProvider
                     $"Compress to {kbps} kbps", "", "Compressing audio", o++, Group: AudioCompress);
             yield return new("tool.audio.mono", ProviderId, OperationMode.Tools, "Mono", "\uE995", "Make it mono", "", "Converting to mono", 130, Group: Channels);
             yield return new("tool.audio.stereo", ProviderId, OperationMode.Tools, "Stereo", "\uE995", "Make it stereo", "", "Converting to stereo", 131, Group: Channels);
+            yield return new("tool.audio.normalize", ProviderId, OperationMode.Tools, "Normalize", "", "As loud as it can be without clipping", "", "Normalizing", 125);
         }
     }
 
@@ -97,6 +98,11 @@ public sealed class MediaFoundationProvider : IOperationProvider
             ct.ThrowIfCancellationRequested();
             try
             {
+                if (operation.Id == "tool.audio.normalize")
+                {
+                    progress.Report(await NormalizeAsync(file, context, ct));
+                    continue;
+                }
                 var (profile, extension, suffix) = await ProfileForAsync(operation, file);
                 if (extension == Path.GetExtension(file).ToLowerInvariant() && suffix is null)
                 {
@@ -142,7 +148,7 @@ public sealed class MediaFoundationProvider : IOperationProvider
                 var props = await source.Properties.GetVideoPropertiesAsync();
                 if (preset.BoxW == 0)
                 {
-                    // Same resolution, half the bitrate. Windows may not report a bitrate; estimate it from size ÷ length.
+                    // Same resolution, half the bitrate. Windows may not report a bitrate; estimate it from size Ã· length.
                     uint bitrate = props.Bitrate;
                     if (bitrate == 0 && props.Duration.TotalSeconds > 0)
                         bitrate = (uint)Math.Min(uint.MaxValue, new FileInfo(file).Length * 8 / props.Duration.TotalSeconds);
@@ -157,7 +163,7 @@ public sealed class MediaFoundationProvider : IOperationProvider
                     {
                         p.Video.Width = w;
                         p.Video.Height = h;
-                        p.Video.Bitrate = (uint)Math.Clamp(w * h * 2.6, 400_000, 6_000_000); // ≈2.4 Mbps at 720p, 5.4 at 1080p
+                        p.Video.Bitrate = (uint)Math.Clamp(w * h * 2.6, 400_000, 6_000_000); // â2.4 Mbps at 720p, 5.4 at 1080p
                     }
                 }
                 if (p.Audio is not null) p.Audio.Bitrate = 128_000;
@@ -177,6 +183,51 @@ public sealed class MediaFoundationProvider : IOperationProvider
                 return (p, ext, op.Id == "tool.audio.mono" ? "mono" : "stereo");
             }
             default: throw new NotSupportedException(op.Id);
+        }
+    }
+
+    /// <summary>Peak target for Normalize: −1 dBFS leaves headroom for lossy encoders.</summary>
+    public const double NormalizePeak = 0.891;
+
+    /// <summary>
+    /// Decodes to 16-bit PCM, scales every sample so the loudest peak reaches <see cref="NormalizePeak"/>, then
+    /// encodes back to the source's format. A file already at full volume is skipped rather than re-encoded.
+    /// </summary>
+    private static async Task<FileOutcome> NormalizeAsync(string file, OperationContext context, CancellationToken ct)
+    {
+        string scratch = Path.Combine(Path.GetTempPath(), "OrbitDrop", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(scratch);
+        try
+        {
+            var source = await StorageFile.GetFileFromPathAsync(file);
+            var props = await source.Properties.RetrievePropertiesAsync(["System.Audio.SampleRate", "System.Audio.ChannelCount"]);
+            uint rate = props.TryGetValue("System.Audio.SampleRate", out var r) && r is uint sr and > 0 ? sr : 44100;
+            uint channels = props.TryGetValue("System.Audio.ChannelCount", out var c) && c is uint ch and > 0 ? Math.Min(ch, 2u) : 2;
+
+            var pcm = MediaEncodingProfile.CreateWav(AudioEncodingQuality.High);
+            pcm.Audio = AudioEncodingProperties.CreatePcm(rate, channels, 16);
+            string decoded = Path.Combine(scratch, "decoded.wav");
+            File.Create(decoded).Dispose();
+            await TranscodeAsync(file, decoded, pcm, f => context.ReportFileFraction?.Invoke(f * 0.4), ct);
+
+            byte[] wav = File.ReadAllBytes(decoded);
+            double gain = WavPcm.NormalizeGain(wav, NormalizePeak);
+            if (gain <= 1.02) return new FileOutcome(file, OutcomeStatus.Skipped, Message: "It's already at full volume.");
+            WavPcm.ApplyGain(wav, gain);
+            string louder = Path.Combine(scratch, "louder.wav");
+            File.WriteAllBytes(louder, wav);
+
+            var (profile, extension) = SameKindAudio(file, lossyOnly: false);
+            if (extension == ".wav") profile.Audio = AudioEncodingProperties.CreatePcm(rate, channels, 16);
+            string output = await Task.Run(() => SafeOutput.WriteToPath(file, context.Output, extension, "normalized",
+                writeToTemp: temp => TranscodeAsync(louder, temp, profile, f => context.ReportFileFraction?.Invoke(0.4 + f * 0.6), ct).GetAwaiter().GetResult(),
+                validate: temp => ValidateContainer(temp, extension),
+                ct, hideWhileWriting: false), ct);
+            return new FileOutcome(file, OutcomeStatus.Succeeded, output);
+        }
+        finally
+        {
+            try { Directory.Delete(scratch, recursive: true); } catch { /* best effort */ }
         }
     }
 
@@ -263,8 +314,8 @@ public sealed class MediaFoundationProvider : IOperationProvider
 
     public IEnumerable<(string Category, string Detail)> DescribeCapabilities()
     {
-        yield return ("Video", "MP4, WMV · extract audio · compress (720p, 1080p, 480p, half size) · remove audio (via Windows Media Foundation)");
-        yield return ("Audio", "MP3, M4A, WAV, WMA, FLAC · compress (128/96/64 kbps) · mono/stereo");
+        yield return ("Video", "MP4, WMV Â· extract audio Â· compress (720p, 1080p, 480p, half size) Â· remove audio (via Windows Media Foundation)");
+        yield return ("Audio", "MP3, M4A, WAV, WMA, FLAC Â· compress (128/96/64 kbps) Â· mono/stereo");
     }
 
     private sealed class MediaFormatException(string message) : Exception(message);
