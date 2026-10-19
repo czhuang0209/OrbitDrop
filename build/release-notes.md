@@ -76,6 +76,10 @@ The biggest update yet: OrbitDrop now does a lot more than convert.
 
 ## Download
 
+**Easiest: [get OrbitDrop from the Microsoft Store](https://apps.microsoft.com/detail/9NJQRMQLL2SZ).** Free, no security warning, updated by the Store. (Already have the version from here? Uninstall it first, so only one OrbitDrop runs.)
+
+Or download it here:
+
 | File | What it is |
 |---|---|
 | **OrbitDrop-Setup.exe** | **Recommended.** Installer: no admin rights, adds a Start Menu shortcut, optional start at sign-in, clean uninstall, in-app updates |
