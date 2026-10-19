@@ -24,6 +24,7 @@ internal static class FilmAssets
     public static int Run(string dir, OperationRegistry registry)
     {
         Directory.CreateDirectory(dir);
+        File.Delete(Path.Combine(dir, "layout.txt"));
         int n = 0;
         string Tmp(string f) => Path.Combine(Path.GetTempPath(), f);
         var photo = new[] { "photo.jpg" };
@@ -36,26 +37,30 @@ internal static class FilmAssets
             string t = theme == AppTheme.Dark ? "-dark" : "";
             var frost = FilmBackdrop(theme == AppTheme.Dark);
 
-            void Wheel(string name, OperationMode mode, string[] files, int hi, string value, string detail)
+            // The lit slice is named, not numbered, so the film stays right when the wheel's layout changes.
+            void Wheel(string name, OperationMode mode, string[] files, string? hi, string value, string detail)
             {
                 var wheel = new RadialWheel();
                 var items = OperationMenu.TopLevel(registry.Query(new FileSet(files.Select(Tmp)), mode));
                 wheel.SetContent(mode, items, value, detail, animate: false);
-                wheel.SetHighlight(hi);
+                int index = hi is null ? -2 : items.ToList().FindIndex(i => i.Label == hi);
+                if (hi is not null && index < 0) throw new InvalidOperationException($"No \"{hi}\" on the {mode} wheel for {name}.");
+                wheel.SetHighlight(index, animate: false);
+                if (hi is not null) File.AppendAllText(Path.Combine(dir, "layout.txt"), $"{name}{t}: {hi} = segment {index} of {items.Count}\n");
                 Save(wheel.RenderPreview(frost, Scale, wallpaperBehind: false), Path.Combine(dir, $"wheel-{name}{t}.png"), ref n);
                 wheel.Close();
             }
 
-            Wheel("convert-idle", OperationMode.Convert, photo, -2, "2.4 MB", "photo.jpg");
-            Wheel("convert-png", OperationMode.Convert, photo, 0, "PNG", "Convert to PNG");
-            Wheel("batch-idle", OperationMode.Convert, batch, -2, "5 files", "JPG");
-            Wheel("batch-png", OperationMode.Convert, batch, 0, "PNG", "Convert to PNG");
-            Wheel("tools-idle", OperationMode.Tools, photo, -2, "2.4 MB", "photo.jpg");
-            Wheel("tools-rotate", OperationMode.Tools, photo, 0, "Rotate right", "photo.jpg");
-            Wheel("actions-idle", OperationMode.Actions, photo, -2, "2.4 MB", "photo.jpg");
-            Wheel("actions-reveal", OperationMode.Actions, photo, 2, "Show in folder", "photo.jpg");
-            Wheel("video-idle", OperationMode.Convert, clip, -2, "18.4 MB", "clip.mp4");
-            Wheel("video-mp3", OperationMode.Convert, clip, 1, "MP3", "Extract audio as MP3"); // MP4 hidden for an .mp4, so MP3 is segment 1
+            Wheel("convert-idle", OperationMode.Convert, photo, null, "2.4 MB", "photo.jpg");
+            Wheel("convert-png", OperationMode.Convert, photo, "PNG", "PNG", "Convert to PNG");
+            Wheel("batch-idle", OperationMode.Convert, batch, null, "5 files", "JPG");
+            Wheel("batch-png", OperationMode.Convert, batch, "PNG", "PNG", "Convert to PNG");
+            Wheel("tools-idle", OperationMode.Tools, photo, null, "2.4 MB", "photo.jpg");
+            Wheel("tools-rotate", OperationMode.Tools, photo, "Rotate & flip", "Rotate right", "photo.jpg");
+            Wheel("actions-idle", OperationMode.Actions, photo, null, "2.4 MB", "photo.jpg");
+            Wheel("actions-reveal", OperationMode.Actions, photo, "Show in folder", "Show in folder", "photo.jpg");
+            Wheel("video-idle", OperationMode.Convert, clip, null, "18.4 MB", "clip.mp4");
+            Wheel("video-mp3", OperationMode.Convert, clip, "MP3", "MP3", "Extract audio as MP3");
 
             void Toast(string name, Action<ToastWindow> setup)
             {
