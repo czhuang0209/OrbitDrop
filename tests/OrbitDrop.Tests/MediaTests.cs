@@ -31,10 +31,11 @@ public class MediaRegistryTests
     [Fact]
     public void Video_and_audio_get_their_own_grouped_tools()
     {
-        Assert.Equal(["Compress", "Remove audio"], Wheel(Files("a.mov"), OperationMode.Tools));
-        Assert.Equal(["720p", "1080p", "480p", "Half size", "Remove audio"], Labels(Files("a.mov"), OperationMode.Tools));
-        Assert.Equal(["Compress", "Normalize", "Channels"], Wheel(Files("a.mp3"), OperationMode.Tools));
-        Assert.Equal(["128 kbps", "96 kbps", "64 kbps", "Normalize", "Mono", "Stereo"], Labels(Files("a.mp3"), OperationMode.Tools));
+        Assert.Equal(["Trim", "Compress", "Remove audio"], Wheel(Files("a.mov"), OperationMode.Tools));
+        Assert.Equal(["Trim", "720p", "1080p", "480p", "Half size", "Remove audio"], Labels(Files("a.mov"), OperationMode.Tools));
+        Assert.Equal(["Trim", "Compress", "Normalize", "Channels"], Wheel(Files("a.mp3"), OperationMode.Tools));
+        Assert.Equal(["Trim", "128 kbps", "96 kbps", "64 kbps", "Normalize", "Mono", "Stereo"], Labels(Files("a.mp3"), OperationMode.Tools));
+        Assert.DoesNotContain("Trim", Labels(Files("a.mp3", "b.mp3"), OperationMode.Tools)); // one file at a time
     }
 
     [Fact]
@@ -226,5 +227,29 @@ public class NormalizeTests
         var c2 = new Collector();
         await provider.ExecuteAsync(op, new FileSet([loud]), Ctx.Default(), c2, CancellationToken.None);
         Assert.Equal(OutcomeStatus.Skipped, Assert.Single(c2.Outcomes).Status);
+    }
+}
+
+public class TrimTests
+{
+    [MediaFact]
+    public async Task Trim_keeps_only_the_chosen_range()
+    {
+        using var t = new TempFolder();
+        string clip = t.File("clip.mp4");
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "testpattern.mp4"), clip);
+        var full = await MediaFoundationProvider.DurationAsync(clip);
+        Assert.True(full > TimeSpan.FromSeconds(1.5), $"fixture is {full}");
+
+        var provider = new MediaFoundationProvider();
+        var op = provider.GetOperations(new FileSet([clip]), OperationMode.Tools).Single(o => o.Id == MediaFoundationProvider.TrimId);
+        var c = new Collector();
+        var range = new TrimRange(TimeSpan.FromSeconds(0.5), TimeSpan.FromSeconds(1.5));
+        await provider.ExecuteAsync(op, new FileSet([clip]), Ctx.Default() with { Input = range }, c, CancellationToken.None);
+        var o = Assert.Single(c.Outcomes);
+        Assert.True(o.Status == OutcomeStatus.Succeeded, o.Message);
+        Assert.Equal(t.File("clip (trimmed).mp4"), o.Output);
+        var trimmed = await MediaFoundationProvider.DurationAsync(o.Output!);
+        Assert.InRange(trimmed.TotalSeconds, 0.8, 1.25);
     }
 }

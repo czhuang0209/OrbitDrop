@@ -16,6 +16,7 @@ public partial class App
     {
         _inputs.Register(MetadataProvider.InfoId, AskMetadataAsync);
         _inputs.Register(ImageToolsProvider.EditId, AskPhotoEditAsync);
+        _inputs.Register(OrbitDrop.Conversion.Media.MediaFoundationProvider.TrimId, AskTrimAsync);
         _inputs.Register(FileActionsProvider.CopyToPrefix + FileActionsProvider.ChooseSuffix, (op, files, _) => AskFolderAsync("Copy to", files));
         _inputs.Register(FileActionsProvider.MoveToPrefix + FileActionsProvider.ChooseSuffix, (op, files, _) => AskFolderAsync("Move to", files));
     }
@@ -28,6 +29,17 @@ public partial class App
         ShowInFront(editor);
         var edited = await editor.Result;
         return edited is null ? (false, null) : (true, edited);
+    }
+
+    /// <summary>Opens the Trim window; the chosen range becomes the job's input.</summary>
+    private async Task<(bool, object?)> AskTrimAsync(OperationDescriptor op, FileSet files, Win32.POINT anchor)
+    {
+        string file = files[0];
+        var length = await OrbitDrop.Conversion.Media.MediaFoundationProvider.DurationAsync(file);
+        var window = new OrbitDrop.UI.Trim.TrimWindow(file, length, OrbitDrop.Conversion.Media.MediaFoundationProvider.IsVideo(file));
+        ShowInFront(window);
+        var range = await window.Result;
+        return range is null ? (false, null) : (true, range);
     }
 
     /// <summary>A folder picker in front of everything; the chosen folder becomes the job's input.</summary>

@@ -128,7 +128,13 @@ internal static class UiReview
                 editor.Close();
             }
 
-            // --- tray flyout
+            // --- trim window (audio, so no video frame is needed)
+            var trim = new OrbitDrop.UI.Trim.TrimWindow(@"C:\Users\You\Music\Interview.m4a", TimeSpan.FromSeconds(272), isVideo: false);
+            trim.ReviewRange(0.18, 0.64);
+            RenderElement((FrameworkElement)trim.Content, 920, 640, bg, dir, $"trim-{t}", ref count, [1.0]);
+            trim.Close();
+
+            // --- TRAY FLYOUT
             var flyout = new TrayFlyout(new PreviewTray());
             RenderElement(flyout.ContentRoot, 300, double.NaN, bg, dir, $"tray-{t}", ref count);
             flyout.Close();

@@ -15,6 +15,7 @@ namespace OrbitDrop.Conversion.Media;
 public sealed class MediaFoundationProvider : IOperationProvider
 {
     public const string ProviderId = "media.mf";
+    public const string TrimId = "tool.media.trim";
     public string Id => ProviderId;
 
     private static readonly HashSet<string> VideoInputs = new(StringComparer.OrdinalIgnoreCase)
@@ -69,7 +70,11 @@ public sealed class MediaFoundationProvider : IOperationProvider
                     allVideo && !t.IsVideo ? $"Extracting audio as {t.Label}" : $"Converting to {t.Label}", order);
             }
         }
-        else if (mode == OperationMode.Tools && allVideo)
+        if (mode == OperationMode.Tools && files.Count == 1)
+            yield return new(TrimId, ProviderId, OperationMode.Tools, "Trim", "", "Keep just the part you choose", "",
+                "Trimming", 110, NeedsInput: true);
+
+        if (mode == OperationMode.Tools && allVideo)
         {
             int o = 120;
             foreach (var p in VideoPresets)
@@ -98,6 +103,11 @@ public sealed class MediaFoundationProvider : IOperationProvider
             ct.ThrowIfCancellationRequested();
             try
             {
+                if (operation.Id == TrimId && context.Input is TrimRange range)
+                {
+                    progress.Report(await TrimAsync(file, range, context, ct));
+                    continue;
+                }
                 if (operation.Id == "tool.audio.normalize")
                 {
                     progress.Report(await NormalizeAsync(file, context, ct));
@@ -186,6 +196,44 @@ public sealed class MediaFoundationProvider : IOperationProvider
         }
     }
 
+    /// <summary>Length of a video or audio file, from the Windows property system (zero if unknown).</summary>
+    public static async Task<TimeSpan> DurationAsync(string file)
+    {
+        var storage = await StorageFile.GetFileFromPathAsync(file);
+        var props = await storage.Properties.GetMusicPropertiesAsync(); // Duration is filled in for video too
+        return props.Duration;
+    }
+
+    /// <summary>Keeps <paramref name="range"/>: video becomes MP4, audio keeps its format where Windows can write it.</summary>
+    private static async Task<FileOutcome> TrimAsync(string file, TrimRange range, OperationContext context, CancellationToken ct)
+    {
+        var duration = await DurationAsync(file);
+        if (range.Start <= TimeSpan.FromMilliseconds(50) && (duration == TimeSpan.Zero || range.End >= duration - TimeSpan.FromMilliseconds(50)))
+            return new FileOutcome(file, OutcomeStatus.Skipped, Message: "Nothing was trimmed.");
+        // Trimming rejects VideoEncodingQuality.Auto, so the video profile is spelled out from the source.
+        MediaEncodingProfile profile;
+        string extension;
+        if (IsVideo(file))
+        {
+            profile = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.HD720p);
+            var props = await (await StorageFile.GetFileFromPathAsync(file)).Properties.GetVideoPropertiesAsync();
+            var (w, h) = FitWithin(props.Width, props.Height, 3840, 2160);
+            if (w > 0 && h > 0)
+            {
+                profile.Video.Width = w;
+                profile.Video.Height = h;
+                profile.Video.Bitrate = props.Bitrate > 0 ? Math.Clamp(props.Bitrate, 1_000_000u, 40_000_000u) : (uint)Math.Clamp(w * h * 4.0, 1_000_000, 16_000_000);
+            }
+            extension = ".mp4";
+        }
+        else (profile, extension) = SameKindAudio(file, lossyOnly: false);
+        string output = await Task.Run(() => SafeOutput.WriteToPath(file, context.Output, extension, "trimmed",
+            writeToTemp: temp => TranscodeAsync(file, temp, profile, context.ReportFileFraction, ct, range, duration).GetAwaiter().GetResult(),
+            validate: temp => ValidateContainer(temp, extension),
+            ct, hideWhileWriting: false), ct);
+        return new FileOutcome(file, OutcomeStatus.Succeeded, output);
+    }
+
     /// <summary>Peak target for Normalize: −1 dBFS leaves headroom for lossy encoders.</summary>
     public const double NormalizePeak = 0.891;
 
@@ -257,15 +305,25 @@ public sealed class MediaFoundationProvider : IOperationProvider
     }
 
     private static async Task TranscodeAsync(string file, string destinationPath, MediaEncodingProfile profile,
-        Action<double>? fraction, CancellationToken ct)
+        Action<double>? fraction, CancellationToken ct, TrimRange? trim = null, TimeSpan duration = default)
     {
         var source = await StorageFile.GetFileFromPathAsync(file);
         var destination = await StorageFile.GetFileFromPathAsync(destinationPath);
-        using IRandomAccessStream input = await source.OpenAsync(FileAccessMode.Read);
         // A native Windows stream: muxers such as ASF (WMV/WMA) need features a wrapped .NET stream lacks.
-        using IRandomAccessStream output = await destination.OpenAsync(FileAccessMode.ReadWrite);
+        // Trimming needs the file-based pipeline instead (the stream-based one refuses trim settings), which opens
+        // the files itself.
+        using IRandomAccessStream? input = trim is null ? await source.OpenAsync(FileAccessMode.Read) : null;
+        using IRandomAccessStream? output = trim is null ? await destination.OpenAsync(FileAccessMode.ReadWrite) : null;
         var transcoder = new MediaTranscoder { HardwareAccelerationEnabled = true };
-        var prepared = await transcoder.PrepareStreamTranscodeAsync(input, output, profile);
+        if (trim is not null)
+        {
+            // Both are positions in the source: output starts at TrimStartTime and stops at TrimStopTime.
+            transcoder.TrimStartTime = trim.Start;
+            if (duration == TimeSpan.Zero || trim.End < duration) transcoder.TrimStopTime = trim.End;
+        }
+        var prepared = trim is null
+            ? await transcoder.PrepareStreamTranscodeAsync(input!, output!, profile)
+            : await transcoder.PrepareFileTranscodeAsync(source, destination, profile);
         if (!prepared.CanTranscode)
             throw new MediaFormatException(prepared.FailureReason switch
             {
@@ -277,7 +335,7 @@ public sealed class MediaFoundationProvider : IOperationProvider
             });
         var progress = new Progress<double>(p => fraction?.Invoke(p / 100.0));
         await prepared.TranscodeAsync().AsTask(ct, progress);
-        await output.FlushAsync();
+        if (output is not null) await output.FlushAsync();
         fraction?.Invoke(1);
     }
 
