@@ -29,6 +29,8 @@ public sealed class RadialWheel : Window
         public required SolidColorBrush Fill;
         public required TextBlock Label;
         public TextBlock? Glyph;
+        /// <summary>The "more options" dots under a group label.</summary>
+        public TextBlock? Dots;
         public required TranslateTransform Lift;
         public required double Angle;
     }
@@ -186,7 +188,7 @@ public sealed class RadialWheel : Window
             var center = new Point(Extent / 2 + LabelR * Math.Cos(rad), Extent / 2 + LabelR * Math.Sin(rad));
             var label = new TextBlock
             {
-                Text = item.Glyph is null ? item.Label.ToUpperInvariant() : item.Label,
+                Text = item.Label, // format labels are already upper-case ("PNG"); presets keep their case ("720p")
                 FontFamily = (FontFamily)FindResource("Orbit.Font.Display"),
                 FontSize = item.Glyph is null ? (items.Count > 6 ? 12.5 : 13.5) : 11,
                 FontWeight = FontWeights.SemiBold,
@@ -207,6 +209,16 @@ public sealed class RadialWheel : Window
                 stack.Children.Add(glyph);
             }
             stack.Children.Add(label);
+            TextBlock? dots = null;
+            if (item.IsGroupHeader)
+            {
+                dots = new TextBlock
+                {
+                    Text = "• • •", FontSize = 8, Opacity = 0.55, HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(0, 2, 0, 0),
+                };
+                stack.Children.Add(dots);
+            }
             center = FitLabel(stack, label, center, items.Count > 5 ? 64 : 78, items.Count > 4 ? 5 : 10);
             System.Windows.Controls.Canvas.SetLeft(stack, center.X - stack.DesiredSize.Width / 2);
             System.Windows.Controls.Canvas.SetTop(stack, center.Y - stack.DesiredSize.Height / 2);
@@ -217,7 +229,7 @@ public sealed class RadialWheel : Window
             group.Children.Add(stack);
             _segments.Children.Add(group);
 
-            var visual = new SegmentVisual { Group = group, Shape = shape, Fill = fill, Label = label, Glyph = glyph, Lift = lift, Angle = mid };
+            var visual = new SegmentVisual { Group = group, Shape = shape, Fill = fill, Label = label, Glyph = glyph, Dots = dots, Lift = lift, Angle = mid };
             _visuals.Add(visual);
             Paint(visual, null);
         }
@@ -286,6 +298,7 @@ public sealed class RadialWheel : Window
         var text = Frozen(new SolidColorBrush(on ? _onAccent : _segmentText));
         v.Label.Foreground = text;
         if (v.Glyph is not null) v.Glyph.Foreground = text;
+        if (v.Dots is not null) v.Dots.Foreground = text;
     }
 
     // ------------------------------------------------------------------ placement & lifecycle
@@ -446,9 +459,10 @@ public sealed class RadialWheel : Window
             label.InvalidateMeasure();
             stack.InvalidateMeasure();
             stack.Measure(inf);
-            // The label sits at the bottom of the stack (under the glyph); test its own box, not the stack's.
-            double lw = label.DesiredSize.Width, lh = label.DesiredSize.Height;
-            double below = stack.DesiredSize.Height / 2 - lh / 2;
+            // Test the label's own box (between the glyph and any group dots), not the whole stack's.
+            double lw = label.DesiredSize.Width, lh = label.DesiredSize.Height, above = 0;
+            foreach (UIElement child in stack.Children) { if (child == label) break; above += child.DesiredSize.Height; }
+            double below = -stack.DesiredSize.Height / 2 + above + lh / 2;
             foreach (var s in shifts)
             {
                 var c = center + s;

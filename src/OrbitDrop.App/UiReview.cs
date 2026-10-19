@@ -31,20 +31,23 @@ internal static class UiReview
             // --- wheel on a bright and a dark wallpaper
             foreach (var (wallName, wall) in new[] { ("bright", Wallpaper(false)), ("dark", Wallpaper(true)) })
             {
-                var cases = new (string Name, OperationMode Mode, string[] Files, int Hi, string Value, string Detail)[]
+                var cases = new (string Name, OperationMode Mode, string[] Files, int Hi, string Value, string Detail, string? Group)[]
                 {
-                    ("convert", OperationMode.Convert, ["photo.jpg"], 1, "BMP", "Convert to BMP"),
-                    ("convert-batch", OperationMode.Convert, ["a.jpg", "b.png", "c.gif"], -2, "3 files", "JPG · PNG · GIF"),
-                    ("tools", OperationMode.Tools, ["photo.jpg"], 0, "Rotate right", "Rotate right"),
-                    ("actions", OperationMode.Actions, ["report.pdf"], 2, "Show in folder", "Show in folder"),
-                    ("video", OperationMode.Convert, ["clip.mp4"], 1, "MP3", "Extract audio as MP3"),
-                    ("video-tools", OperationMode.Tools, ["clip.mp4"], 0, "Compress", "clip.mp4"),
-                    ("unsupported", OperationMode.Convert, ["report.pdf"], -2, "No conversions yet", "Tap Shift for more"),
+                    ("convert", OperationMode.Convert, ["photo.jpg"], 1, "BMP", "Convert to BMP", null),
+                    ("convert-batch", OperationMode.Convert, ["a.jpg", "b.png", "c.gif"], -2, "3 files", "JPG · PNG · GIF", null),
+                    ("tools", OperationMode.Tools, ["photo.jpg"], 0, "Compress", "Hold for options · drop: 50%", null),
+                    ("tools-compress", OperationMode.Tools, ["photo.jpg"], 3, "Under 1 MB", "Compress to under 1 MB", "image.compress"),
+                    ("audio-tools", OperationMode.Tools, ["song.mp3"], 1, "Channels", "Hold for options · drop: Mono", null),
+                    ("actions", OperationMode.Actions, ["report.pdf"], 2, "Show in folder", "Show in folder", null),
+                    ("video", OperationMode.Convert, ["clip.mp4"], 1, "MP3", "Extract audio as MP3", null),
+                    ("video-tools", OperationMode.Tools, ["clip.mp4"], 0, "Compress", "Hold for options · drop: 720p", null),
+                    ("unsupported", OperationMode.Convert, ["report.pdf"], -2, "No conversions yet", "Tap Shift for more", null),
                 };
                 foreach (var c in cases)
                 {
                     var wheel = new RadialWheel();
-                    var items = registry.Query(new FileSet(c.Files.Select(f => Path.Combine(Path.GetTempPath(), f))), c.Mode);
+                    var flat = registry.Query(new FileSet(c.Files.Select(f => Path.Combine(Path.GetTempPath(), f))), c.Mode);
+                    var items = c.Group is null ? OperationMenu.TopLevel(flat) : OperationMenu.Members(flat, c.Group);
                     wheel.SetContent(c.Mode, items, c.Value, c.Detail, animate: false);
                     wheel.SetHighlight(c.Hi);
                     foreach (double scale in new[] { 1.0, 1.5 })

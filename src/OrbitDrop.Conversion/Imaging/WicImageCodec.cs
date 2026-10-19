@@ -36,15 +36,96 @@ public static class WicImageCodec
 
     public static IEnumerable<string> InputExtensions => InputByExtension.Keys;
 
-    /// <summary>Decodes the first frame and normalises to BGRA32 (drops metadata/colour contexts that not every encoder accepts).</summary>
+    /// <summary>
+    /// Decodes the first frame, applies the EXIF orientation (so phone photos come out upright) and normalises to
+    /// BGRA32. Metadata and colour contexts are dropped: not every encoder accepts them.
+    /// </summary>
     public static BitmapSource Load(string path)
     {
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
         var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
         if (decoder.Frames.Count == 0) throw new InvalidDataException("The image contains no frames.");
-        var bgra = new FormatConvertedBitmap(decoder.Frames[0], PixelFormats.Bgra32, null, 0);
-        bgra.Freeze();
-        return bgra;
+        var frame = decoder.Frames[0];
+        BitmapSource bgra = new FormatConvertedBitmap(frame, PixelFormats.Bgra32, null, 0);
+        if (OrientationTransform(Orientation(frame)) is { } t) bgra = new TransformedBitmap(bgra, t);
+        // Materialise: the result must not depend on the (closed) stream or on lazy transforms.
+        var result = BitmapSource.Create(bgra.PixelWidth, bgra.PixelHeight, bgra.DpiX, bgra.DpiY, PixelFormats.Bgra32, null, Pixels(bgra), bgra.PixelWidth * 4);
+        result.Freeze();
+        return result;
+    }
+
+    /// <summary>EXIF orientation tag (1–8), or 1 when absent.</summary>
+    public static int Orientation(BitmapFrame frame)
+    {
+        if (frame.Metadata is not BitmapMetadata meta) return 1;
+        foreach (string query in new[] { "/app1/ifd/{ushort=274}", "/ifd/{ushort=274}" })
+        {
+            try
+            {
+                if (meta.GetQuery(query) is ushort v && v is >= 1 and <= 8) return v;
+            }
+            catch { /* query not valid for this container */ }
+        }
+        return 1;
+    }
+
+    /// <summary>The transform that turns a stored image with EXIF <paramref name="orientation"/> upright.</summary>
+    public static Transform? OrientationTransform(int orientation) => orientation switch
+    {
+        2 => new ScaleTransform(-1, 1),
+        3 => new RotateTransform(180),
+        4 => new ScaleTransform(1, -1),
+        5 => new TransformGroup { Children = { new RotateTransform(90), new ScaleTransform(-1, 1) } },
+        6 => new RotateTransform(90),
+        7 => new TransformGroup { Children = { new RotateTransform(270), new ScaleTransform(-1, 1) } },
+        8 => new RotateTransform(270),
+        _ => null,
+    };
+
+    public static byte[] Pixels(BitmapSource bgra)
+    {
+        int stride = bgra.PixelWidth * 4;
+        var px = new byte[stride * bgra.PixelHeight];
+        bgra.CopyPixels(px, stride, 0);
+        return px;
+    }
+
+    /// <summary>True when any pixel is not fully opaque.</summary>
+    public static bool HasTransparency(BitmapSource bgra)
+    {
+        var px = Pixels(bgra);
+        for (int i = 3; i < px.Length; i += 4) if (px[i] != 255) return true;
+        return false;
+    }
+
+    /// <summary>High-quality (Fant) resample to exactly <paramref name="width"/>×<paramref name="height"/>.</summary>
+    public static BitmapSource Resize(BitmapSource source, int width, int height)
+    {
+        var visual = new DrawingVisual();
+        RenderOptions.SetBitmapScalingMode(visual, BitmapScalingMode.Fant);
+        using (var dc = visual.RenderOpen()) dc.DrawImage(source, new Rect(0, 0, width, height));
+        var target = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        target.Render(visual);
+        var bgra = new FormatConvertedBitmap(target, PixelFormats.Bgra32, null, 0);
+        var result = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgra32, null, Pixels(bgra), width * 4);
+        result.Freeze();
+        return result;
+    }
+
+    /// <summary>Scale so the longer side is at most <paramref name="maxSide"/> (never upscales). Null when already small enough.</summary>
+    public static (int W, int H)? FitLongSide(int width, int height, int maxSide)
+    {
+        int longSide = Math.Max(width, height);
+        if (longSide <= maxSide) return null;
+        double k = (double)maxSide / longSide;
+        return (Math.Max(1, (int)Math.Round(width * k)), Math.Max(1, (int)Math.Round(height * k)));
+    }
+
+    public static byte[] EncodeToBytes(BitmapSource image, ImageFormat format, int jpegQuality)
+    {
+        using var ms = new MemoryStream();
+        Encode(image, format, ms, jpegQuality);
+        return ms.ToArray();
     }
 
     public static void Encode(BitmapSource image, ImageFormat format, Stream stream, int jpegQuality)

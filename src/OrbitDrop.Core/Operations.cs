@@ -11,6 +11,7 @@ public enum OperationMode { Convert, Tools, Actions }
 /// <param name="Glyph">Optional Segoe Fluent Icons glyph for tool/action segments; format segments are text-only.</param>
 /// <param name="DropText">Native drag tooltip, with %1 replaced by <paramref name="DropInsert"/> ("Convert to %1").</param>
 /// <param name="ProgressTitle">Toast title while running ("Converting to PNG").</param>
+/// <param name="NeedsInput">The app asks for choices first (a window or picker) and passes them as <see cref="OperationContext.Input"/>.</param>
 public sealed record OperationDescriptor(
     string Id,
     string ProviderId,
@@ -21,7 +22,21 @@ public sealed record OperationDescriptor(
     string DropInsert,
     string ProgressTitle,
     int Order,
-    bool MirrorGlyph = false);
+    bool MirrorGlyph = false,
+    OperationGroup? Group = null,
+    bool NeedsInput = false)
+{
+    public const string GroupPrefix = "group.";
+
+    /// <summary>True for the synthetic segment that stands for a collapsed <see cref="OperationGroup"/>.</summary>
+    public bool IsGroupHeader => Id.StartsWith(GroupPrefix, StringComparison.Ordinal);
+}
+
+/// <summary>
+/// Related options that share one wheel segment ("Compress" → 75%, 50%, Under 1 MB …). Hovering the segment opens
+/// them as a sub-wheel; dropping on it runs the first (default) option.
+/// </summary>
+public sealed record OperationGroup(string Id, string Label, string? Glyph, bool MirrorGlyph = false);
 
 public enum OutcomeStatus { Succeeded, Skipped, Failed, Canceled }
 
@@ -47,6 +62,9 @@ public sealed record OperationContext
 
     /// <summary>Progress (0–1) within the file currently being processed; set by the job queue. Optional for providers.</summary>
     public Action<double>? ReportFileFraction { get; init; }
+
+    /// <summary>Choices collected interactively before the job started (e.g. a trim range or edited metadata). Provider-specific.</summary>
+    public object? Input { get; init; }
 }
 
 /// <summary>Windows shell services a provider may need, implemented in OrbitDrop.Windows.</summary>

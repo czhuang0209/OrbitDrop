@@ -22,7 +22,11 @@ public sealed class InteractionController : IDropSink, IDisposable
     {
         public FileSet Files = FileSet.Empty;
         public OperationMode Mode = OperationMode.Convert;
+        /// <summary>Every option for the current mode; <see cref="Items"/> is what the wheel shows (top level or one group).</summary>
+        public IReadOnlyList<OperationDescriptor> Flat = [];
         public IReadOnlyList<OperationDescriptor> Items = [];
+        public OperationDescriptor? OpenGroup;
+        public int LastHit = WheelGeometry.HitOutside;
         public bool EnterSeen, OverWheel, Dropped;
         /// <summary>Set when Convert had nothing for these files and the wheel opened in another mode.</summary>
         public string? UnsupportedNote;
@@ -42,10 +46,18 @@ public sealed class InteractionController : IDropSink, IDisposable
     private Session? _session;
     private DispatcherTimer? _deferredDismiss;
     private DispatcherTimer? _previewTimer;
+    private readonly DispatcherTimer _dwell = new() { Interval = TimeSpan.FromMilliseconds(DwellMs) };
+    private readonly Func<OperationDescriptor, FileSet, Win32.POINT, Task<(bool Ok, object? Input)>> _askInput;
+
+    /// <summary>How long the pointer rests on a group (or on the centre inside one) before the wheel switches.</summary>
+    private const int DwellMs = 380;
 
     public InteractionController(RadialWheel wheel, DragSessionDetector detector, OperationRegistry registry, JobQueue jobs,
-        ToastManager toasts, Func<AppSettings> settings, Func<OperationContext> context, IShellIntegration shell)
+        ToastManager toasts, Func<AppSettings> settings, Func<OperationContext> context, IShellIntegration shell,
+        Func<OperationDescriptor, FileSet, Win32.POINT, Task<(bool Ok, object? Input)>> askInput)
     {
+        _askInput = askInput;
+        _dwell.Tick += (_, _) => OnDwell();
         _wheel = wheel;
         _detector = detector;
         _registry = registry;
@@ -94,6 +106,7 @@ public sealed class InteractionController : IDropSink, IDisposable
         var next = NextMode(s, s.Mode, includeCurrent: false);
         if (next == s.Mode && s.EnterSeen) return; // only one mode has options: nothing to switch to
         s.Mode = next;
+        s.OpenGroup = null;
         Refresh(animate: true);
     }
 
@@ -110,7 +123,10 @@ public sealed class InteractionController : IDropSink, IDisposable
     private void Refresh(bool animate)
     {
         if (_session is not { } s) return;
-        s.Items = _registry.Query(s.Files, s.Mode);
+        s.Flat = _registry.Query(s.Files, s.Mode);
+        s.Items = s.OpenGroup is { } g ? OperationMenu.Members(s.Flat, g.Group!.Id) : OperationMenu.TopLevel(s.Flat);
+        s.LastHit = WheelGeometry.HitOutside;
+        _dwell.Stop();
         var (value, detail) = Summary(s);
         _wheel.SetContent(s.Mode, s.Items, value, detail, animate);
     }
@@ -118,6 +134,7 @@ public sealed class InteractionController : IDropSink, IDisposable
     private (string Value, string Detail) Summary(Session s)
     {
         if (!s.EnterSeen) return ("Move here", "");
+        if (s.OpenGroup is { } g) return (g.Label, "Rest on the centre to go back");
         if (s.Files.IsEmpty) return ("No files", "Only files can be dropped here");
         if (s.Items.Count == 0) return ("Not supported", $"{KindSummary(s.Files)} isn't supported yet");
         if (s.Files.Count > 1) return ($"{s.Files.Count} files", s.UnsupportedNote ?? KindSummary(s.Files));
@@ -143,6 +160,7 @@ public sealed class InteractionController : IDropSink, IDisposable
     private void Dismiss(bool confirmed, string reason)
     {
         _deferredDismiss?.Stop();
+        _dwell.Stop();
         if (_session is null && !_wheel.IsVisible) return;
         _session = null;
         _detector.SessionOpen = false;
@@ -176,9 +194,23 @@ public sealed class InteractionController : IDropSink, IDisposable
         if (_session is not { } s) return new(false, null, null);
         int hit = _wheel.HitTest(pt);
         _wheel.SetHighlight(hit);
+        if (hit != s.LastHit)
+        {
+            s.LastHit = hit;
+            _dwell.Stop();
+            // Resting on a group opens it; resting on the centre inside a group goes back.
+            bool group = hit >= 0 && hit < s.Items.Count && s.Items[hit].IsGroupHeader;
+            if (group || (hit == WheelGeometry.HitHub && s.OpenGroup is not null)) _dwell.Start();
+        }
         if (hit >= 0 && hit < s.Items.Count)
         {
             var item = s.Items[hit];
+            if (item.IsGroupHeader)
+            {
+                var first = OperationMenu.DefaultFor(s.Flat, item);
+                _wheel.SetHub(item.Label, $"Hold for options · drop: {first.Label}");
+                return new(true, first.DropText, first.DropInsert);
+            }
             // Formats read "Convert to PNG"; tools and actions already say what they do, so show the file instead.
             string line = item.DropText == "%1" ? Summary(s).Detail : item.DropText.Replace("%1", item.DropInsert);
             _wheel.SetHub(item.Label, line);
@@ -187,15 +219,36 @@ public sealed class InteractionController : IDropSink, IDisposable
         var (value, detail) = Summary(s);
         if (hit == WheelGeometry.HitHub && s.Items.Count > 0)
         {
-            _wheel.SetHub(value, "Release to cancel");
+            _wheel.SetHub(value, s.OpenGroup is null ? "Release to cancel" : "Going back…");
             return new(false, "Cancel", null);
         }
         _wheel.SetHub(value, detail);
         return new(false, null, null);
     }
 
+    /// <summary>The pointer rested long enough: open the group under it, or leave the open group from the centre.</summary>
+    private void OnDwell()
+    {
+        _dwell.Stop();
+        if (_session is not { } s) return;
+        int hit = s.LastHit;
+        if (hit >= 0 && hit < s.Items.Count && s.Items[hit].IsGroupHeader)
+        {
+            s.OpenGroup = s.Items[hit];
+            Refresh(animate: true);
+        }
+        else if (hit == WheelGeometry.HitHub && s.OpenGroup is not null)
+        {
+            s.OpenGroup = null;
+            Refresh(animate: true);
+        }
+        // The pointer hasn't moved, so OLE won't call DragOver: re-evaluate what is under it now.
+        if (_session is { OverWheel: true }) OnDragOver(ScreenInfo.CursorPosition);
+    }
+
     public void OnDragLeave()
     {
+        _dwell.Stop();
         if (_session is not { } s) return;
         s.OverWheel = false;
         _wheel.SetHighlight(WheelGeometry.HitOutside);
@@ -209,13 +262,35 @@ public sealed class InteractionController : IDropSink, IDisposable
         int hit = _wheel.IsVisible ? _wheel.HitTest(pt) : _wheel.Highlight;
         s.Dropped = true;
         var item = hit >= 0 && hit < s.Items.Count ? s.Items[hit] : null;
+        if (item is { IsGroupHeader: true }) item = OperationMenu.DefaultFor(s.Flat, item);
         var set = files.Length > 0 ? new FileSet(files) : s.Files;
         Dismiss(confirmed: item is not null, item is null ? "dropped on centre" : "dropped");
         if (item is null || set.IsEmpty) return;
+        if (item.NeedsInput) _ = RunWithInputAsync(item, set, s.Anchor);
+        else Run(item, set, s.Anchor, null);
+    }
 
+    /// <summary>Asks for the option's choices first (a window or picker); runs only if the user confirms.</summary>
+    private async Task RunWithInputAsync(OperationDescriptor item, FileSet set, Win32.POINT anchor)
+    {
+        try
+        {
+            var (ok, input) = await _askInput(item, set, anchor);
+            if (ok) Run(item, set, anchor, input);
+            else Log.Info($"{item.Id} canceled before running");
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Could not prepare {item.Id}", ex);
+            _toasts.ShowMessage(ToastKind.Error, "That didn't work", ex.Message, anchor);
+        }
+    }
+
+    private void Run(OperationDescriptor item, FileSet set, Win32.POINT anchor, object? input)
+    {
         Log.Info($"Run {item.Id} on {set.Count} file(s)");
-        var job = _jobs.Enqueue(item, set, _context());
-        _toasts.ShowJob(job, s.Anchor, _shell.Reveal);
+        var job = _jobs.Enqueue(item, set, _context() with { Input = input });
+        _toasts.ShowJob(job, anchor, _shell.Reveal);
         job.Changed += j =>
         {
             if (!j.IsFinished) return;
@@ -234,8 +309,9 @@ public sealed class InteractionController : IDropSink, IDisposable
     {
         Dismiss(false, "preview");
         var sample = new FileSet([Path.Combine(Path.GetTempPath(), "sample.jpg")]);
-        var items = _registry.Query(sample, OperationMode.Convert);
-        _session = new Session { Files = sample, Items = items, EnterSeen = true, Anchor = ScreenInfo.CursorPosition };
+        var flat = _registry.Query(sample, OperationMode.Convert);
+        var items = OperationMenu.TopLevel(flat);
+        _session = new Session { Files = sample, Flat = flat, Items = items, EnterSeen = true, Anchor = ScreenInfo.CursorPosition };
         _detector.SessionOpen = true;
         _detector.EnsurePolling();
         _wheel.SetContent(OperationMode.Convert, items, "Preview", "Sample options", animate: false);

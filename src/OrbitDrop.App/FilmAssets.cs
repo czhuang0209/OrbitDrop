@@ -39,7 +39,7 @@ internal static class FilmAssets
             void Wheel(string name, OperationMode mode, string[] files, int hi, string value, string detail)
             {
                 var wheel = new RadialWheel();
-                var items = registry.Query(new FileSet(files.Select(Tmp)), mode);
+                var items = OperationMenu.TopLevel(registry.Query(new FileSet(files.Select(Tmp)), mode));
                 wheel.SetContent(mode, items, value, detail, animate: false);
                 wheel.SetHighlight(hi);
                 Save(wheel.RenderPreview(frost, Scale, wallpaperBehind: false), Path.Combine(dir, $"wheel-{name}{t}.png"), ref n);

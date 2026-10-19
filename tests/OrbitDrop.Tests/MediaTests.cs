@@ -18,26 +18,30 @@ public class MediaRegistryTests
     private static readonly MediaFoundationProvider Provider = new();
     private static FileSet Files(params string[] n) => new(n.Select(x => Path.Combine(@"C:\x", x)));
     private static List<string> Labels(FileSet f, OperationMode m) => Provider.GetOperations(f, m).Select(d => d.Label).ToList();
+    /// <summary>What the wheel shows: groups collapsed to one segment.</summary>
+    private static List<string> Wheel(FileSet f, OperationMode m) => OperationMenu.TopLevel(Provider.GetOperations(f, m).ToList()).Select(d => d.Label).ToList();
 
     [Fact]
     public void Mp4_offers_wmv_and_audio_extraction_but_not_mp4()
     {
-        Assert.Equal(["WMV", "MP3", "M4A", "WAV", "WMA"], Labels(Files("clip.mp4"), OperationMode.Convert));
+        Assert.Equal(["WMV", "MP3", "M4A", "WAV", "WMA", "FLAC"], Labels(Files("clip.mp4"), OperationMode.Convert));
         Assert.Equal("Extract audio as %1", Provider.GetOperations(Files("clip.mp4"), OperationMode.Convert).First(d => d.Label == "MP3").DropText);
     }
 
     [Fact]
-    public void Video_tools_are_offered_for_video_only()
+    public void Video_and_audio_get_their_own_grouped_tools()
     {
-        Assert.Equal(["Compress", "Remove audio"], Labels(Files("a.mov"), OperationMode.Tools));
-        Assert.Empty(Labels(Files("a.mp3"), OperationMode.Tools));
+        Assert.Equal(["Compress", "Remove audio"], Wheel(Files("a.mov"), OperationMode.Tools));
+        Assert.Equal(["720p", "1080p", "480p", "Half size", "Remove audio"], Labels(Files("a.mov"), OperationMode.Tools));
+        Assert.Equal(["Compress", "Channels"], Wheel(Files("a.mp3"), OperationMode.Tools));
+        Assert.Equal(["128 kbps", "96 kbps", "64 kbps", "Mono", "Stereo"], Labels(Files("a.mp3"), OperationMode.Tools));
     }
 
     [Fact]
     public void Audio_and_mixed_media_selections_get_audio_targets_only()
     {
-        Assert.Equal(["M4A", "WAV", "WMA"], Labels(Files("song.mp3"), OperationMode.Convert));
-        Assert.Equal(["MP3", "M4A", "WAV", "WMA"], Labels(Files("clip.mp4", "song.flac"), OperationMode.Convert));
+        Assert.Equal(["M4A", "WAV", "WMA", "FLAC"], Labels(Files("song.mp3"), OperationMode.Convert));
+        Assert.Equal(["MP3", "M4A", "WAV", "WMA", "FLAC"], Labels(Files("clip.mp4", "song.flac"), OperationMode.Convert));
     }
 
     [Fact]
@@ -111,7 +115,10 @@ public class MediaTranscodeTests
         using var t = new TempFolder();
         string src = Copy(t, "testpattern.mp4");
         var (muted, _) = await Run("tool.video.mute", src);
-        var (small, _) = await Run("tool.video.compress", src);
+        var (small, _) = await Run("tool.video.compress.720", src);
+        var (half, _) = await Run("tool.video.compress.half", src);
+        Assert.True(half.Status == OutcomeStatus.Succeeded, $"Half: {half.Message}");
+        Assert.Null(MediaFoundationProvider.ValidateContainer(half.Output!, ".mp4"));
         Assert.Equal(t.File("testpattern (no audio).mp4"), muted.Output);
         Assert.Equal(t.File("testpattern (compressed).mp4"), small.Output);
         Assert.Null(MediaFoundationProvider.ValidateContainer(muted.Output!, ".mp4"));
@@ -137,5 +144,38 @@ public class MediaTranscodeTests
         var (o, _) = await Run("convert.media.wav", t.File("broken.mp4"));
         Assert.Equal(OutcomeStatus.Failed, o.Status);
         Assert.Single(Directory.GetFiles(t.Path));
+    }
+}
+
+public class AudioToolTests
+{
+    private static async Task<FileOutcome> Run(string id, string file)
+    {
+        var provider = new MediaFoundationProvider();
+        var files = new FileSet([file]);
+        var op = Enum.GetValues<OperationMode>().SelectMany(m => provider.GetOperations(files, m)).Single(d => d.Id == id);
+        var c = new Collector();
+        await provider.ExecuteAsync(op, files, Ctx.Default(), c, CancellationToken.None);
+        return Assert.Single(c.Outcomes);
+    }
+
+    [MediaFact]
+    public async Task Audio_compresses_converts_to_flac_and_goes_mono()
+    {
+        using var t = new TempFolder();
+        string video = Path.Combine(t.Path, "testpattern.mp4");
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "testpattern.mp4"), video);
+        var m4a = await Run("convert.media.m4a", video);
+        Assert.True(m4a.Status == OutcomeStatus.Succeeded, m4a.Message);
+
+        var small = await Run("tool.audio.compress.64", m4a.Output!);
+        var flac = await Run("convert.media.flac", m4a.Output!);
+        var mono = await Run("tool.audio.mono", m4a.Output!);
+        Assert.True(small.Status == OutcomeStatus.Succeeded, $"compress: {small.Message}");
+        Assert.True(flac.Status == OutcomeStatus.Succeeded, $"flac: {flac.Message}");
+        Assert.True(mono.Status == OutcomeStatus.Succeeded, $"mono: {mono.Message}");
+        Assert.Equal(t.File("testpattern (compressed).m4a"), small.Output);
+        Assert.Equal(t.File("testpattern (mono).m4a"), mono.Output);
+        Assert.Null(MediaFoundationProvider.ValidateContainer(flac.Output!, ".flac"));
     }
 }

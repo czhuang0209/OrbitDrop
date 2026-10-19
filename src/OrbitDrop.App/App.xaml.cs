@@ -38,6 +38,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
     private OnboardingWindow? _onboarding;
     private DispatcherTimer? _saveDebounce;
     private UpdateManager? _updates;
+    private readonly InputBroker _inputs = new();
     private SettingsViewModel? _settingsVm;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -111,7 +112,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
 
         var wheel = new RadialWheel();
         wheel.Prewarm();
-        _interaction = new InteractionController(wheel, _detector, _registry, jobs, _toasts, () => _settings, CreateContext, _shell);
+        _interaction = new InteractionController(wheel, _detector, _registry, jobs, _toasts, () => _settings, CreateContext, _shell, _inputs.AskAsync);
 
         var iconStream = GetResourceStream(new Uri("pack://application:,,,/OrbitDrop.UI;component/Assets/orbitdrop.ico"))!.Stream;
         using (var ms = new MemoryStream()) { iconStream.CopyTo(ms); _tray = new TrayIcon(_messages, ms.ToArray(), TrayTooltip); }

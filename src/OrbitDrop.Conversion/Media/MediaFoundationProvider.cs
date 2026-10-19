@@ -25,7 +25,24 @@ public sealed class MediaFoundationProvider : IOperationProvider
     private sealed record Target(string Label, string Extension, bool IsVideo);
 
     private static readonly Target[] VideoTargets = [new("MP4", ".mp4", true), new("WMV", ".wmv", true)];
-    private static readonly Target[] AudioTargets = [new("MP3", ".mp3", false), new("M4A", ".m4a", false), new("WAV", ".wav", false), new("WMA", ".wma", false)];
+    private static readonly Target[] AudioTargets = [new("MP3", ".mp3", false), new("M4A", ".m4a", false), new("WAV", ".wav", false), new("WMA", ".wma", false), new("FLAC", ".flac", false)];
+
+    private static readonly OperationGroup VideoCompress = new("video.compress", "Compress", "\uE73F");
+    private static readonly OperationGroup AudioCompress = new("audio.compress", "Compress", "\uE73F");
+    private static readonly OperationGroup Channels = new("audio.channels", "Channels", "\uE995");
+
+    /// <summary>Video compression presets: a resolution box, or (Box = null) the same size at half the bitrate.</summary>
+    private sealed record VideoPreset(string Key, string Label, string Hint, uint BoxW, uint BoxH);
+
+    private static readonly VideoPreset[] VideoPresets =
+    [
+        new("720", "720p", "Compress to 720p", 1280, 720),
+        new("1080", "1080p", "Compress to 1080p", 1920, 1080),
+        new("480", "480p", "Compress to 480p", 854, 480),
+        new("half", "Half size", "Same resolution, about half the size", 0, 0),
+    ];
+
+    private static readonly uint[] AudioBitrates = [128, 96, 64];
 
     public static bool IsVideo(string path) => VideoInputs.Contains(Path.GetExtension(path));
     public static bool IsAudio(string path) => AudioInputs.Contains(Path.GetExtension(path));
@@ -54,10 +71,21 @@ public sealed class MediaFoundationProvider : IOperationProvider
         }
         else if (mode == OperationMode.Tools && allVideo)
         {
-            yield return new("tool.video.compress", ProviderId, OperationMode.Tools, "Compress", "",
-                "%1", "Compress to 720p", "Compressing video", 120);
+            int o = 120;
+            foreach (var p in VideoPresets)
+                yield return new($"tool.video.compress.{p.Key}", ProviderId, OperationMode.Tools, p.Label, null,
+                    p.Hint, "", "Compressing video", o++, Group: VideoCompress);
             yield return new("tool.video.mute", ProviderId, OperationMode.Tools, "Remove audio", "",
-                "%1", "Remove audio", "Removing audio", 121);
+                "%1", "Remove audio", "Removing audio", 130);
+        }
+        else if (mode == OperationMode.Tools)
+        {
+            int o = 120;
+            foreach (uint kbps in AudioBitrates)
+                yield return new($"tool.audio.compress.{kbps}", ProviderId, OperationMode.Tools, $"{kbps} kbps", null,
+                    $"Compress to {kbps} kbps", "", "Compressing audio", o++, Group: AudioCompress);
+            yield return new("tool.audio.mono", ProviderId, OperationMode.Tools, "Mono", "\uE995", "Make it mono", "", "Converting to mono", 130, Group: Channels);
+            yield return new("tool.audio.stereo", ProviderId, OperationMode.Tools, "Stereo", "\uE995", "Make it stereo", "", "Converting to stereo", 131, Group: Channels);
         }
     }
 
@@ -105,24 +133,66 @@ public sealed class MediaFoundationProvider : IOperationProvider
                 p.Audio = null;
                 return (p, ".mp4", "no audio");
             }
-            case "tool.video.compress":
+            case "convert.media.flac": return (MediaEncodingProfile.CreateFlac(AudioEncodingQuality.High), ".flac", null);
+            case var id when id.StartsWith("tool.video.compress."):
             {
+                var preset = VideoPresets.Single(v => id == $"tool.video.compress.{v.Key}");
                 var p = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.Auto);
                 var source = await StorageFile.GetFileFromPathAsync(file);
                 var props = await source.Properties.GetVideoPropertiesAsync();
-                (uint w, uint h) = FitWithin(props.Width, props.Height, 1280, 720);
-                if (w > 0 && h > 0)
+                if (preset.BoxW == 0)
                 {
-                    p.Video.Width = w;
-                    p.Video.Height = h;
-                    p.Video.Bitrate = (uint)Math.Clamp(w * h * 2.6, 400_000, 2_500_000); // ≈2.4 Mbps at 720p
+                    // Same resolution, half the bitrate. Windows may not report a bitrate; estimate it from size ÷ length.
+                    uint bitrate = props.Bitrate;
+                    if (bitrate == 0 && props.Duration.TotalSeconds > 0)
+                        bitrate = (uint)Math.Min(uint.MaxValue, new FileInfo(file).Length * 8 / props.Duration.TotalSeconds);
+                    (uint w, uint h) = FitWithin(props.Width, props.Height, 7680, 4320);
+                    if (w > 0 && h > 0) { p.Video.Width = w; p.Video.Height = h; }
+                    if (bitrate > 0) p.Video.Bitrate = (uint)Math.Max(300_000, bitrate * 0.5 - 128_000);
+                }
+                else
+                {
+                    (uint w, uint h) = FitWithin(props.Width, props.Height, preset.BoxW, preset.BoxH);
+                    if (w > 0 && h > 0)
+                    {
+                        p.Video.Width = w;
+                        p.Video.Height = h;
+                        p.Video.Bitrate = (uint)Math.Clamp(w * h * 2.6, 400_000, 6_000_000); // ≈2.4 Mbps at 720p, 5.4 at 1080p
+                    }
                 }
                 if (p.Audio is not null) p.Audio.Bitrate = 128_000;
                 return (p, ".mp4", "compressed");
             }
+            case var id when id.StartsWith("tool.audio.compress."):
+            {
+                uint kbps = uint.Parse(id["tool.audio.compress.".Length..]);
+                var (p, ext) = SameKindAudio(file, lossyOnly: true);
+                p.Audio.Bitrate = kbps * 1000;
+                return (p, ext, "compressed");
+            }
+            case "tool.audio.mono" or "tool.audio.stereo":
+            {
+                var (p, ext) = SameKindAudio(file, lossyOnly: false);
+                p.Audio.ChannelCount = op.Id == "tool.audio.mono" ? 1u : 2u;
+                return (p, ext, op.Id == "tool.audio.mono" ? "mono" : "stereo");
+            }
             default: throw new NotSupportedException(op.Id);
         }
     }
+
+    /// <summary>
+    /// A profile in the source's own audio format where Windows can write it. Lossless or unwritable sources become
+    /// M4A when <paramref name="lossyOnly"/> (a bitrate only means something for lossy formats).
+    /// </summary>
+    private static (MediaEncodingProfile Profile, string Extension) SameKindAudio(string file, bool lossyOnly) =>
+        Path.GetExtension(file).ToLowerInvariant() switch
+        {
+            ".mp3" => (MediaEncodingProfile.CreateMp3(AudioEncodingQuality.High), ".mp3"),
+            ".wma" => (MediaEncodingProfile.CreateWma(AudioEncodingQuality.High), ".wma"),
+            ".wav" when !lossyOnly => (MediaEncodingProfile.CreateWav(AudioEncodingQuality.High), ".wav"),
+            ".flac" when !lossyOnly => (MediaEncodingProfile.CreateFlac(AudioEncodingQuality.High), ".flac"),
+            _ => (MediaEncodingProfile.CreateM4a(AudioEncodingQuality.High), ".m4a"),
+        };
 
     /// <summary>Scales to fit inside a box, keeping aspect ratio, never upscaling, with even dimensions (H.264 requirement).</summary>
     public static (uint W, uint H) FitWithin(uint width, uint height, uint maxW, uint maxH)
@@ -175,6 +245,7 @@ public sealed class MediaFoundationProvider : IOperationProvider
             ".wav" => head[0] == 'R' && head[1] == 'I' && head[2] == 'F' && head[3] == 'F' && head[8] == 'W' && head[9] == 'A' && head[10] == 'V' && head[11] == 'E',
             ".mp3" => (head[0] == 'I' && head[1] == 'D' && head[2] == '3') || (head[0] == 0xFF && (head[1] & 0xE0) == 0xE0),
             ".wmv" or ".wma" => head[0] == 0x30 && head[1] == 0x26 && head[2] == 0xB2 && head[3] == 0x75, // ASF header GUID
+            ".flac" => head[0] == 'f' && head[1] == 'L' && head[2] == 'a' && head[3] == 'C',
             _ => true,
         };
         return ok ? null : $"the output isn't a valid {extension.TrimStart('.').ToUpperInvariant()} file";
@@ -192,8 +263,8 @@ public sealed class MediaFoundationProvider : IOperationProvider
 
     public IEnumerable<(string Category, string Detail)> DescribeCapabilities()
     {
-        yield return ("Video", "MP4, WMV · extract audio · compress to 720p · remove audio (via Windows Media Foundation)");
-        yield return ("Audio", "MP3, M4A, WAV, WMA");
+        yield return ("Video", "MP4, WMV · extract audio · compress (720p, 1080p, 480p, half size) · remove audio (via Windows Media Foundation)");
+        yield return ("Audio", "MP3, M4A, WAV, WMA, FLAC · compress (128/96/64 kbps) · mono/stereo");
     }
 
     private sealed class MediaFormatException(string message) : Exception(message);
