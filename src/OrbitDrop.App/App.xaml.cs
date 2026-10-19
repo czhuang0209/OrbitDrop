@@ -75,6 +75,17 @@ public partial class App : Application, ISettingsHost, ITrayCommands
             return;
         }
 
+        int frames = Array.IndexOf(args, "--render-guide-frames");
+        if (frames >= 0)
+        {
+            string dir = frames + 1 < args.Length ? args[frames + 1] : Path.Combine(Environment.CurrentDirectory, "guide-frames");
+            int code;
+            try { code = GuideExport.Frames(dir, BuildRegistry()); }
+            catch (Exception ex) { Directory.CreateDirectory(dir); File.WriteAllText(Path.Combine(dir, "error.txt"), ex.ToString()); code = 1; }
+            Shutdown(code);
+            return;
+        }
+
         int guide = Array.IndexOf(args, "--render-guide");
         if (guide >= 0)
         {

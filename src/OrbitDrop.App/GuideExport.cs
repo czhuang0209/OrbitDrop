@@ -55,6 +55,35 @@ internal static class GuideExport
         return 0;
     }
 
+    /// <summary>
+    /// <c>OrbitDrop.exe --render-guide-frames &lt;folder&gt;</c>: the same scenes as PNG frames at 2× and 30 fps
+    /// (&lt;folder&gt;/&lt;scene&gt;[-dark]/0000.png …), for encoding into sharp looping web videos (website/).
+    /// </summary>
+    public static int Frames(string dir, OperationRegistry registry, int fps = 30, double scale = 2.0)
+    {
+        foreach (var theme in new[] { AppTheme.Light, AppTheme.Dark })
+        {
+            ThemeManager.Current.Apply(theme, useWindowsAccent: false, reduceMotion: true);
+            var assets = new GuideAssets(registry, scale: scale * 2);
+            var stage = new GuideStage(assets, "Shift");
+            foreach (var scene in Enum.GetValues<GuideScene>())
+            {
+                string sub = Path.Combine(dir, $"{scene.ToString().ToLowerInvariant()}{(theme == AppTheme.Dark ? "-dark" : "")}");
+                Directory.CreateDirectory(sub);
+                int frames = (int)Math.Round(GuideStage.DurationOf(scene) * fps);
+                for (int i = 0; i < frames; i++)
+                {
+                    var enc = new PngBitmapEncoder();
+                    enc.Frames.Add(BitmapFrame.Create(stage.Render(scene, i / (double)fps, scale)));
+                    using var fs = File.Create(Path.Combine(sub, $"{i:D4}.png"));
+                    enc.Save(fs);
+                }
+            }
+            assets.Dispose();
+        }
+        return 0;
+    }
+
     /// <summary>Bounding box of the pixels that differ (at least 1×1, so every frame keeps its timing).</summary>
     private static Int32Rect Changed(byte[] a, byte[] b, int w, int h)
     {
