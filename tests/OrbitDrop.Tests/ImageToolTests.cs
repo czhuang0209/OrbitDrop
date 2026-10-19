@@ -75,10 +75,10 @@ public class ImageToolTests
     }
 
     [Fact]
-    public void Image_tools_show_four_segments()
+    public void Image_tools_show_edit_then_grouped_tools()
     {
         var top = OperationMenu.TopLevel(Provider.GetOperations(new FileSet([@"C:\x\a.png"]), OperationMode.Tools).ToList());
-        Assert.Equal(["Compress", "Resize", "Rotate & flip", "Grayscale"], top.Select(o => o.Label));
+        Assert.Equal(["Edit", "Compress", "Resize", "Rotate & flip", "Grayscale"], top.Select(o => o.Label));
     }
 
     [Fact]
