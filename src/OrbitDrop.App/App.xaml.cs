@@ -63,6 +63,17 @@ public partial class App : Application, ISettingsHost, ITrayCommands
             return;
         }
 
+        int guide = Array.IndexOf(args, "--render-guide");
+        if (guide >= 0)
+        {
+            string dir = guide + 1 < args.Length ? args[guide + 1] : Path.Combine(Environment.CurrentDirectory, "guide");
+            int code;
+            try { code = GuideExport.Run(dir, BuildRegistry()); }
+            catch (Exception ex) { Directory.CreateDirectory(dir); File.WriteAllText(Path.Combine(dir, "error.txt"), ex.ToString()); code = 1; }
+            Shutdown(code);
+            return;
+        }
+
         int render = Array.IndexOf(args, "--render-ui");
         if (render >= 0)
         {
@@ -111,6 +122,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
 
         _detector = new DragSessionDetector();
         _detector.Start();
+        OrbitDrop.UI.Onboarding.InternalDrag.Starting = () => _detector?.ArmInternal();
         ApplyInteractionSettings();
 
         var wheel = new RadialWheel();
@@ -204,9 +216,18 @@ public partial class App : Application, ISettingsHost, ITrayCommands
     public void ShowOnboarding()
     {
         if (_onboarding is not null) { _onboarding.Activate(); return; }
-        _onboarding = new OnboardingWindow(TriggerKeyName);
+        var assets = new GuideAssets(_registry);
+        _onboarding = new OnboardingWindow(TriggerKeyName, assets, Path.Combine(_paths.LocalDirectory, "Guide"));
         _onboarding.Completed += () => Update(s => s.OnboardingCompleted = true);
-        _onboarding.Closed += (_, _) => _onboarding = null;
+        _onboarding.ShowResultRequested += path => _shell.Reveal([path]);
+        void OnJob(IReadOnlyList<string> sources, IReadOnlyList<string> outputs) => _onboarding?.OnJobFinished(sources, outputs);
+        if (_interaction is not null) _interaction.JobFinished += OnJob;
+        _onboarding.Closed += (_, _) =>
+        {
+            if (_interaction is not null) _interaction.JobFinished -= OnJob;
+            assets.Dispose();
+            _onboarding = null;
+        };
         _onboarding.Show();
         _onboarding.Activate();
     }

@@ -11,8 +11,13 @@ public static class GifLoop
         [0x21, 0xFF, 0x0B, .. "NETSCAPE2.0"u8.ToArray(), 0x03, 0x01, 0x00, 0x00, 0x00];
 
     /// <param name="delayCentiseconds">Frame delay in hundredths of a second.</param>
-    public static byte[] AddTimingAndLoop(byte[] gif, int delayCentiseconds)
+    /// <param name="offsets">
+    /// For delta-encoded animations: where each frame's image sits on the canvas. Frames then stack ("do not dispose"),
+    /// so each one only needs the region that changed.
+    /// </param>
+    public static byte[] AddTimingAndLoop(byte[] gif, int delayCentiseconds, IReadOnlyList<(int X, int Y)>? offsets = null)
     {
+        int frame = 0;
         if (gif.Length < 13 || gif[0] != 'G' || gif[1] != 'I' || gif[2] != 'F') throw new InvalidDataException("Not a GIF.");
         using var output = new MemoryStream(gif.Length + 1024);
         int at = 13; // header (6) + logical screen descriptor (7)
@@ -21,7 +26,8 @@ public static class GifLoop
         output.Write(gif, 6, at - 6);
         output.Write(LoopExtension);
 
-        byte[] control = [0x21, 0xF9, 0x04, 0x08 /* dispose: restore to background */, (byte)delayCentiseconds, (byte)(delayCentiseconds >> 8), 0x00, 0x00];
+        byte disposal = offsets is null ? (byte)0x08 /* restore to background */ : (byte)0x04 /* leave in place */;
+        byte[] control = [0x21, 0xF9, 0x04, disposal, (byte)delayCentiseconds, (byte)(delayCentiseconds >> 8), 0x00, 0x00];
         int i = at;
         while (i < gif.Length)
         {
@@ -42,6 +48,13 @@ public static class GifLoop
                 if ((packed & 0x80) != 0) j += 3 * (1 << ((packed & 0x07) + 1));
                 j = SkipSubBlocks(gif, j + 1);
                 output.Write(control);
+                if (offsets is not null && frame < offsets.Count)
+                {
+                    var (x, y) = offsets[frame];
+                    gif[i + 1] = (byte)x; gif[i + 2] = (byte)(x >> 8);
+                    gif[i + 3] = (byte)y; gif[i + 4] = (byte)(y >> 8);
+                }
+                frame++;
                 output.Write(gif, i, j - i);
                 i = j;
             }

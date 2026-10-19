@@ -124,6 +124,16 @@ public sealed class DragSessionDetector : IDisposable
         _poll.Start();
     }
 
+    /// <summary>
+    /// A drag that starts in one of OrbitDrop's own windows (guide practice photo, Float shelf) has no shell drag image,
+    /// so arm the trigger key directly. It disarms when the mouse button is released, like any other drag.
+    /// </summary>
+    public void ArmInternal()
+    {
+        _hookArmed = true;
+        StartPolling();
+    }
+
     /// <summary>Called by the owner when it opens a wheel without a drag (e.g. preview) so Esc still works.</summary>
     public void EnsurePolling() => StartPolling();
 

@@ -132,6 +132,7 @@ public partial class ShelfWindow : Window
         var paths = (tag == "*" ? Paths : [tag]).Where(p => File.Exists(p) || Directory.Exists(p)).ToArray();
         if (paths.Length == 0) return;
         var data = new DataObject(DataFormats.FileDrop, paths);
+        OrbitDrop.UI.Onboarding.InternalDrag.Starting?.Invoke(); // so tapping the wheel key works from the shelf too
         // Copy, move or link: whatever the target prefers. The shelf only holds references.
         DragDrop.DoDragDrop(element, data, DragDropEffects.Copy | DragDropEffects.Move | DragDropEffects.Link);
         // A move elsewhere means the file left its old place: drop it from the shelf.

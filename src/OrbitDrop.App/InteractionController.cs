@@ -80,6 +80,9 @@ public sealed class InteractionController : IDropSink, IDisposable
         _detector.DragButtonReleased += OnDragButtonReleased;
     }
 
+    /// <summary>Every finished job: (input files, files written). Used by the guide's practice step.</summary>
+    public event Action<IReadOnlyList<string>, IReadOnlyList<string>>? JobFinished;
+
     private string TriggerName => _settings().TriggerKey == TriggerKey.Ctrl ? "Ctrl" : "Shift";
 
     // ------------------------------------------------------------------ session lifecycle
@@ -311,6 +314,7 @@ public sealed class InteractionController : IDropSink, IDisposable
                 Log.Warn($"  {Log.Path(o.Source)}: {o.Message}");
             var outputs = j.Outcomes.Where(o => o.Output is not null).Select(o => o.Output!).ToList();
             if (_settings().RevealWhenDone && outputs.Count > 0) _shell.Reveal(outputs);
+            JobFinished?.Invoke(j.Files, outputs);
         };
     }
 

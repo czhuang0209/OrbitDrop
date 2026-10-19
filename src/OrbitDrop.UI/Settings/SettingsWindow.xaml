@@ -90,8 +90,8 @@
                             <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE897;" />
                             <Button DockPanel.Dock="Right" Content="Open guide" Style="{StaticResource Orbit.Button.Standard}" Command="{Binding ShowOnboardingCommand}" VerticalAlignment="Center" />
                             <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="Welcome guide" Style="{StaticResource RowTitle}" />
-                                <TextBlock Text="A 20-second refresher on the drag-and-tap gesture." Style="{StaticResource RowHint}" />
+                                <TextBlock Text="How to use OrbitDrop" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="An animated walkthrough of every gesture, with a practice run on a sample photo." Style="{StaticResource RowHint}" />
                             </StackPanel>
                         </DockPanel>
                     </Border>

@@ -1,4 +1,9 @@
-## What's new in 0.2.2-alpha
+## What's new in 0.2.3-alpha
+
+- **A brand-new guide** (tray menu → How to use OrbitDrop, or Settings → General): animated, step-by-step demonstrations built from the real wheel, covering dragging and tapping Shift, choosing an option, switching modes, grouped options and the Ctrl + Alt + Space shortcut. It ends with a **hands-on practice**: drag a sample photo, tap Shift, let go on JPG, and the guide confirms when you've done it.
+- You can now tap Shift while dragging files **out of the Float shelf** too.
+
+## In 0.2.2-alpha
 
 - **Trim** video and audio: drag the start and end of the part to keep, play it, save a copy.
 - **Float**: park files on a small always-on-top shelf and drag them out later, one at a time or all at once (great for email attachments and uploads). Drop more files on it any time.

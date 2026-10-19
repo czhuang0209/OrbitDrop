@@ -3,31 +3,50 @@
 <h1 align="center">OrbitDrop</h1>
 <p align="center"><b>Your files. Your flow.</b><br>Convert, edit and manage files without opening an app. For Windows 10 (19041+) and 11.</p>
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/guide/guide-hero-dark.gif">
+    <img src="docs/guide/guide-hero.gif" width="600" alt="Dragging photo.png, tapping Shift, the OrbitDrop wheel opening, releasing on JPG and photo.jpg appearing next to the original">
+  </picture>
+</p>
+
 ## Download
 
-**[⬇ Download OrbitDrop for Windows (installer)](https://github.com/i3sam/OrbitDrop/releases/download/v0.2.2-alpha/OrbitDrop-Setup.exe)** · [portable .zip](https://github.com/i3sam/OrbitDrop/releases/download/v0.2.2-alpha/OrbitDrop-Portable.zip) · [all releases](https://github.com/i3sam/OrbitDrop/releases)
+**[⬇ Download OrbitDrop for Windows (installer)](https://github.com/i3sam/OrbitDrop/releases/download/v0.2.3-alpha/OrbitDrop-Setup.exe)** · [portable .zip](https://github.com/i3sam/OrbitDrop/releases/download/v0.2.3-alpha/OrbitDrop-Portable.zip) · [all releases](https://github.com/i3sam/OrbitDrop/releases)
 
 Run the installer: no admin rights or .NET needed. This alpha isn't code-signed yet, so if Windows shows "Windows protected your PC", click **More info → Run anyway**.
 
-> **Status: 0.2.2-alpha.** The core gesture is validated on Windows 11 (single monitor, 100% scale). Multi-monitor, mixed-DPI and Windows 10 sign-off are still pending; see [the feasibility report](docs/research/02-feasibility-report.md).
+> **Status: 0.2.3-alpha.** The core gesture is validated on Windows 11 (single monitor, 100% scale). Multi-monitor, mixed-DPI and Windows 10 sign-off are still pending; see [the feasibility report](docs/research/02-feasibility-report.md).
 
 ## How it works
 
-1. Start dragging one or more files in File Explorer or on the desktop.
-2. **Tap Shift** while you're still holding the mouse button. A radial wheel opens around the pointer.
-3. Release on an option. The result appears **next to the original**, which is never changed.
+**1. Drag a file, then tap Shift.** Start dragging one or more files in File Explorer or on the desktop and keep holding. Tap Shift once: the wheel opens around the pointer.
 
-Tap Shift again to switch **Convert → Tools → Actions**. Release on the centre or press **Esc** to cancel.
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/guide/guide-drag-dark.gif"><img src="docs/guide/guide-drag.gif" width="600" alt="Dragging a photo and tapping Shift opens the wheel"></picture>
+
+**2. Let go on what you want.** The result appears **next to the original**, which is never changed. Let go on the centre or press **Esc** to cancel.
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/guide/guide-release-dark.gif"><img src="docs/guide/guide-release.gif" width="600" alt="Releasing on JPG creates photo.jpg next to photo.png"></picture>
+
+**3. Tap Shift again for more.** Each tap switches between **Convert**, **Tools** and **Actions**.
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/guide/guide-modes-dark.gif"><img src="docs/guide/guide-modes.gif" width="600" alt="Tapping Shift cycles the wheel through Convert, Tools and Actions"></picture>
+
+**Options with dots open into more choices.** Rest on one (like Compress) to see them; rest on the centre to go back, or let go straight away for the most common choice.
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/guide/guide-groups-dark.gif"><img src="docs/guide/guide-groups.gif" width="600" alt="Resting on Compress opens sizes; choosing 1 MB saves a compressed copy"></picture>
+
+**No dragging?** Select files, press **Ctrl + Alt + Space** and click an option.
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/guide/guide-keyboard-dark.gif"><img src="docs/guide/guide-keyboard.gif" width="600" alt="With a file selected, Ctrl+Alt+Space opens the wheel and a click converts it"></picture>
+
+The app includes the same guide with a hands-on practice step (tray menu → **How to use OrbitDrop**). These animations are rendered from the real app: `OrbitDrop.exe --render-guide <folder>`.
 
 | Mode | 0.2 capabilities |
 |---|---|
 | Convert | **Images:** PNG, JPG, BMP, TIFF, GIF, PDF (reads WebP, HEIC, AVIF, JPEG XL and camera RAW when Windows has the codec) · **PDF:** pages to PNG or JPG · **Video:** MP4, WMV, animated GIF, or extract audio as MP3 / M4A / WAV / WMA / FLAC · **Audio:** MP3, M4A, WAV, WMA, FLAC |
 | Tools | **Images:** edit (crop, adjust, markup, redact), compress (by % or under 1 MB / 500 KB / 200 KB), resize, rotate & flip, grayscale, copy text (OCR), combine into PDF · **Video:** trim, compress (720p / 1080p / 480p / half size), remove audio, snapshot, join · **Audio:** trim, compress, normalize, mono / stereo · **Archives:** extract ZIP, TAR, TAR.GZ, GZ · **Any file:** info, edit details, remove metadata or location |
 | Actions | Copy path or name, show in folder, copy to / move to (recent and common folders), float (a shelf to drag files out later), share (Nearby Share), zip, terminal, set as wallpaper. Works on folders too |
-
-Related options are grouped: rest on a segment with dots (for example **Compress**) to open its choices, rest on the centre to go back, or drop straight on it for the most common choice.
-
-**No drag needed:** select files in File Explorer or on the desktop and press **Ctrl + Alt + Space**, then click an option.
 
 **Private by design:** everything runs locally. No uploads, no account, no telemetry. The only network request is an optional once-a-day update check against GitHub Releases (Settings → About; turn it off any time).
 

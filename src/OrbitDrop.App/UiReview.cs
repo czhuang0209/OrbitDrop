@@ -85,13 +85,15 @@ internal static class UiReview
             }
 
             // --- onboarding
-            for (int step = 0; step < 3; step++)
+            var guideAssets = new GuideAssets(registry);
+            var onboarding = new OnboardingWindow("Shift", guideAssets, Path.Combine(dir, "guide-practice"));
+            for (int step = 0; step < onboarding.StepCount; step++)
             {
-                var onboarding = new OnboardingWindow("Shift");
-                onboarding.ShowStep(step);
-                RenderElement(onboarding.ContentRoot, 560, 470, bg, dir, $"onboarding-{step + 1}-{t}", ref count);
-                onboarding.Close();
+                onboarding.ShowStepStill(step);
+                RenderElement(onboarding.ContentRoot, 680, double.NaN, bg, dir, $"onboarding-{step + 1}-{t}", ref count, [1.0]);
             }
+            onboarding.Close();
+            guideAssets.Dispose();
 
             // --- Info window (sample photo)
             var info = new OrbitDrop.UI.Metadata.MetadataWindow(new MetadataSnapshot(@"C:\Users\You\Pictures\IMG_2041.jpg", "Image",
