@@ -44,6 +44,9 @@ WizardStyle=modern
 ; Ask to close a running OrbitDrop (mutex created by SingleInstance) instead of failing to overwrite it.
 AppMutex=OrbitDrop.Running
 CloseApplications=yes
+; Ends with SHChangeNotify(SHCNE_ASSOCCHANGED) so Explorer and Start drop cached icons. Without it, an upgrade
+; that changes the app icon keeps showing the old one (the cache is keyed by the unchanged exe path).
+ChangesAssociations=yes
 
 [Tasks]
 Name: "startup"; Description: "Start OrbitDrop when I sign in to Windows"; GroupDescription: "Options:"
