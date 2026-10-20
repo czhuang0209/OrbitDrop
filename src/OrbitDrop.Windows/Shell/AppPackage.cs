@@ -65,6 +65,36 @@ public static class AppPackage
         catch { return false; }
     }
 
+    /// <summary>How many Store updates are waiting for this app (0 if none, or if the Store couldn't be reached).</summary>
+    public static async Task<int> PendingStoreUpdatesAsync()
+    {
+        if (!IsPackaged) return 0;
+        var context = global::Windows.Services.Store.StoreContext.GetDefault();
+        var updates = await context.GetAppAndOptionalStorePackageUpdatesAsync();
+        return updates.Count;
+    }
+
+    /// <summary>
+    /// Downloads and installs the waiting Store updates with no dialog. Windows closes the app to install; it is
+    /// registered for restart first, so Windows starts it again (with --updated) once the new version is in place.
+    /// Returns the Store's final state, for the log.
+    /// </summary>
+    public static async Task<string> InstallStoreUpdatesSilentlyAsync()
+    {
+        if (!IsPackaged) return "not packaged";
+        var context = global::Windows.Services.Store.StoreContext.GetDefault();
+        if (!context.CanSilentlyDownloadStorePackageUpdates) return "silent updates aren't allowed on this PC";
+        var updates = await context.GetAppAndOptionalStorePackageUpdatesAsync();
+        if (updates.Count == 0) return "no updates";
+        // RESTART_NO_CRASH | RESTART_NO_HANG | RESTART_NO_REBOOT: restart only after an update, never after a crash.
+        RegisterApplicationRestart("--updated", 1 | 2 | 8);
+        var result = await context.TrySilentDownloadAndInstallStorePackageUpdatesAsync(updates);
+        return result.OverallState.ToString();
+    }
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+    private static extern int RegisterApplicationRestart(string commandLine, int flags);
+
     public static void SetStartup(bool enabled)
     {
         var task = StartupTask.GetAsync(StartupTaskId).AsTask().GetAwaiter().GetResult();

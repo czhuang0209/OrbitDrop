@@ -1,4 +1,8 @@
-## What's new in 0.3.2-alpha
+## What's new in 0.3.3-alpha
+
+- **Microsoft Store version: updates install right away.** OrbitDrop checks the Store every few hours and installs a new version by itself as soon as you're not using it, then starts again, instead of waiting for your next restart.
+
+## In 0.3.2-alpha
 
 - **Rate OrbitDrop from Settings.** Settings → General now has an "Enjoying OrbitDrop?" row: rate it in the Microsoft Store, or star it on GitHub.
 

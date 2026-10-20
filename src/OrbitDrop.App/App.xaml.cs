@@ -163,7 +163,8 @@ public partial class App : Application, ISettingsHost, ITrayCommands
 
         _updates = new UpdateManager(_toasts, () => _settings, Update, () => _instance?.ReleaseOwnership(), Quit, IsInUse);
         _updates.Changed += () => _settingsVm?.RefreshUpdates();
-        if (!AppPackage.IsPackaged) _updates.Start(); // the Store version is updated by the Microsoft Store
+        if (!AppPackage.IsPackaged) _updates.Start(); // GitHub version: our own updater
+        else StartStoreUpdates();                      // Store version: install Store updates as soon as idle
 
         ApplyHotkey();
         _instance.ListenForActivation(() => Dispatcher.BeginInvoke(() => OpenSettings()));
