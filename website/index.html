@@ -3,23 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>OrbitDrop: convert files without opening an app</title>
-  <meta name="description" content="Drag any file, tap Shift, and let go on what you want. Convert, compress, edit and share files right where they are. Free for Windows 10 and 11.">
-  <meta name="theme-color" content="#FBFBFD" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0E0E11" media="(prefers-color-scheme: dark)">
+  <title>OrbitDrop · The one-move file converter for Windows</title>
+  <meta name="description" content="Drag a file, tap Shift, and let go. Convert, compress, edit and share files without opening an app. Free, offline, for Windows 10 and 11.">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0B0B0D" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="/assets/favicon-64.png" type="image/png">
   <link rel="apple-touch-icon" href="/assets/icon-256.png">
-
   <meta property="og:type" content="website">
-  <meta property="og:title" content="OrbitDrop: convert files without opening an app">
-  <meta property="og:description" content="Drag a file, tap Shift, let go. Free for Windows 10 and 11.">
+  <meta property="og:title" content="OrbitDrop · The one-move file converter for Windows">
+  <meta property="og:description" content="Drag a file, tap Shift, let go. Free and offline, for Windows 10 and 11.">
   <meta property="og:image" content="/assets/og.png">
   <meta name="twitter:card" content="summary_large_image">
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -27,209 +25,188 @@
 
   <header class="nav">
     <div class="wrap nav-inner">
-      <a class="brand" href="/" aria-label="OrbitDrop home"><img src="/assets/icon-256.png" alt="" width="30" height="30"><span>OrbitDrop</span></a>
+      <a class="brand" href="/" aria-label="OrbitDrop home"><img src="/assets/icon-256.png" alt="" width="28" height="28"><span>OrbitDrop</span></a>
       <nav aria-label="Main">
-        <a href="#how">How it works</a>
         <a href="#features">Features</a>
         <a href="#privacy">Privacy</a>
         <a href="https://github.com/i3sam/OrbitDrop">GitHub</a>
       </nav>
-      <a class="btn btn-small" href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ?cid=website-nav&amp;mode=direct">Get it free</a>
+      <a class="badge-link" data-store="nav" href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ" aria-label="Get OrbitDrop from the Microsoft Store">
+        <picture>
+          <source srcset="https://get.microsoft.com/images/en-us%20light.svg" media="(prefers-color-scheme: dark)">
+          <img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft" width="120" height="43">
+        </picture>
+      </a>
     </div>
   </header>
 
   <main id="main">
     <!-- Hero -->
     <section class="hero wrap">
-      <p class="eyebrow">Free for Windows 10 and 11</p>
-      <h1>Convert files<br>without opening an app.</h1>
-      <p class="lede">Drag any file, tap <kbd>Shift</kbd>, and let go on what you want. The result appears right next to the original.</p>
-      <div class="cta">
-        <a class="store" href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ?cid=website-hero&amp;mode=direct" aria-label="Get OrbitDrop from the Microsoft Store">
-          <picture>
-            <source srcset="https://get.microsoft.com/images/en-us%20light.svg" media="(prefers-color-scheme: dark)">
-            <img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft" width="200" height="72">
-          </picture>
-        </a>
-        <a class="link-play" href="#film"><span class="play" aria-hidden="true"></span>Watch the film <span class="muted">(1 min)</span></a>
-      </div>
-      <figure class="stage reveal">
-        <video class="demo" data-light="/assets/demo/hero.mp4" data-dark="/assets/demo/hero-dark.mp4" autoplay muted loop playsinline preload="auto" aria-label="Dragging photo.png, tapping Shift, and letting go on JPG: photo.jpg appears next to the original"></video>
-      </figure>
-    </section>
-
-    <!-- Numbers -->
-    <section class="numbers wrap reveal" aria-label="At a glance">
-      <div><strong>1</strong><span>move, from file to finished</span></div>
-      <div><strong>0</strong><span>uploads. It all happens on your PC</span></div>
-      <div><strong>3</strong><span>wheels: Convert, Tools, Actions</span></div>
-      <div><strong>0</strong><span>accounts, ads or trackers</span></div>
-    </section>
-
-    <!-- File kinds -->
-    <section class="kinds wrap reveal" aria-label="Works with">
-      <span><i aria-hidden="true">🖼️</i>Photos</span>
-      <span><i aria-hidden="true">📄</i>PDFs</span>
-      <span><i aria-hidden="true">🎬</i>Videos</span>
-      <span><i aria-hidden="true">🎵</i>Music</span>
-      <span><i aria-hidden="true">🗜️</i>Archives</span>
-      <span><i aria-hidden="true">📁</i>Any file</span>
-    </section>
-
-    <!-- How it works -->
-    <section id="how" class="section wrap">
-      <h2 class="reveal">Three steps.<br><span class="muted">That's the whole manual.</span></h2>
-
-      <div class="row reveal">
-        <div class="copy">
-          <p class="step">01</p>
-          <h3>Drag a file. Tap Shift.</h3>
-          <p>Start dragging anything in File Explorer or on your desktop, and keep holding. Tap <kbd>Shift</kbd> once and the wheel opens right under your pointer.</p>
-        </div>
-        <video class="demo" data-light="/assets/demo/drag.mp4" data-dark="/assets/demo/drag-dark.mp4" muted loop playsinline preload="none" aria-label="Dragging a photo and tapping Shift opens the wheel"></video>
-      </div>
-
-      <div class="row flip reveal">
-        <div class="copy">
-          <p class="step">02</p>
-          <h3>Let go on what you want.</h3>
-          <p>Drop it on JPG, PNG, PDF or anything else. A new file lands next to the original, which is never changed. Changed your mind? Let go in the middle, or press <kbd>Esc</kbd>.</p>
-        </div>
-        <video class="demo" data-light="/assets/demo/release.mp4" data-dark="/assets/demo/release-dark.mp4" muted loop playsinline preload="none" aria-label="Letting go on JPG creates photo.jpg next to photo.png"></video>
-      </div>
-
-      <div class="row reveal">
-        <div class="copy">
-          <p class="step">03</p>
-          <h3>Tap again for more.</h3>
-          <p>Each tap of <kbd>Shift</kbd> switches the wheel: <b>Convert</b> for formats, <b>Tools</b> for quick edits like compress and resize, and <b>Actions</b> for copy, move, share and zip.</p>
-        </div>
-        <video class="demo" data-light="/assets/demo/modes.mp4" data-dark="/assets/demo/modes-dark.mp4" muted loop playsinline preload="none" aria-label="Tapping Shift cycles the wheel through Convert, Tools and Actions"></video>
-      </div>
-    </section>
-
-    <!-- Features -->
-    <section id="features" class="section wrap">
-      <h2 class="reveal">Small wheel.<br><span class="muted">Surprisingly deep.</span></h2>
-
-      <div class="row flip reveal">
-        <div class="copy">
-          <h3>Options open into more.</h3>
-          <p>Slices with dots, like <b>Compress</b>, open their choices when you rest on them: 50%, under 1&nbsp;MB, under 200&nbsp;KB. Let go straight away for the most common one.</p>
-        </div>
-        <video class="demo" data-light="/assets/demo/groups.mp4" data-dark="/assets/demo/groups-dark.mp4" muted loop playsinline preload="none" aria-label="Resting on Compress opens sizes; choosing 1 MB saves a compressed copy"></video>
-      </div>
-
-      <div class="row reveal">
-        <div class="copy">
-          <h3>No dragging needed.</h3>
-          <p>Select files and press <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Space</kbd>. The wheel opens where you are; click an option. Click the centre to switch to Tools and Actions.</p>
-        </div>
-        <video class="demo" data-light="/assets/demo/keyboard.mp4" data-dark="/assets/demo/keyboard-dark.mp4" muted loop playsinline preload="none" aria-label="Pressing Ctrl+Alt+Space opens the wheel for the selected file"></video>
-      </div>
-
-      <div class="row flip reveal">
-        <div class="copy">
-          <h3>Make the wheel yours.</h3>
-          <p>In Settings, your wheel is right there. Click a slice to hide it, drag slices into your own order, press Save. Done.</p>
-        </div>
-        <video class="demo" data-light="/assets/demo/customize.mp4" data-dark="/assets/demo/customize-dark.mp4" muted loop playsinline preload="none" aria-label="Hiding BMP and TIFF and moving PDF to the top in Settings, then saving"></video>
-      </div>
-
-      <div class="row reveal">
-        <div class="copy">
-          <h3>A photo editor, built in.</h3>
-          <p>Crop, adjust brightness, contrast and warmth, draw arrows and boxes, add text, or redact. It always saves a copy.</p>
-        </div>
-        <picture class="shot">
-          <source srcset="/assets/editor-dark.jpg" media="(prefers-color-scheme: dark)">
-          <img src="/assets/editor.jpg" alt="The OrbitDrop photo editor with an arrow, a box and text on a sunset photo" loading="lazy" width="1600" height="1112">
+      <h1>The one-move<br>file converter.</h1>
+      <p class="lede">Drag a file, tap <kbd>Shift</kbd>, and let go. Convert, compress and share files without breaking your flow.</p>
+      <a class="badge-link big hero-badge" data-store="hero" href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ" aria-label="Get OrbitDrop from the Microsoft Store">
+        <picture>
+          <source srcset="https://get.microsoft.com/images/en-us%20light.svg" media="(prefers-color-scheme: dark)">
+          <img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft" width="160" height="58">
         </picture>
+      </a>
+      <p class="local">Everything happens on your PC. Free for Windows 10 and 11.</p>
+    </section>
+
+    <!-- Live playground -->
+    <section class="play wrap" aria-label="Interactive demo">
+      <div class="scene" id="playground">
+        <div class="wallpaper" aria-hidden="true"></div>
+        <div class="hint-wrap"><div class="hint" id="hint" role="status" aria-live="polite"><span id="hint-text">Drag a file</span></div></div>
+        <div class="desk"></div>
+        <aside class="shelf" aria-live="polite"></aside>
+        <div class="toasts" aria-live="polite"></div>
+        <div class="taskbar" aria-hidden="true">
+          <span class="tb-start"></span><span class="tb-app"></span><span class="tb-app"></span><span class="tb-app"></span>
+          <span class="tb-tray"><img src="/assets/icon-256.png" alt="" width="16" height="16"><span>12:00</span></span>
+        </div>
+      </div>
+      <div class="play-foot">
+        <span>A little live demo. Use your mouse and the <kbd>Shift</kbd> key, or tap a file.</span>
+        <button class="key-btn" id="shift-key" type="button" aria-label="Shift key"><span>⇧</span>Shift</button>
+        <button class="text-btn" id="reset" type="button">Reset</button>
       </div>
     </section>
 
-    <!-- Everything -->
-    <section class="section wrap">
-      <h2 class="reveal">Everything it does.</h2>
-      <div class="lists reveal">
+    <!-- Stats -->
+    <section class="stats wrap reveal" aria-label="What it can do">
+      <div><strong>20+</strong><h2>Conversions</h2><p>Images, PDFs, video and audio, to the formats you need.</p></div>
+      <div><strong>35+</strong><h2>File tools</h2><p>Compress, resize, rotate, edit, trim, normalize and more.</p></div>
+      <div><strong>10+</strong><h2>File actions</h2><p>Copy, move, share, zip, float, terminal and copy path.</p></div>
+    </section>
+
+    <!-- Per kind -->
+    <section class="kinds wrap" id="features" aria-labelledby="kinds-title">
+      <div class="section-head reveal">
+        <h2 id="kinds-title">One wheel. Every kind of file.</h2>
+        <p>Point at the wheels to see what each option does.</p>
+      </div>
+      <div class="tabs reveal" role="tablist" aria-label="Kind of file">
+        <button type="button" role="tab" data-kind="image" aria-selected="true">🖼️ Images</button>
+        <button type="button" role="tab" data-kind="video" aria-selected="false" tabindex="-1">🎬 Video</button>
+        <button type="button" role="tab" data-kind="audio" aria-selected="false" tabindex="-1">🎵 Audio</button>
+      </div>
+      <div class="kinds-panel reveal" role="tabpanel">
+        <div class="pair">
+          <div class="preview" data-mode="convert" data-size="250" data-idle="Point at a format">
+            <p class="keys"><kbd>⇧ Shift</kbd></p>
+            <h3>Convert</h3>
+            <div class="preview-wheel"></div>
+            <p class="preview-result"></p>
+          </div>
+          <div class="preview" data-mode="tools" data-size="250" data-idle="Point at a tool">
+            <p class="keys"><kbd>⇧ Shift</kbd> <kbd>⇧ Shift</kbd></p>
+            <h3>Tools</h3>
+            <div class="preview-wheel"></div>
+            <p class="preview-result"></p>
+          </div>
+        </div>
+        <div class="cards" id="kind-cards"></div>
+      </div>
+      <p class="note reveal">Start dragging, tap Shift, and the wheel stays open until you let go. Tap Shift again to switch. Options with dots open when you rest on them.</p>
+    </section>
+
+    <!-- Actions -->
+    <section class="actions wrap" aria-labelledby="actions-title">
+      <div class="actions-grid reveal">
         <div>
-          <h4>Convert</h4>
-          <ul>
-            <li>Images to JPG, PNG, GIF, BMP, TIFF or PDF</li>
-            <li>Opens WebP, HEIC, AVIF, JPEG&nbsp;XL and camera RAW<sup>*</sup></li>
-            <li>Several images into one PDF</li>
-            <li>PDF pages to PNG or JPG</li>
-            <li>Video to MP4 or WMV</li>
-            <li>Audio to MP3, M4A, WAV, WMA or FLAC</li>
-            <li>The soundtrack out of a video</li>
+          <h2 id="actions-title">File actions</h2>
+          <p class="sub">Works on any file or folder. Tap Shift three times.</p>
+          <ul class="ticks">
+            <li><b>Copy to, Move to.</b> A folder you pick, or a recent one. It never overwrites.</li>
+            <li><b>Float.</b> Park files on a small always-on-top shelf and drag them out later.</li>
+            <li><b>Share, Zip.</b> Nearby Share and your apps, or a ZIP right next to it.</li>
+            <li><b>Copy path, Terminal.</b> For when you need the path, or a prompt in that folder.</li>
           </ul>
         </div>
-        <div>
-          <h4>Tools</h4>
-          <ul>
-            <li>Photo editor: crop, adjust, mark up, redact</li>
-            <li>Compress photos to a size, like under 1&nbsp;MB</li>
-            <li>Resize, rotate, flip, grayscale</li>
-            <li>Copy the text out of an image</li>
-            <li>Trim and join videos, make GIFs, snapshots</li>
-            <li>Normalize audio, mono or stereo</li>
-            <li>See and edit details, remove location or all metadata</li>
-          </ul>
-        </div>
-        <div>
-          <h4>Actions</h4>
-          <ul>
-            <li>Copy to or move to a folder</li>
-            <li>Share with Nearby Share and apps</li>
-            <li>Zip, or extract ZIP and TAR</li>
-            <li>Float files on an always-on-top shelf</li>
-            <li>Open a terminal here</li>
-            <li>Copy the path or name</li>
-            <li>Set a photo as wallpaper</li>
-          </ul>
+        <div class="preview" data-mode="actions" data-size="300" data-file="photo.png" data-idle="Point at an action">
+          <p class="keys"><kbd>⇧</kbd> <kbd>⇧</kbd> <kbd>⇧</kbd></p>
+          <div class="preview-wheel"></div>
+          <p class="preview-result"></p>
         </div>
       </div>
-      <p class="footnote reveal"><sup>*</sup>When Windows has the matching image extension installed.</p>
+    </section>
+
+    <!-- Bento: keyboard, customize, editor -->
+    <section class="bento wrap" aria-label="More">
+      <article class="tile wide reveal">
+        <div class="tile-copy">
+          <h3>No dragging needed.</h3>
+          <p>Select files in File Explorer and press the shortcut. Try it here: the keys light up.</p>
+          <div class="bigkeys"><span id="k-ctrl">Ctrl</span><span id="k-alt">Alt</span><span id="k-space" class="space">Space</span></div>
+          <p class="combo" id="combo-ok">✓ That's the one.</p>
+        </div>
+        <video class="demo" data-light="/assets/demo/keyboard.mp4" data-dark="/assets/demo/keyboard-dark.mp4" muted loop playsinline preload="none" aria-label="Ctrl+Alt+Space opens the wheel for the selected file"></video>
+      </article>
+      <article class="tile reveal">
+        <h3>Make the wheel yours.</h3>
+        <p>Hide what you don't use. Drag slices into your order. Save.</p>
+        <video class="demo" data-light="/assets/demo/customize.mp4" data-dark="/assets/demo/customize-dark.mp4" muted loop playsinline preload="none" aria-label="Customizing the wheel in Settings"></video>
+      </article>
+      <article class="tile reveal">
+        <h3>A photo editor, built in.</h3>
+        <p>Crop, adjust, mark up and redact. Always saves a copy.</p>
+        <picture>
+          <source srcset="/assets/editor-dark.jpg" media="(prefers-color-scheme: dark)">
+          <img src="/assets/editor.jpg" alt="The OrbitDrop photo editor" loading="lazy" width="1600" height="1112">
+        </picture>
+      </article>
+    </section>
+
+    <!-- Formats -->
+    <section class="formats wrap" aria-labelledby="formats-title">
+      <h2 id="formats-title" class="reveal">Supported formats</h2>
+      <div class="format-list reveal">
+        <div class="row"><h3>Images</h3><p>JPG <span>PNG</span> GIF <span>BMP</span> TIFF</p><small>PDF export · reads WebP, HEIC, AVIF, JPEG XL and RAW when Windows has the codec</small></div>
+        <div class="row"><h3>PDF</h3><p>Images → PDF <span>PDF → PNG</span> PDF → JPG</p><small>Several images into one PDF · every page</small></div>
+        <div class="row"><h3>Video</h3><p>MP4 <span>WMV</span> GIF</p><small>Audio out as MP3, M4A, WAV, WMA or FLAC</small></div>
+        <div class="row"><h3>Audio</h3><p>MP3 <span>M4A</span> WAV <span>WMA</span> FLAC</p><small>Compress · normalize · mono or stereo</small></div>
+        <div class="row"><h3>Archives</h3><p>ZIP <span>TAR</span> TAR.GZ <span>GZ</span></p><small>Zip anything · extract here</small></div>
+      </div>
     </section>
 
     <!-- Privacy -->
-    <section id="privacy" class="section wrap">
-      <h2 class="reveal">Your files stay yours.</h2>
-      <div class="cards reveal">
-        <div class="card"><span class="icon" aria-hidden="true">💻</span><h4>On your PC</h4><p>Every conversion and edit runs locally. Nothing is uploaded, ever. It works offline.</p></div>
-        <div class="card"><span class="icon" aria-hidden="true">🛟</span><h4>Originals untouched</h4><p>Results are new files next to the original. Nothing is overwritten.</p></div>
-        <div class="card"><span class="icon" aria-hidden="true">🙈</span><h4>No tracking</h4><p>No account, no ads, no analytics. <a href="/privacy">Read the privacy policy</a>.</p></div>
-        <div class="card"><span class="icon" aria-hidden="true">🔓</span><h4>Open source</h4><p>Every line is on <a href="https://github.com/i3sam/OrbitDrop">GitHub</a> under the MIT licence.</p></div>
+    <section class="privacy wrap" id="privacy" aria-labelledby="privacy-title">
+      <div class="privacy-copy reveal">
+        <p class="eyebrow">Privacy</p>
+        <h2 id="privacy-title">Your files stay on your PC.</h2>
+        <p>Online converters ask you to upload a copy of your file. That puts your photos, documents and their hidden details on a server you don't control.</p>
+      </div>
+      <div class="points reveal">
+        <article><span aria-hidden="true">↑</span><h3>Uploading adds risk</h3><p>Once a file leaves your PC, you have to trust how someone else stores and deletes it.</p></article>
+        <article><span aria-hidden="true">⌂</span><h3>OrbitDrop never uploads</h3><p>Every conversion runs on your PC, even offline. No account, no tracking.</p></article>
+        <article><span aria-hidden="true">✓</span><h3>Originals stay put</h3><p>Results are new files next to the original. Nothing is overwritten.</p></article>
+        <article><span aria-hidden="true">{ }</span><h3>Open source</h3><p>Every line is on <a href="https://github.com/i3sam/OrbitDrop">GitHub</a>. <a href="/privacy">Privacy policy</a>.</p></article>
       </div>
     </section>
 
     <!-- Film -->
-    <section id="film" class="section wrap">
-      <h2 class="reveal">See it in a minute.</h2>
-      <div class="film reveal">
-        <video src="/assets/film.mp4" poster="/assets/film-poster.jpg" controls preload="none" playsinline aria-label="OrbitDrop launch film, one minute"></video>
-      </div>
+    <section class="film wrap reveal" aria-labelledby="film-title">
+      <h2 id="film-title">See it in a minute.</h2>
+      <div class="film-frame"><video src="/assets/film.mp4" poster="/assets/film-poster.jpg" controls preload="none" playsinline></video></div>
     </section>
 
     <!-- FAQ -->
-    <section id="faq" class="section wrap narrow">
-      <h2 class="reveal">Questions.</h2>
-      <div class="faq reveal">
-        <details><summary>Is it really free?</summary><p>Yes. No trial, no ads, no account. It's open source, too.</p></details>
-        <details><summary>Which Windows versions does it work on?</summary><p>Windows 11, and Windows 10 version 2004 or later, 64-bit.</p></details>
-        <details><summary>Does it change my original files?</summary><p>Never. Every result is a new file saved next to the original, with a new name if one already exists.</p></details>
-        <details><summary>Does it need the internet?</summary><p>No. Everything runs on your PC. The Microsoft Store handles updates.</p></details>
-        <details><summary>Can I use it without dragging?</summary><p>Yes. Select files in File Explorer and press <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Space</kbd>.</p></details>
-        <details><summary>Where does it live when I'm not using it?</summary><p>In the notification area, next to the clock. Click the icon for Settings and the guide. You can have it start when you sign in.</p></details>
-        <details><summary>Something isn't working. Where do I report it?</summary><p>Open an issue on <a href="https://github.com/i3sam/OrbitDrop/issues">GitHub</a>. Settings → Advanced → Logs has details that help.</p></details>
-      </div>
+    <section class="faq wrap reveal" aria-labelledby="faq-title">
+      <h2 id="faq-title">Questions</h2>
+      <details><summary>Is it really free?</summary><p>Yes. No trial, no ads, no account. It's open source, too.</p></details>
+      <details><summary>Which Windows versions?</summary><p>Windows 11, and Windows 10 version 2004 or later, 64-bit.</p></details>
+      <details><summary>Does it change my files?</summary><p>Never. Every result is a new file next to the original, with a new name if one already exists.</p></details>
+      <details><summary>Does it need the internet?</summary><p>No. Everything runs on your PC. The Microsoft Store keeps it up to date.</p></details>
+      <details><summary>Where is it when I'm not using it?</summary><p>In the notification area next to the clock. Click it for Settings and the guide.</p></details>
     </section>
 
     <!-- Closing -->
     <section class="closing wrap reveal">
-      <img src="/assets/icon-256.png" alt="" width="112" height="112">
+      <img src="/assets/icon-256.png" alt="" width="96" height="96">
       <h2>Your files. Your flow.</h2>
-      <a class="store" href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ?cid=website-footer&amp;mode=direct" aria-label="Get OrbitDrop from the Microsoft Store">
+      <a class="badge-link big" data-store="footer" href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ" aria-label="Get OrbitDrop from the Microsoft Store">
         <picture>
           <source srcset="https://get.microsoft.com/images/en-us%20light.svg" media="(prefers-color-scheme: dark)">
           <img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft" width="200" height="72" loading="lazy">
@@ -244,12 +221,21 @@
       <nav aria-label="Footer">
         <a href="/privacy">Privacy</a>
         <a href="https://github.com/i3sam/OrbitDrop">GitHub</a>
-        <a href="https://github.com/i3sam/OrbitDrop/issues">Report a problem</a>
+        <a href="https://github.com/i3sam/OrbitDrop/issues">Support</a>
         <a href="https://github.com/i3sam/OrbitDrop/releases">Other downloads</a>
       </nav>
     </div>
   </footer>
 
-  <script src="/main.js" defer></script>
+  <dialog id="editor-dialog" aria-label="The photo editor">
+    <button class="close" type="button" aria-label="Close">✕</button>
+    <p>In the app, <b>Edit</b> opens this, right where you are. <b>Save copy</b> keeps your original.</p>
+    <picture>
+      <source srcset="/assets/editor-dark.jpg" media="(prefers-color-scheme: dark)">
+      <img src="/assets/editor.jpg" alt="The OrbitDrop photo editor" width="1600" height="1112">
+    </picture>
+  </dialog>
+
+  <script src="/app.js" defer></script>
 </body>
 </html>
