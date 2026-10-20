@@ -102,6 +102,7 @@ public partial class App
         if (Paused || _readingSelection) return;
         if (_interaction?.CycleIfOpenFromKeyboard() == true) return; // pressed again: next mode
         IReadOnlyList<string> files = ExplorerSelection.FromForegroundWindow();
+        Log.Info($"Ctrl+Alt+Space: {ExplorerSelection.LastResult}");
         bool vsCode = files.Count == 0 && _messages is not null && VsCodeSelection.IsForeground(out _);
         if (vsCode)
         {

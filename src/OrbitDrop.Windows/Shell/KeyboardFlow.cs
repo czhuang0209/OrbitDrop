@@ -53,54 +53,105 @@ public sealed class GlobalHotkey : IDisposable
 /// </summary>
 public static class ExplorerSelection
 {
+    /// <summary>What happened, for the log: which window, which tab, how many items.</summary>
+    public static string LastResult { get; private set; } = "";
+
     public static IReadOnlyList<string> FromForegroundWindow()
     {
         IntPtr foreground = GetForegroundWindow();
         string cls = ClassOf(foreground);
-        try
-        {
-            var type = Type.GetTypeFromProgID("Shell.Application");
-            if (type is null) return [];
-            dynamic shell = Activator.CreateInstance(type)!;
-            dynamic? view = null;
+        if (cls is not ("Progman" or "WorkerW" or "CabinetWClass")) { LastResult = $"foreground is {cls}, not File Explorer"; return []; }
 
-            if (cls is "Progman" or "WorkerW")
-            {
-                // The desktop is a shell view too: SWC_DESKTOP (8) with SWFO_NEEDDISPATCH (1).
-                object location = 0, root = Type.Missing;
-                view = shell.Windows().FindWindowSW(ref location, ref root, 8, out int _, 1);
-            }
-            else if (cls == "CabinetWClass")
-            {
-                // Windows 11 tabs share one window handle: pick the tab whose folder name starts the window title.
-                string title = TitleOf(foreground);
-                var matches = new List<dynamic>();
-                foreach (dynamic w in shell.Windows())
-                {
-                    try { if (new IntPtr((long)w.HWND) == foreground) matches.Add(w); } catch { /* not an Explorer view */ }
-                }
-                view = matches.Count switch
-                {
-                    0 => null,
-                    1 => matches[0],
-                    _ => matches.FirstOrDefault(m => title.StartsWith((string)m.LocationName, StringComparison.OrdinalIgnoreCase)) ?? matches[0],
-                };
-            }
-            if (view is null) return [];
-
-            var paths = new List<string>();
-            foreach (dynamic item in view.Document.SelectedItems())
-            {
-                string? path = item.Path;
-                if (!string.IsNullOrEmpty(path) && (File.Exists(path) || Directory.Exists(path))) paths.Add(path);
-            }
-            return paths;
-        }
-        catch
+        // Explorer can briefly refuse automation calls while it's busy (RPC_E_CALL_REJECTED and the like): retry.
+        for (int attempt = 1; ; attempt++)
         {
-            return [];
+            try { return Read(foreground, cls); }
+            catch (Exception ex) when (attempt < 4)
+            {
+                LastResult = $"attempt {attempt} failed: {ex.Message}";
+                Thread.Sleep(60 * attempt);
+            }
+            catch (Exception ex) { LastResult = $"failed: {ex.Message}"; return []; }
         }
     }
+
+    private static IReadOnlyList<string> Read(IntPtr foreground, string cls)
+    {
+        LastResult = "";
+        var type = Type.GetTypeFromProgID("Shell.Application");
+        if (type is null) { LastResult = "Shell.Application unavailable"; return []; }
+        dynamic shell = Activator.CreateInstance(type)!;
+        dynamic? view = null;
+
+        if (cls is "Progman" or "WorkerW")
+        {
+            // The desktop is a shell view too: SWC_DESKTOP (8) with SWFO_NEEDDISPATCH (1).
+            object location = 0, root = Type.Missing;
+            view = shell.Windows().FindWindowSW(ref location, ref root, 8, out int _, 1);
+        }
+        else
+        {
+            // Windows 11 tabs share one top-level window. The active tab is the topmost ShellTabWindowClass child;
+            // each tab's browser reports its own tab window, so match on that (the title is only a fallback).
+            IntPtr activeTab = FindWindowEx(foreground, IntPtr.Zero, "ShellTabWindowClass", null);
+            var matches = new List<dynamic>();
+            foreach (dynamic w in shell.Windows())
+            {
+                try { if (new IntPtr((long)w.HWND) == foreground) matches.Add(w); } catch { /* not an Explorer view */ }
+            }
+            view = matches.FirstOrDefault(m => activeTab != IntPtr.Zero && TabWindowOf((object)m) == activeTab);
+            if (view is null && matches.Count > 0)
+            {
+                string title = TitleOf(foreground);
+                view = matches.FirstOrDefault(m => title.StartsWith((string)m.LocationName, StringComparison.OrdinalIgnoreCase)) ?? matches[0];
+            }
+            LastResult = $"{matches.Count} tab(s)";
+        }
+        if (view is null) { LastResult = "no Explorer view found"; return []; }
+
+        var paths = new List<string>();
+        foreach (dynamic item in view.Document.SelectedItems())
+        {
+            string? path = item.Path;
+            if (!string.IsNullOrEmpty(path) && (File.Exists(path) || Directory.Exists(path))) paths.Add(path);
+        }
+        LastResult = $"{(cls == "CabinetWClass" ? "File Explorer" : "desktop")}: {paths.Count} selected ({LastResult})";
+        return paths;
+    }
+
+    /// <summary>The tab window behind one Explorer browser: IServiceProvider → IShellBrowser → IOleWindow::GetWindow.</summary>
+    private static IntPtr TabWindowOf(object browser)
+    {
+        try
+        {
+            if (browser is not IServiceProvider sp) return IntPtr.Zero;
+            Guid service = SID_STopLevelBrowser, iid = IID_IShellBrowser;
+            if (sp.QueryService(ref service, ref iid, out IntPtr shellBrowser) != 0 || shellBrowser == IntPtr.Zero) return IntPtr.Zero;
+            try
+            {
+                IntPtr getWindow = Marshal.ReadIntPtr(Marshal.ReadIntPtr(shellBrowser), 3 * IntPtr.Size); // IOleWindow::GetWindow
+                var call = Marshal.GetDelegateForFunctionPointer<GetWindowFn>(getWindow);
+                return call(shellBrowser, out IntPtr hwnd) == 0 ? hwnd : IntPtr.Zero;
+            }
+            finally { Marshal.Release(shellBrowser); }
+        }
+        catch { return IntPtr.Zero; }
+    }
+
+    private static readonly Guid SID_STopLevelBrowser = new("4C96BE40-915C-11CF-99D3-00AA004AE837");
+    private static readonly Guid IID_IShellBrowser = new("000214E2-0000-0000-C000-000000000046");
+
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+    private delegate int GetWindowFn(IntPtr self, out IntPtr hwnd);
+
+    [ComImport, Guid("6D5140C1-7436-11CE-8034-00AA006009FA"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IServiceProvider
+    {
+        [PreserveSig] int QueryService(ref Guid service, ref Guid riid, out IntPtr obj);
+    }
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern IntPtr FindWindowEx(IntPtr parent, IntPtr after, string? cls, string? title);
 
     private static string ClassOf(IntPtr hwnd)
     {

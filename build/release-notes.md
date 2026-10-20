@@ -1,4 +1,8 @@
-## What's new in 0.3.0-alpha
+## What's new in 0.3.1-alpha
+
+- **Ctrl + Alt + Space is more reliable in File Explorer.** With several tabs open it now always reads the tab you're looking at, and it tries again if File Explorer is busy for a moment, instead of saying "Select files first".
+
+## In 0.3.0-alpha
 
 - **PDF tools.** Drag PDFs, tap Shift twice for Tools:
   - **Merge** several PDFs into one, in the order you picked.
