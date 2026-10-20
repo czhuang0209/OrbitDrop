@@ -1,4 +1,8 @@
-## What's new in 0.3.3-alpha
+## What's new in 0.3.4-alpha
+
+- **Windows accent colour works in dark mode.** OrbitDrop now uses the same shade of your accent that Windows itself uses: lighter in dark mode, darker in light mode. Dark accents no longer fall back to black and white.
+
+## In 0.3.3-alpha
 
 - **Microsoft Store version: updates install right away.** OrbitDrop checks the Store every few hours and installs a new version by itself as soon as you're not using it, then starts again, instead of waiting for your next restart.
 

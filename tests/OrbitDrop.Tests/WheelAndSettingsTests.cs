@@ -117,3 +117,32 @@ public class DataObjectTests
         Assert.Equal(files, read);
     }
 }
+
+public class AccentTests
+{
+    private static System.Windows.Media.Color C(string hex) => (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex);
+    private static readonly System.Windows.Media.Color DarkSegment = C("#2F2F38"), LightSegment = C("#FFFFFF");
+
+    [Fact]
+    public void Dark_mode_uses_the_lighter_shade_of_a_dark_accent()
+    {
+        // A deep blue accent: the base colour is too dark for the dark wheel, Windows' Light2 shade isn't.
+        var shades = new[] { C("#99C9FF"), C("#4A8FE0"), C("#003E92"), C("#CDE6FF") }; // Light2, Light1, Accent, Light3
+        Assert.Equal(C("#99C9FF"), OrbitDrop.UI.ThemeManager.PickAccent(shades, DarkSegment));
+    }
+
+    [Fact]
+    public void Light_mode_uses_the_darker_shade()
+    {
+        var shades = new[] { C("#005FB8"), C("#0078D4"), C("#003E92"), C("#001A68") }; // Dark1, Accent, Dark2, Dark3
+        Assert.Equal(C("#005FB8"), OrbitDrop.UI.ThemeManager.PickAccent(shades, LightSegment));
+    }
+
+    [Fact]
+    public void Falls_back_only_when_no_shade_is_readable()
+    {
+        var murky = new[] { C("#3A3A44"), C("#34343E"), C("#2B2B33") };
+        Assert.Null(OrbitDrop.UI.ThemeManager.PickAccent(murky, DarkSegment));
+        Assert.Null(OrbitDrop.UI.ThemeManager.PickAccent([], DarkSegment));
+    }
+}

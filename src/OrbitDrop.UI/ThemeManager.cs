@@ -72,17 +72,17 @@ public sealed class ThemeManager
         AccentFallbackActive = false;
         if (!useWindowsAccent) return;
 
-        if (SystemTheme.AccentColor is not { } accent) { AccentFallbackActive = true; return; }
-        // Guard: the accent must stand out against wheel segments (≥ 3:1) or we keep the monochrome accent.
+        // Use the shade of the accent Windows itself uses in this mode (lighter in dark mode, darker in light mode),
+        // as long as it stands out against the wheel segments (≥ 3:1); otherwise keep the black and white accent.
         var segment = (Color)_activeTokens![("Orbit.C.WheelSegment")];
-        if (Contrast(accent, segment) < 3.0) { AccentFallbackActive = true; return; }
+        if (PickAccent(SystemTheme.AccentShades(IsDark), segment) is not { } accent) { AccentFallbackActive = true; return; }
 
         Color onAccent = Luminance(accent) > 0.45 ? Colors.Black : Colors.White;
         Set("Accent", accent);
         Set("AccentHover", Shade(accent, IsDark ? 1.12 : 0.9));
         Set("AccentPressed", Shade(accent, IsDark ? 0.92 : 0.8));
         Set("OnAccent", onAccent);
-        Set("AccentText", IsDark ? Shade(accent, 1.35) : Shade(accent, 0.85));
+        Set("AccentText", IsDark ? accent : Shade(accent, 0.85)); // the shade is already the readable one for this mode
     }
 
     private void Set(string name, Color c)
@@ -92,6 +92,10 @@ public sealed class ThemeManager
         brush.Freeze();
         _accentOverride[$"Orbit.{name}"] = brush;
     }
+
+    /// <summary>The first shade, in Windows' order of preference, that is readable against the wheel segment (≥ 3:1).</summary>
+    public static Color? PickAccent(IReadOnlyList<Color> shades, Color segment) =>
+        shades.Cast<Color?>().FirstOrDefault(c => Contrast(c!.Value, segment) >= 3.0);
 
     public static Color Token(string name) => (Color)Application.Current.FindResource($"Orbit.C.{name}");
     public static double Number(string name) => (double)Application.Current.FindResource($"Orbit.{name}");

@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows.Media;
 using Microsoft.Win32;
+using UIColorType = global::Windows.UI.ViewManagement.UIColorType;
 
 namespace OrbitDrop.Windows.Shell;
 
@@ -32,17 +33,28 @@ public sealed class SystemTheme : IDisposable
         }
     }
 
-    public static Color? AccentColor
+    public static Color? AccentColor => Accent(UIColorType.Accent);
+
+    /// <summary>
+    /// The accent shades to try, best first, the way Windows itself picks them: on dark surfaces Windows uses lighter
+    /// shades of the accent (Light2 for fills), on light surfaces darker ones (Dark1). Empty if unavailable.
+    /// </summary>
+    public static IReadOnlyList<Color> AccentShades(bool dark)
     {
-        get
+        var kinds = dark
+            ? new[] { UIColorType.AccentLight2, UIColorType.AccentLight1, UIColorType.Accent, UIColorType.AccentLight3 }
+            : new[] { UIColorType.AccentDark1, UIColorType.Accent, UIColorType.AccentDark2, UIColorType.AccentDark3 };
+        return kinds.Select(Accent).OfType<Color>().ToList();
+    }
+
+    private static Color? Accent(UIColorType kind)
+    {
+        try
         {
-            try
-            {
-                var c = new global::Windows.UI.ViewManagement.UISettings().GetColorValue(global::Windows.UI.ViewManagement.UIColorType.Accent);
-                return Color.FromRgb(c.R, c.G, c.B);
-            }
-            catch { return null; }
+            var c = new global::Windows.UI.ViewManagement.UISettings().GetColorValue(kind);
+            return Color.FromRgb(c.R, c.G, c.B);
         }
+        catch { return null; }
     }
 
     private bool OnMessage(int msg, IntPtr wParam, IntPtr lParam)
