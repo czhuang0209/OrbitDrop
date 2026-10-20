@@ -97,6 +97,16 @@
                             </StackPanel>
                         </DockPanel>
                     </Border>
+                    <Border Style="{StaticResource Orbit.Card}">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE734;" />
+                            <Button DockPanel.Dock="Right" Content="{Binding RateButtonText}" Style="{StaticResource Orbit.Button.Standard}" Command="{Binding RateCommand}" VerticalAlignment="Center" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Enjoying OrbitDrop?" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="{Binding RateHint}" Style="{StaticResource RowHint}" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
                 </StackPanel>
 
                 <!-- Appearance -->

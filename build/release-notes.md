@@ -1,4 +1,8 @@
-## What's new in 0.3.1-alpha
+## What's new in 0.3.2-alpha
+
+- **Rate OrbitDrop from Settings.** Settings → General now has an "Enjoying OrbitDrop?" row: rate it in the Microsoft Store, or star it on GitHub.
+
+## In 0.3.1-alpha
 
 - **Ctrl + Alt + Space is more reliable in File Explorer.** With several tabs open it now always reads the tab you're looking at, and it tries again if File Explorer is busy for a moment, instead of saying "Select files first".
 

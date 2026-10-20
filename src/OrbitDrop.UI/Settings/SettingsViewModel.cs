@@ -32,6 +32,10 @@ public interface ISettingsHost
     /// <summary>Every option OrbitDrop has, for the Wheel page (built by the app from the live registry).</summary>
     IReadOnlyList<WheelCategory> WheelCatalog => [];
     void UpdateButtonClicked() { }
+    /// <summary>"Rate" in the Store version (the Store's own rating window); "Star on GitHub" otherwise.</summary>
+    string RateButtonText => "Rate";
+    string RateHint => "A quick rating helps other people find OrbitDrop.";
+    void RateClicked() { }
 }
 
 public sealed class SettingsViewModel : ObservableObject
@@ -48,6 +52,7 @@ public sealed class SettingsViewModel : ObservableObject
         OpenLicenseCommand = new RelayCommand(() => { if (host.LicensePath is { } p) host.OpenPath(p); }, () => host.LicensePath is not null);
         ResetCommand = new RelayCommand(() => { host.ResetSettings(); RaiseAll(); });
         UpdateCommand = new RelayCommand(host.UpdateButtonClicked);
+        RateCommand = new RelayCommand(host.RateClicked);
     }
 
     private AppSettings S => _host.Settings;
@@ -143,6 +148,9 @@ public sealed class SettingsViewModel : ObservableObject
         Raise(nameof(UpdateButtonEnabled));
     }
 
+    public RelayCommand RateCommand { get; }
+    public string RateButtonText => _host.RateButtonText;
+    public string RateHint => _host.RateHint;
     public RelayCommand PreviewWheelCommand { get; }
     public RelayCommand ShowOnboardingCommand { get; }
     public RelayCommand OpenLogsCommand { get; }

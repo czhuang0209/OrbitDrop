@@ -36,6 +36,18 @@ public partial class App
         timer.Start();
     });
 
+    public string RateButtonText => AppPackage.IsPackaged ? "Rate" : "Star on GitHub";
+    public string RateHint => AppPackage.IsPackaged
+        ? "A quick rating in the Microsoft Store helps other people find OrbitDrop."
+        : "A star on GitHub helps other people find OrbitDrop.";
+
+    public void RateClicked()
+    {
+        Update(s => s.RatingAsked = true); // they found it themselves: no need to ask later
+        if (AppPackage.IsPackaged) _ = RateAsync();
+        else UpdateManager.OpenUrl("https://github.com/i3sam/OrbitDrop");
+    }
+
     private async Task RateAsync()
     {
         IntPtr owner = _messages?.Handle ?? IntPtr.Zero;
