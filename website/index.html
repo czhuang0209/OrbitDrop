@@ -172,7 +172,10 @@
     <!-- Film -->
     <section class="film wrap reveal" aria-labelledby="film-title">
       <h2 id="film-title" class="split">See it in 30 seconds.</h2>
-      <div class="film-frame"><video src="/assets/film.mp4" poster="/assets/film-poster.jpg" controls preload="none" playsinline></video></div>
+      <div class="film-frame">
+        <video src="/assets/film.mp4" poster="/assets/film-poster.jpg" preload="metadata" playsinline aria-label="OrbitDrop trailer, 30 seconds"></video>
+        <button class="film-play" type="button" aria-label="Play the trailer"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>Play trailer <span class="len">0:32</span></button>
+      </div>
     </section>
 
     <!-- FAQ -->

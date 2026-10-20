@@ -271,4 +271,12 @@
   $$(".reveal").forEach((el) => io.observe(el));
 
   $$("[data-store]").forEach((a) => { a.href = STORE + a.dataset.store; });
+
+  // The trailer: one big play button, then the browser's own controls.
+  const film = $(".film-frame"), filmVideo = film && $("video", film);
+  film && $(".film-play", film).addEventListener("click", () => {
+    film.classList.add("started");
+    filmVideo.controls = true;
+    filmVideo.play().catch(() => {});
+  });
 })();

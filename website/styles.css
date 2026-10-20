@@ -177,8 +177,21 @@ section h2 { font-size: clamp(34px, 5vw, 56px); }
 @media (max-width: 520px) { .points { grid-template-columns: 1fr; } }
 
 .film h2 { text-align: center; margin-bottom: 30px; }
-.film-frame { border-radius: 26px; overflow: hidden; box-shadow: var(--shadow); background: #000; }
+.film-frame { position: relative; border-radius: 26px; overflow: hidden; box-shadow: var(--shadow); background: #000; }
 .film-frame video { width: 100%; aspect-ratio: 16 / 9; }
+/* a big play button until the film starts; then the browser's own controls take over */
+.film-play {
+  position: absolute; left: 50%; bottom: 28px; translate: -50% 0; display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 24px 14px 18px; border-radius: 999px; border: 0; cursor: pointer; font: 600 16px var(--font); color: #fff;
+  background: rgba(11, 11, 13, .86); backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(255, 255, 255, .12);
+  transition: scale .45s var(--spring, ease), opacity .3s, background .3s;
+}
+.film-play svg { flex: none; }
+.film-play .len { color: rgba(255, 255, 255, .6); font-weight: 500; }
+.film-play:hover { scale: 1.06; background: rgba(11, 11, 13, .95); }
+.film-play:active { scale: .96; }
+.film-frame.started .film-play { opacity: 0; pointer-events: none; scale: .8; }
 
 .faq { max-width: 760px; }
 .faq h2 { text-align: center; margin-bottom: 30px; }

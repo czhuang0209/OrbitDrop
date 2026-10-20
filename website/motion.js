@@ -123,7 +123,7 @@
   // What the ring does over different things: grow over links and buttons, tighten over the wheels, label media.
   const modes = [
     [".preview-wheel", "precise", ""],
-    ["video[controls]", "media", "Play"],
+    [".film-play", "media", "Play"],
     ["a, button, summary, [role=tab], kbd, label", "link", ""],
     [".tile, .cards article, .points article, .showcase", "card", ""],
   ];
