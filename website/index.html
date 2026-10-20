@@ -23,29 +23,26 @@
 <body>
   <a class="skip" href="#main">Skip to content</a>
 
-  <header class="nav">
-    <div class="wrap nav-inner">
-      <a class="brand" href="/" aria-label="OrbitDrop home"><img src="/assets/icon-256.png" alt="" width="28" height="28"><span>OrbitDrop</span></a>
+  <header class="nav" id="nav">
+    <div class="nav-pill">
+      <a class="brand" href="/" aria-label="OrbitDrop home" data-magnetic><img src="/assets/icon-256.png" alt="" width="26" height="26"><span>OrbitDrop</span></a>
       <nav aria-label="Main">
-        <a href="#features">Features</a>
-        <a href="#privacy">Privacy</a>
-        <a href="https://github.com/i3sam/OrbitDrop">GitHub</a>
+        <a href="#features" data-magnetic>Features</a>
+        <a href="#privacy" data-magnetic>Privacy</a>
+        <a href="#faq" data-magnetic>FAQ</a>
+        <a href="https://github.com/i3sam/OrbitDrop" data-magnetic>GitHub</a>
       </nav>
-      <a class="badge-link" data-store="nav" href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ" aria-label="Get OrbitDrop from the Microsoft Store">
-        <picture>
-          <source srcset="https://get.microsoft.com/images/en-us%20light.svg" media="(prefers-color-scheme: dark)">
-          <img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft" width="120" height="43">
-        </picture>
-      </a>
+      <a class="nav-cta" data-store="nav" href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ" data-magnetic>Get it free</a>
     </div>
   </header>
 
   <main id="main">
     <!-- Hero -->
     <section class="hero wrap">
-      <h1>The one-move<br>file converter.</h1>
+      <div class="hero-glow" aria-hidden="true"></div>
+      <h1 class="split">The one-move<br>file converter.</h1>
       <p class="lede">Drag a file, tap <kbd>Shift</kbd>, and let go. Convert, compress and share files without breaking your flow.</p>
-      <a class="badge-link big hero-badge" data-store="hero" href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ" aria-label="Get OrbitDrop from the Microsoft Store">
+      <a class="badge-link big hero-badge" data-magnetic data-store="hero" href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ" aria-label="Get OrbitDrop from the Microsoft Store">
         <picture>
           <source srcset="https://get.microsoft.com/images/en-us%20light.svg" media="(prefers-color-scheme: dark)">
           <img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft" width="160" height="58">
@@ -67,17 +64,10 @@
       </ol>
     </section>
 
-    <!-- Stats -->
-    <section class="stats wrap reveal" aria-label="What it can do">
-      <div><strong>20+</strong><h2>Conversions</h2><p>Images, PDFs, video and audio, to the formats you need.</p></div>
-      <div><strong>35+</strong><h2>File tools</h2><p>Compress, resize, rotate, edit, trim, normalize and more.</p></div>
-      <div><strong>10+</strong><h2>File actions</h2><p>Copy, move, share, zip, float, terminal and copy path.</p></div>
-    </section>
-
     <!-- Per kind -->
     <section class="kinds wrap" id="features" aria-labelledby="kinds-title">
       <div class="section-head reveal">
-        <h2 id="kinds-title">One wheel. Every kind of file.</h2>
+        <h2 id="kinds-title" class="split">One wheel. Every kind of file.</h2>
         <p>Point at the wheels to see what each option does.</p>
       </div>
       <div class="tabs reveal" role="tablist" aria-label="Kind of file">
@@ -109,7 +99,7 @@
     <section class="actions wrap" aria-labelledby="actions-title">
       <div class="actions-grid reveal">
         <div>
-          <h2 id="actions-title">File actions</h2>
+          <h2 id="actions-title" class="split">File actions</h2>
           <p class="sub">Works on any file or folder. Tap Shift three times.</p>
           <ul class="ticks">
             <li><b>Copy to, Move to.</b> A folder you pick, or a recent one. It never overwrites.</li>
@@ -154,7 +144,7 @@
 
     <!-- Formats -->
     <section class="formats wrap" aria-labelledby="formats-title">
-      <h2 id="formats-title" class="reveal">Supported formats</h2>
+      <h2 id="formats-title" class="split">Supported formats</h2>
       <div class="format-list reveal">
         <div class="row"><h3>Images</h3><p>JPG <span>PNG</span> GIF <span>BMP</span> TIFF</p><small>PDF export · reads WebP, HEIC, AVIF, JPEG XL and RAW when Windows has the codec</small></div>
         <div class="row"><h3>PDF</h3><p>Images → PDF <span>PDF → PNG</span> PDF → JPG</p><small>Merge · split · compress · rotate pages · several images into one PDF</small></div>
@@ -168,7 +158,7 @@
     <section class="privacy wrap" id="privacy" aria-labelledby="privacy-title">
       <div class="privacy-copy reveal">
         <p class="eyebrow">Privacy</p>
-        <h2 id="privacy-title">Your files stay on your PC.</h2>
+        <h2 id="privacy-title" class="split">Your files stay on your PC.</h2>
         <p>Online converters ask you to upload a copy of your file. That puts your photos, documents and their hidden details on a server you don't control.</p>
       </div>
       <div class="points reveal">
@@ -181,13 +171,13 @@
 
     <!-- Film -->
     <section class="film wrap reveal" aria-labelledby="film-title">
-      <h2 id="film-title">See it in 30 seconds.</h2>
+      <h2 id="film-title" class="split">See it in 30 seconds.</h2>
       <div class="film-frame"><video src="/assets/film.mp4" poster="/assets/film-poster.jpg" controls preload="none" playsinline></video></div>
     </section>
 
     <!-- FAQ -->
-    <section class="faq wrap reveal" aria-labelledby="faq-title">
-      <h2 id="faq-title">Questions</h2>
+    <section class="faq wrap reveal" id="faq" aria-labelledby="faq-title">
+      <h2 id="faq-title" class="split">Questions</h2>
       <details><summary>Is it really free?</summary><p>Yes. No trial, no ads, no account. It's open source, too.</p></details>
       <details><summary>Which Windows versions?</summary><p>Windows 11, and Windows 10 version 2004 or later, 64-bit.</p></details>
       <details><summary>Does it change my files?</summary><p>Never. Every result is a new file next to the original, with a new name if one already exists.</p></details>
@@ -198,8 +188,8 @@
     <!-- Closing -->
     <section class="closing wrap reveal">
       <img src="/assets/icon-256.png" alt="" width="96" height="96">
-      <h2>Your files. Your flow.</h2>
-      <a class="badge-link big" data-store="footer" href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ" aria-label="Get OrbitDrop from the Microsoft Store">
+      <h2 class="split">Your files. Your flow.</h2>
+      <a class="badge-link big" data-magnetic data-store="footer" href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ" aria-label="Get OrbitDrop from the Microsoft Store">
         <picture>
           <source srcset="https://get.microsoft.com/images/en-us%20light.svg" media="(prefers-color-scheme: dark)">
           <img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft" width="200" height="72" loading="lazy">
@@ -220,6 +210,10 @@
     </div>
   </footer>
 
+  <div class="cursor" aria-hidden="true"><div class="cursor-ring"><span class="cursor-label"></span></div><div class="cursor-dot"></div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js" defer></script>
   <script src="/app.js" defer></script>
+  <script src="/motion.js" defer></script>
 </body>
 </html>

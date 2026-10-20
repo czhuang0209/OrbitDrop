@@ -10,6 +10,7 @@ A static site: plain HTML, CSS and a little JavaScript. No build step and no dep
 | `app.js` | The interactive wheels (same slices, groups and modes as the app), tabs, keys that light up, the looping demos (light/dark) |
 | `assets/demo/*.mp4`, `*.jpg` | The guide's demos as small looping videos with still frames, light and dark (`OrbitDrop.exe --render-guide-frames`, then ffmpeg) |
 | `assets/film.mp4` | The launch film, web size |
+| `motion.js` | Smooth scrolling (Lenis 1.1.20, MIT, from jsDelivr), custom cursor, magnetic buttons, tilting cards, word-by-word headings, the floating header |
 | `vercel.json` | Clean URLs and caching for Vercel |
 | `dev-server.mjs` | Local preview (not deployed; see `.vercelignore`) |
 
