@@ -3,18 +3,31 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>OrbitDrop · The one-move file converter for Windows</title>
-  <meta name="description" content="Drag a file, tap Shift, and let go. Convert, compress, edit and share files without opening an app. Free, offline, for Windows 10 and 11.">
+  <title>OrbitDrop · Free File Converter for Windows (Offline, Drag & Drop)</title>
+  <meta name="description" content="Free, offline file converter for Windows 10 and 11. Drag a file, tap Shift, let go: convert PNG to JPG or PDF, compress images under 1 MB, merge PDFs, extract MP3 from video. No uploads, no account.">
+  <link rel="canonical" href="https://orbitdrop.essam.biz/">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="Mohammed Essam">
+  <meta name="application-name" content="OrbitDrop">
   <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0B0B0D" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="/assets/favicon-64.png" type="image/png">
   <link rel="apple-touch-icon" href="/assets/icon-256.png">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="OrbitDrop · The one-move file converter for Windows">
-  <meta property="og:description" content="Drag a file, tap Shift, let go. Free and offline, for Windows 10 and 11.">
-  <meta property="og:image" content="/assets/og.png">
+  <meta property="og:site_name" content="OrbitDrop">
+  <meta property="og:url" content="https://orbitdrop.essam.biz/">
+  <meta property="og:title" content="OrbitDrop · Free File Converter for Windows">
+  <meta property="og:description" content="Drag a file, tap Shift, let go. Convert, compress and merge files offline on Windows 10 and 11. Free and open source.">
+  <meta property="og:image" content="https://orbitdrop.essam.biz/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="OrbitDrop's wheel of formats opening next to a file">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="OrbitDrop · Free File Converter for Windows">
+  <meta name="twitter:description" content="Drag a file, tap Shift, let go. Convert, compress and merge files offline. Free and open source.">
+  <meta name="twitter:image" content="https://orbitdrop.essam.biz/assets/og.png">
+  <script type="application/ld+json">[{"@context":"https://schema.org","@type":"SoftwareApplication","name":"OrbitDrop","alternateName":"OrbitDrop - Drag & Convert","description":"A free, offline file converter for Windows. Drag a file, tap Shift and pick a format: convert images to JPG, PNG or PDF, compress photos, merge PDFs, extract MP3 from video, and more.","applicationCategory":"UtilitiesApplication","operatingSystem":"Windows 10, Windows 11","url":"https://orbitdrop.essam.biz/","downloadUrl":"https://apps.microsoft.com/detail/9NJQRMQLL2SZ","installUrl":"https://apps.microsoft.com/detail/9NJQRMQLL2SZ","image":"https://orbitdrop.essam.biz/assets/og.png","screenshot":"https://orbitdrop.essam.biz/assets/editor.jpg","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Mohammed Essam"},"sameAs":["https://github.com/i3sam/OrbitDrop","https://apps.microsoft.com/detail/9NJQRMQLL2SZ"]},{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is OrbitDrop really free?","acceptedAnswer":{"@type":"Answer","text":"Yes. No trial, no ads, no account. It's open source (MIT), and free on the Microsoft Store."}},{"@type":"Question","name":"How do I convert PNG to JPG on Windows?","acceptedAnswer":{"@type":"Answer","text":"Start dragging the PNG in File Explorer, tap Shift, and let go on JPG. The JPG appears next to the original. No app to open, nothing uploaded."}},{"@type":"Question","name":"How do I compress an image to under 1 MB?","acceptedAnswer":{"@type":"Answer","text":"Drag the photo, tap Shift twice for Tools, rest on Compress and let go on 1 MB. OrbitDrop saves a smaller copy and keeps your original."}},{"@type":"Question","name":"Can I merge PDF files offline?","acceptedAnswer":{"@type":"Answer","text":"Yes. Drag several PDFs, tap Shift twice and choose Merge. You can also split, compress and rotate PDFs. Nothing leaves your PC."}},{"@type":"Question","name":"Is there a Tangerine alternative for Windows?","acceptedAnswer":{"@type":"Answer","text":"OrbitDrop brings the same idea to Windows: drag a file, tap a key, and pick what to do with it from a wheel at your cursor."}},{"@type":"Question","name":"Which Windows versions does it work on?","acceptedAnswer":{"@type":"Answer","text":"Windows 11, and Windows 10 version 2004 or later, 64-bit."}},{"@type":"Question","name":"Does it change my original files?","acceptedAnswer":{"@type":"Answer","text":"Never. Every result is a new file next to the original, with a new name if one already exists."}},{"@type":"Question","name":"Does it need the internet?","acceptedAnswer":{"@type":"Answer","text":"No. Everything runs on your PC, even offline. The Microsoft Store keeps it up to date."}},{"@type":"Question","name":"Where is it when I'm not using it?","acceptedAnswer":{"@type":"Answer","text":"In the notification area next to the clock. Click it for Settings and the guide."}}]}]</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -41,7 +54,7 @@
     <section class="hero wrap">
       <div class="hero-glow" aria-hidden="true"></div>
       <h1 class="split">The one-move<br>file converter.</h1>
-      <p class="lede">Drag a file, tap <kbd>Shift</kbd>, and let go. Convert, compress and share files without breaking your flow.</p>
+      <p class="lede">Drag a file, tap <kbd>Shift</kbd>, and let go. A free, offline file converter for Windows that converts, compresses and shares files without opening an app.</p>
       <a class="badge-link big hero-badge" data-magnetic data-store="hero" href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ" aria-label="Get OrbitDrop from the Microsoft Store">
         <picture>
           <source srcset="https://get.microsoft.com/images/en-us%20light.svg" media="(prefers-color-scheme: dark)">
@@ -181,16 +194,20 @@
     <!-- FAQ -->
     <section class="faq wrap reveal" id="faq" aria-labelledby="faq-title">
       <h2 id="faq-title" class="split">Questions</h2>
-      <details><summary>Is it really free?</summary><p>Yes. No trial, no ads, no account. It's open source, too.</p></details>
-      <details><summary>Which Windows versions?</summary><p>Windows 11, and Windows 10 version 2004 or later, 64-bit.</p></details>
-      <details><summary>Does it change my files?</summary><p>Never. Every result is a new file next to the original, with a new name if one already exists.</p></details>
-      <details><summary>Does it need the internet?</summary><p>No. Everything runs on your PC. The Microsoft Store keeps it up to date.</p></details>
+      <details><summary>Is OrbitDrop really free?</summary><p>Yes. No trial, no ads, no account. It's open source (MIT), and free on the Microsoft Store.</p></details>
+      <details><summary>How do I convert PNG to JPG on Windows?</summary><p>Start dragging the PNG in File Explorer, tap Shift, and let go on JPG. The JPG appears next to the original. No app to open, nothing uploaded.</p></details>
+      <details><summary>How do I compress an image to under 1 MB?</summary><p>Drag the photo, tap Shift twice for Tools, rest on Compress and let go on 1 MB. OrbitDrop saves a smaller copy and keeps your original.</p></details>
+      <details><summary>Can I merge PDF files offline?</summary><p>Yes. Drag several PDFs, tap Shift twice and choose Merge. You can also split, compress and rotate PDFs. Nothing leaves your PC.</p></details>
+      <details><summary>Is there a Tangerine alternative for Windows?</summary><p>OrbitDrop brings the same idea to Windows: drag a file, tap a key, and pick what to do with it from a wheel at your cursor.</p></details>
+      <details><summary>Which Windows versions does it work on?</summary><p>Windows 11, and Windows 10 version 2004 or later, 64-bit.</p></details>
+      <details><summary>Does it change my original files?</summary><p>Never. Every result is a new file next to the original, with a new name if one already exists.</p></details>
+      <details><summary>Does it need the internet?</summary><p>No. Everything runs on your PC, even offline. The Microsoft Store keeps it up to date.</p></details>
       <details><summary>Where is it when I'm not using it?</summary><p>In the notification area next to the clock. Click it for Settings and the guide.</p></details>
     </section>
 
     <!-- Closing -->
     <section class="closing wrap reveal">
-      <img src="/assets/icon-256.png" alt="" width="96" height="96">
+      <img src="/assets/icon-256.png" alt="OrbitDrop app icon" width="96" height="96">
       <h2 class="split">Your files. Your flow.</h2>
       <a class="badge-link big" data-magnetic data-store="footer" href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ" aria-label="Get OrbitDrop from the Microsoft Store">
         <picture>
