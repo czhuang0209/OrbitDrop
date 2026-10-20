@@ -100,6 +100,65 @@ public class DragDataTests
         Assert.Empty(DataObjectReader.ReadFileDrop((ComIDataObject)data));
     }
 
+    /// <summary>What VS Code's drag looked like on a real PC: CF_HDROP is listed, but asking for it fails.</summary>
+    private sealed class BrokenHDrop(ComIDataObject inner) : ComIDataObject
+    {
+        private const short CF_HDROP = 15;
+        public void GetData(ref System.Runtime.InteropServices.ComTypes.FORMATETC f, out System.Runtime.InteropServices.ComTypes.STGMEDIUM m)
+        {
+            if (f.cfFormat == CF_HDROP) throw new System.Runtime.InteropServices.COMException("Invalid FORMATETC structure", unchecked((int)0x80040064));
+            inner.GetData(ref f, out m);
+        }
+        public int QueryGetData(ref System.Runtime.InteropServices.ComTypes.FORMATETC f) => f.cfFormat == CF_HDROP ? 0 : inner.QueryGetData(ref f);
+        public void GetDataHere(ref System.Runtime.InteropServices.ComTypes.FORMATETC f, ref System.Runtime.InteropServices.ComTypes.STGMEDIUM m) => inner.GetDataHere(ref f, ref m);
+        public int GetCanonicalFormatEtc(ref System.Runtime.InteropServices.ComTypes.FORMATETC i, out System.Runtime.InteropServices.ComTypes.FORMATETC o) => inner.GetCanonicalFormatEtc(ref i, out o);
+        public void SetData(ref System.Runtime.InteropServices.ComTypes.FORMATETC f, ref System.Runtime.InteropServices.ComTypes.STGMEDIUM m, bool release) => inner.SetData(ref f, ref m, release);
+        public System.Runtime.InteropServices.ComTypes.IEnumFORMATETC EnumFormatEtc(System.Runtime.InteropServices.ComTypes.DATADIR d) => inner.EnumFormatEtc(d);
+        public int DAdvise(ref System.Runtime.InteropServices.ComTypes.FORMATETC f, System.Runtime.InteropServices.ComTypes.ADVF a, System.Runtime.InteropServices.ComTypes.IAdviseSink s, out int c) => inner.DAdvise(ref f, a, s, out c);
+        public void DUnadvise(int c) => inner.DUnadvise(c);
+        public int EnumDAdvise(out System.Runtime.InteropServices.ComTypes.IEnumSTATDATA? e) => inner.EnumDAdvise(out e);
+    }
+
+    [Fact]
+    public void A_failing_cf_hdrop_does_not_hide_the_other_formats()
+    {
+        string a = TempFile("Bahrain Chamber Template.docx");
+        var data = new System.Windows.DataObject();
+        data.SetData(System.Windows.DataFormats.UnicodeText, a);
+        Assert.Equal([a], DataObjectReader.ReadFileDrop(new BrokenHDrop((ComIDataObject)data)));
+    }
+
+    /// <summary>VS Code's Explorer, as its source writes it: text paths (files and folders), ResourceURLs (files only),
+    /// and a DownloadURL whose CF_HDROP can't be read.</summary>
+    [Fact]
+    public void Reads_vs_code_explorer_drag_with_a_folder()
+    {
+        string file = TempFile("Bahrain Chamber Template.docx");
+        string folder = Path.GetDirectoryName(file)!;
+        var data = new System.Windows.DataObject();
+        data.SetData(System.Windows.DataFormats.UnicodeText, file + "\r\n" + folder);
+        string uris = System.Text.Json.JsonSerializer.Serialize(new[] { new Uri(file).AbsoluteUri });
+        data.SetData("Chromium Web Custom MIME Data Format", new MemoryStream(Pickle(("resourceurls", uris), ("downloadurl", "application/octet-stream:x:file:///x"))));
+        Assert.Equal([file, folder], DataObjectReader.ReadFileDrop(new BrokenHDrop((ComIDataObject)data)));
+    }
+
+    [Fact]
+    public void Uses_resource_urls_when_the_text_is_not_a_path_list()
+    {
+        string file = TempFile("deck.pdf");
+        var data = new System.Windows.DataObject();
+        data.SetData(System.Windows.DataFormats.UnicodeText, "deck.pdf");
+        string uris = System.Text.Json.JsonSerializer.Serialize(new[] { "file:///" + file.Replace('\\', '/').Replace(":", "%3A").Replace(" ", "%20") });
+        data.SetData("Chromium Web Custom MIME Data Format", new MemoryStream(Pickle(("resourceurls", uris))));
+        Assert.Equal([file], DataObjectReader.ReadFileDrop(new BrokenHDrop((ComIDataObject)data)));
+    }
+
+    [Fact]
+    public void Vs_code_file_links_become_paths()
+    {
+        Assert.Equal([@"c:\Users\me\a b.png"], DataObjectReader.PathsFromUris(["vscode-file://vscode-app/c%3A/Users/me/a%20b.png"]));
+    }
+
     [Fact]
     public void Explorer_file_drop_still_wins()
     {

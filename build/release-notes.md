@@ -1,4 +1,8 @@
-## What's new in 0.2.9-alpha
+## What's new in 0.2.10-alpha
+
+- **Fixed: dragging from VS Code.** In 0.2.9 the wheel opened but said "No files". It now reads the real file and folder paths VS Code sends, so drag from its Explorer sidebar, tap Shift, and let go on what you want. Results land next to your original, not in a temporary folder.
+
+## In 0.2.9-alpha
 
 - **Works with VS Code:** drag a file or folder from VS Code's Explorer sidebar, tap Shift, and the wheel opens, just like from File Explorer. The same goes for other apps that drag files their own way (many are built like VS Code).
 

@@ -25,35 +25,49 @@ public static class DataObjectReader
 
     /// <summary>
     /// The files being dragged. Explorer and most apps provide CF_HDROP. Apps that don't (VS Code's Explorer, and
-    /// other Chromium/Electron apps) still describe the files: as Chromium custom web data (VS Code's "CodeFiles"),
-    /// a file:// URL, a single file name, or plain text with one path per line. Only paths that exist are returned.
+    /// other Chromium/Electron apps) still describe the files: as Chromium custom web data, plain text with one full
+    /// path per line, a file:// URL or a single file name. Apart from CF_HDROP, only paths that exist are returned.
     /// </summary>
     public static string[] ReadFileDrop(ComIDataObject data)
     {
-        string[] hdrop = ReadHDrop(data);
-        if (hdrop.Length > 0) return hdrop;
-
-        foreach (var read in new Func<ComIDataObject, IEnumerable<string>>[] { FromChromiumCustom, FromUrl, FromFileName, FromText })
+        // The real paths come first. VS Code's Explorer sends each item's full path as text (files and folders) and
+        // file:// links in "ResourceURLs" (files only); its other views send "CodeFiles". Its CF_HDROP is a promise
+        // of a temporary download copy (DownloadURL) and can fail to render (DV_E_FORMATETC), so it comes after them.
+        // Plain text only counts when every line is an existing full path. Each source is tried on its own, so one
+        // that fails never hides the others.
+        var sources = new (string Name, Func<ComIDataObject, IEnumerable<string>> Read)[]
+        {
+            ("CodeFiles", d => FromChromiumCustom(d, "CodeFiles")), ("text", FromText),
+            ("ResourceURLs", d => FromChromiumCustom(d, "ResourceURLs")), ("CF_HDROP", ReadHDrop), ("URL", FromUrl),
+            ("FileNameW", FromFileName), ("text/uri-list", d => FromChromiumCustom(d, "text/uri-list")),
+        };
+        foreach (var (name, read) in sources)
         {
             string[] found;
-            try { found = Existing(read(data)); }
-            catch (Exception ex) { Diagnostics.Write($"Drag data read failed: {ex.Message}"); continue; }
-            if (found.Length > 0) return found;
+            // CF_HDROP is used as given (as before); the other sources only count paths that exist.
+            try { found = name == "CF_HDROP" ? read(data).ToArray() : Existing(read(data)); }
+            catch (Exception ex) { Diagnostics.Write($"Drag data: {name} unreadable ({ex.Message})"); continue; }
+            if (found.Length == 0) continue;
+            if (name != "CF_HDROP") Diagnostics.Write($"Drag data: {found.Length} file(s) from {name}");
+            return found;
         }
         return [];
     }
 
-    private static IEnumerable<string> FromChromiumCustom(ComIDataObject data)
+    /// <summary>One entry of Chromium's custom web data: "CodeFiles" (JSON paths), "ResourceURLs" (JSON URIs) or "text/uri-list".</summary>
+    private static IEnumerable<string> FromChromiumCustom(ComIDataObject data, string type)
     {
         if (ReadBytes(data, CfChromiumCustom) is not { } bytes) return [];
-        var custom = ParseChromiumCustomData(bytes);
-        // VS Code: "CodeFiles" is a JSON array of file system paths; "ResourceURLs" a JSON array of URIs.
-        foreach (var (type, value) in custom)
-            if (type.Equals("CodeFiles", StringComparison.OrdinalIgnoreCase) && JsonStrings(value) is { Length: > 0 } paths) return paths;
-        foreach (var (type, value) in custom)
-            if (type.Equals("ResourceURLs", StringComparison.OrdinalIgnoreCase) && JsonStrings(value) is { Length: > 0 } uris) return PathsFromUris(uris);
-        foreach (var (type, value) in custom)
-            if (type.Equals("text/uri-list", StringComparison.OrdinalIgnoreCase)) return PathsFromUris(value.Split('\n'));
+        foreach (var (t, value) in ParseChromiumCustomData(bytes))
+        {
+            if (!t.Equals(type, StringComparison.OrdinalIgnoreCase)) continue; // Blink lowercases the types
+            return type switch
+            {
+                "CodeFiles" => JsonStrings(value),
+                "ResourceURLs" => PathsFromUris(JsonStrings(value)),
+                _ => PathsFromUris(value.Split('\n')),
+            };
+        }
         return [];
     }
 
@@ -93,17 +107,17 @@ public static class DataObjectReader
         return result;
     }
 
-    /// <summary>file:// URIs (one per entry; blank lines and "#" comments ignored) as local paths.</summary>
+    /// <summary>file:// (and VS Code's vscode-file://vscode-app/...) URIs, one per entry, as local paths. Blank lines and "#" comments are ignored.</summary>
     public static string[] PathsFromUris(IEnumerable<string> uris) =>
         uris.Select(u => u.Trim().Trim('\0'))
             .Where(u => u.Length > 0 && !u.StartsWith('#'))
-            .Select(u => Uri.TryCreate(u, UriKind.Absolute, out var uri) && uri.IsFile ? LocalPath(uri) : null)
+            .Select(u => Uri.TryCreate(u, UriKind.Absolute, out var uri) && (uri.IsFile || uri.Scheme == "vscode-file") ? LocalPath(uri) : null)
             .OfType<string>().ToArray();
 
     /// <summary>VS Code writes the drive colon encoded ("file:///c%3A/..."), which Uri.LocalPath leaves as "/c:/...".</summary>
     private static string LocalPath(Uri uri)
     {
-        if (uri.IsUnc) return uri.LocalPath;
+        if (uri.IsFile && uri.IsUnc) return uri.LocalPath;
         string path = Uri.UnescapeDataString(uri.AbsolutePath);
         if (path.Length >= 3 && path[0] == '/' && char.IsAsciiLetter(path[1]) && path[2] == ':') path = path[1..];
         return path.Replace('/', '\\');
