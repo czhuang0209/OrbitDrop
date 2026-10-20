@@ -8,6 +8,7 @@ public static class Win32
 {
     // ---- WinEvents (out-of-context) ----
     public const uint EVENT_OBJECT_SHOW = 0x8002, EVENT_OBJECT_HIDE = 0x8003;
+    public const uint EVENT_SYSTEM_CAPTURESTART = 0x0008;
     public const uint WINEVENT_OUTOFCONTEXT = 0x0000, WINEVENT_SKIPOWNPROCESS = 0x0002;
     public const int OBJID_WINDOW = 0;
 
@@ -167,6 +168,9 @@ public static class Win32
 
     [DllImport("kernel32.dll")]
     public static extern bool GlobalUnlock(IntPtr mem);
+
+    [DllImport("kernel32.dll")]
+    public static extern UIntPtr GlobalSize(IntPtr mem);
 
     [DllImport("kernel32.dll")]
     public static extern IntPtr GlobalFree(IntPtr mem);

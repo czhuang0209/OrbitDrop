@@ -1,4 +1,8 @@
-## What's new in 0.2.8-alpha
+## What's new in 0.2.9-alpha
+
+- **Works with VS Code:** drag a file or folder from VS Code's Explorer sidebar, tap Shift, and the wheel opens, just like from File Explorer. The same goes for other apps that drag files their own way (many are built like VS Code).
+
+## In 0.2.8-alpha
 
 - **Trimming works on more PCs:** if your graphics hardware can't encode the video, OrbitDrop now finishes the trim in software instead of failing.
 - **The guide's demos are easier to read:** the pointer now rests beside each option instead of on top of its label.

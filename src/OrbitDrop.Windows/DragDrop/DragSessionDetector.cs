@@ -10,6 +10,9 @@ namespace OrbitDrop.Windows.DragDrop;
 /// <item><b>Primary signal</b>: the shell's <c>SysDragImage</c> window is shown (out-of-context WinEvent; 18/18 in the
 /// feasibility run, never on plain clicks). It is <i>latched</i> until the drag button is released, because the shell
 /// hides the image while the cursor is over our wheel (feasibility R8).</item>
+/// <item><b>OLE drag loop</b>: every OLE drag (<c>DoDragDrop</c>) gives mouse capture to OLE's hidden
+/// <c>CLIPBRDWNDCLASS</c> window for as long as the drag lasts. Apps that draw their own drag image (VS Code and other
+/// Chromium/Electron apps) never show <c>SysDragImage</c>, but they all go through this loop. Latched the same way.</item>
 /// <item><b>Optional</b> "extended detection": a low-level mouse hook heuristic for drag sources that don't use the
 /// shell drag image (off by default; it is noisy, feasibility R9).</item>
 /// <item>Key and button state is polled at ~60 Hz <b>only while a drag is armed or a wheel is open</b>. There is no
@@ -21,9 +24,9 @@ public sealed class DragSessionDetector : IDisposable
     private readonly Win32.WinEventProc _winEventProc;
     private readonly Win32.LowLevelProc _mouseProc;
     private readonly DispatcherTimer _poll;
-    private IntPtr _showHideHook, _mouseHook;
+    private IntPtr _showHideHook, _captureHook, _mouseHook;
     private IntPtr _dragImage;
-    private bool _imageArmed, _hookArmed, _hookButtonDown;
+    private bool _imageArmed, _oleArmed, _hookArmed, _hookButtonDown;
     private Win32.POINT _downPoint;
     private bool _prevTrigger, _prevEscape, _prevButton;
     private int _triggerVk = Win32.VK_SHIFT;
@@ -47,7 +50,9 @@ public sealed class DragSessionDetector : IDisposable
 
     public bool Enabled { get; set; } = true;
 
-    public bool IsArmed => (_imageArmed || _hookArmed) && DragButtonDown;
+    public bool IsArmed => Armed && DragButtonDown;
+
+    private bool Armed => _imageArmed || _oleArmed || _hookArmed;
 
     public static bool DragButtonDown =>
         Win32.IsDown(Win32.GetSystemMetrics(Win32.SM_SWAPBUTTON) != 0 ? Win32.VK_RBUTTON : Win32.VK_LBUTTON);
@@ -56,7 +61,10 @@ public sealed class DragSessionDetector : IDisposable
     {
         _showHideHook = Win32.SetWinEventHook(Win32.EVENT_OBJECT_SHOW, Win32.EVENT_OBJECT_HIDE, IntPtr.Zero, _winEventProc, 0, 0,
             Win32.WINEVENT_OUTOFCONTEXT | Win32.WINEVENT_SKIPOWNPROCESS);
+        _captureHook = Win32.SetWinEventHook(Win32.EVENT_SYSTEM_CAPTURESTART, Win32.EVENT_SYSTEM_CAPTURESTART, IntPtr.Zero, _winEventProc, 0, 0,
+            Win32.WINEVENT_OUTOFCONTEXT | Win32.WINEVENT_SKIPOWNPROCESS);
         Diagnostics.Write(_showHideHook != IntPtr.Zero ? "Drag detection active (shell drag image)" : "Drag detection hook FAILED");
+        Diagnostics.Write(_captureHook != IntPtr.Zero ? "Drag detection active (OLE drag loop)" : "OLE drag detection hook FAILED");
     }
 
     public void SetTriggerKey(bool ctrl) => _triggerVk = ctrl ? Win32.VK_CONTROL : Win32.VK_SHIFT;
@@ -79,6 +87,16 @@ public sealed class DragSessionDetector : IDisposable
 
     private void OnWinEvent(IntPtr hook, uint evt, IntPtr hwnd, int idObject, int idChild, uint thread, uint time)
     {
+        if (evt == Win32.EVENT_SYSTEM_CAPTURESTART)
+        {
+            if (!_oleArmed && DragButtonDown && Win32.ClassNameOf(hwnd) == "CLIPBRDWNDCLASS")
+            {
+                _oleArmed = true;
+                Diagnostics.Write("Drag detected (OLE drag loop)");
+                StartPolling();
+            }
+            return;
+        }
         if (idObject != Win32.OBJID_WINDOW || idChild != 0) return;
         if (evt == Win32.EVENT_OBJECT_SHOW && Win32.ClassNameOf(hwnd) == "SysDragImage")
         {
@@ -141,24 +159,25 @@ public sealed class DragSessionDetector : IDisposable
     {
         bool button = DragButtonDown, trigger = Win32.IsDown(_triggerVk), escape = Win32.IsDown(Win32.VK_ESCAPE);
 
-        if (Enabled && trigger && !_prevTrigger && (SessionOpen || ((_imageArmed || _hookArmed) && button)))
+        if (Enabled && trigger && !_prevTrigger && (SessionOpen || (Armed && button)))
             TriggerPressed?.Invoke();
         if (escape && !_prevEscape && SessionOpen) EscapePressed?.Invoke();
         if (!button && _prevButton)
         {
-            _imageArmed = _hookArmed = false;
+            _imageArmed = _oleArmed = _hookArmed = false;
             DragButtonReleased?.Invoke();
         }
 
         _prevTrigger = trigger; _prevEscape = escape; _prevButton = button;
-        if (!button && !SessionOpen && !_imageArmed && !_hookArmed) _poll.Stop();
+        if (!button && !SessionOpen && !Armed) _poll.Stop();
     }
 
     public void Dispose()
     {
         _poll.Stop();
         if (_showHideHook != IntPtr.Zero) Win32.UnhookWinEvent(_showHideHook);
+        if (_captureHook != IntPtr.Zero) Win32.UnhookWinEvent(_captureHook);
         if (_mouseHook != IntPtr.Zero) Win32.UnhookWindowsHookEx(_mouseHook);
-        _showHideHook = _mouseHook = IntPtr.Zero;
+        _showHideHook = _captureHook = _mouseHook = IntPtr.Zero;
     }
 }

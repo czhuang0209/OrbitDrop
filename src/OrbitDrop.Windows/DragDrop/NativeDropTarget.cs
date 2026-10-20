@@ -56,7 +56,8 @@ public sealed class NativeDropTarget : Ole.IDropTarget
             int allowed = pdwEffect;
             string[] files = [];
             try { files = DataObjectReader.ReadFileDrop(pDataObj); }
-            catch (Exception ex) { Diagnostics.Write($"CF_HDROP read failed: {ex.Message}"); }
+            catch (Exception ex) { Diagnostics.Write($"File list read failed: {ex.Message}"); }
+            if (files.Length == 0) Diagnostics.Write($"Drag has no files; formats: {string.Join(", ", DataObjectReader.ListFormats(pDataObj))}");
 
             var p = new Win32.POINT(pt.X, pt.Y);
             _sink.OnDragEnter(files, p);
