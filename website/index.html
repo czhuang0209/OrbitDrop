@@ -54,24 +54,17 @@
       <p class="local">Everything happens on your PC. Free for Windows 10 and 11.</p>
     </section>
 
-    <!-- Live playground -->
-    <section class="play wrap" aria-label="Interactive demo">
-      <div class="scene" id="playground">
-        <div class="wallpaper" aria-hidden="true"></div>
-        <div class="hint-wrap"><div class="hint" id="hint" role="status" aria-live="polite"><span id="hint-text">Drag a file</span></div></div>
-        <div class="desk"></div>
-        <aside class="shelf" aria-live="polite"></aside>
-        <div class="toasts" aria-live="polite"></div>
-        <div class="taskbar" aria-hidden="true">
-          <span class="tb-start"></span><span class="tb-app"></span><span class="tb-app"></span><span class="tb-app"></span>
-          <span class="tb-tray"><img src="/assets/icon-256.png" alt="" width="16" height="16"><span>12:00</span></span>
-        </div>
-      </div>
-      <div class="play-foot">
-        <span>A little live demo. Use your mouse and the <kbd>Shift</kbd> key, or tap a file.</span>
-        <button class="key-btn" id="shift-key" type="button" aria-label="Shift key"><span>⇧</span>Shift</button>
-        <button class="text-btn" id="reset" type="button">Reset</button>
-      </div>
+    <!-- The real app, looping -->
+    <section class="play wrap" aria-label="OrbitDrop in action">
+      <figure class="showcase">
+        <video class="demo" data-light="/assets/demo/hero.mp4" data-dark="/assets/demo/hero-dark.mp4" autoplay muted loop playsinline preload="auto"
+          aria-label="Dragging photo.png, tapping Shift, and letting go on JPG: photo.jpg appears next to the original"></video>
+      </figure>
+      <ol class="steps-inline">
+        <li><span>1</span>Drag a file</li>
+        <li><span>2</span>Tap <kbd>Shift</kbd></li>
+        <li><span>3</span>Let go on what you want</li>
+      </ol>
     </section>
 
     <!-- Stats -->
@@ -226,15 +219,6 @@
       </nav>
     </div>
   </footer>
-
-  <dialog id="editor-dialog" aria-label="The photo editor">
-    <button class="close" type="button" aria-label="Close">✕</button>
-    <p>In the app, <b>Edit</b> opens this, right where you are. <b>Save copy</b> keeps your original.</p>
-    <picture>
-      <source srcset="/assets/editor-dark.jpg" media="(prefers-color-scheme: dark)">
-      <img src="/assets/editor.jpg" alt="The OrbitDrop photo editor" width="1600" height="1112">
-    </picture>
-  </dialog>
 
   <script src="/app.js" defer></script>
 </body>

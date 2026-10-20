@@ -7,7 +7,7 @@ A static site: plain HTML, CSS and a little JavaScript. No build step and no dep
 | `index.html` | The home page |
 | `privacy.html` | The privacy policy (served at `/privacy`) |
 | `styles.css` | Look: clean and white, dark mode follows the system |
-| `app.js` | The live playground (drag a file, tap Shift, let go), the interactive wheels (same slices, groups and modes as the app), tabs, keys that light up, demo videos |
+| `app.js` | The interactive wheels (same slices, groups and modes as the app), tabs, keys that light up, the looping demos (light/dark) |
 | `assets/demo/*.mp4`, `*.jpg` | The guide's demos as small looping videos with still frames, light and dark (`OrbitDrop.exe --render-guide-frames`, then ffmpeg) |
 | `assets/film.mp4` | The launch film, web size |
 | `vercel.json` | Clean URLs and caching for Vercel |
