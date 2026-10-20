@@ -4,6 +4,8 @@ Where to post, what to post, and when. Every post below is ready to copy. Each o
 
 **The one-line pitch:** OrbitDrop lets you convert, compress and share files without opening an app: drag a file, tap Shift, let go. Free on the Microsoft Store.
 
+**New since the first draft:** PDF tools (merge, split, compress, rotate) and VS Code support. Mention them: "merge PDFs without uploading them anywhere" is a strong hook on its own.
+
 ---
 
 ## 0. Before you post (once, about 30 minutes)
@@ -42,6 +44,7 @@ Don't post everywhere on the same day. Spread it out so you can reply to everyon
 | Day 1 (Tue or Wed) | **r/Windows11** + X thread | The core audience. Learn which questions come up. |
 | Day 2 | **Show HN** (Hacker News) | Post between 8 and 10 am US Eastern. Open source and offline go down well here. |
 | Day 3 | **r/software**, **r/opensource** | Different crowds, same post with small tweaks. |
+| Day 4 | **r/vscode** | OrbitDrop now works from VS Code's sidebar: a niche, very engaged crowd. |
 | Day 4 | **YouTube Shorts, TikTok, Instagram Reels** | Post all three vertical clips over the week, one per day. |
 | Day 5 | **AlternativeTo** + **LinkedIn** | Slow-burn discovery; people search "Tangerine alternative". |
 | Week 2, Tue | **Product Hunt** | Goes live at 12:01 am US Pacific. Ask friends to look that day, but never ask for upvotes. |
@@ -76,6 +79,25 @@ Tap Shift again for Tools (compress to under 1 MB, resize, rotate, a small photo
 - Microsoft Store: https://apps.microsoft.com/detail/9NJQRMQLL2SZ?cid=reddit
 
 It's inspired by Tangerine on the Mac. I'd love feedback, especially on what's missing from the wheel!
+```
+
+### Reddit: r/vscode (Day 4)
+
+**Attach:** `videos/OrbitDrop-Kinetic-16x9.mp4`, or a short screen recording of you dragging a file out of VS Code's sidebar and tapping Shift (that's the most convincing thing you can post here).
+
+**Title:**
+```
+I made a free tool: drag a file from VS Code's Explorer, tap Shift, and convert/compress/zip it without leaving the editor
+```
+**Text:**
+```
+OrbitDrop is a small Windows app: start dragging any file (VS Code's Explorer works too), tap Shift, and a wheel opens under your cursor. Let go on PNG, PDF, MP3, "compress to 1 MB", "zip", "merge PDFs"... and the result lands next to the original.
+
+No dragging? Select files in VS Code's Explorer and press Ctrl+Alt+Space.
+
+Free, offline, open source (MIT): https://github.com/i3sam/OrbitDrop
+Microsoft Store: https://apps.microsoft.com/detail/9NJQRMQLL2SZ?cid=reddit
+Works in Cursor and VSCodium too. Feedback very welcome!
 ```
 
 ### Reddit: r/software and r/opensource (Day 3)
@@ -288,7 +310,9 @@ Mohammed Essam
 | `images/portrait-1-files-1080x1350.png` | 1080 × 1350 | Instagram and LinkedIn feed (portrait gets more space) |
 | `images/portrait-2-dark-1080x1350.png` | 1080 × 1350 | Dark-mode lovers |
 | `images/x-header-1500x500.png` | 1500 × 500 | X/Twitter profile header |
-| `videos/OrbitDrop-Trailer-1080p.mp4` | 70 s, 16:9 | YouTube, Product Hunt, the website |
+| `videos/OrbitDrop-Kinetic-16x9.mp4` | 33 s, 16:9 | **Best trailer.** YouTube, Product Hunt, Store trailer, website, Reddit, X |
+| `videos/OrbitDrop-Kinetic-Laptop-9x16.mp4` | 33 s, 9:16 | **Best vertical.** TikTok, Reels, Shorts (the "filmed on a laptop" look) |
+| `videos/OrbitDrop-Trailer-1080p.mp4` | 70 s, 16:9 | The longer, narrated film (AI voice: check the ElevenLabs licence first) |
 | `videos/OrbitDrop-Square-Convert.mp4` | 15 s, 1:1 | X, LinkedIn, Reddit |
 | `videos/OrbitDrop-Vertical-*.mp4` | 13–16 s, 9:16 | Shorts, TikTok, Reels, Stories |
 | `gifs/guide-*.gif` | 600 × 320 | Reddit, GitHub, forums, anywhere video won't play |
