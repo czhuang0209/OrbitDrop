@@ -153,6 +153,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         wheel.Prewarm();
         RegisterInputs();
         _interaction = new InteractionController(wheel, _detector, _registry, jobs, _toasts, () => _settings, CreateContext, _shell, _inputs.AskAsync);
+        _interaction.JobFinished += (_, outputs) => { if (outputs.Count > 0) OnSuccessfulJob(); };
 
         var iconStream = GetResourceStream(new Uri("pack://application:,,,/OrbitDrop.UI;component/Assets/orbitdrop.ico"))!.Stream;
         using (var ms = new MemoryStream()) { iconStream.CopyTo(ms); _tray = new TrayIcon(_messages, ms.ToArray(), TrayTooltip); }
@@ -181,7 +182,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
     }
 
     private static OperationRegistry BuildRegistry(FileActionsProvider? actions = null) =>
-        new([new ImageConversionProvider(), new PdfProvider(), new MediaFoundationProvider(), new MediaEditingProvider(),
+        new([new ImageConversionProvider(), new PdfProvider(), new PdfToolsProvider(), new MediaFoundationProvider(), new MediaEditingProvider(),
              new ImageToolsProvider(), new ImageTextProvider(), new ArchiveProvider(), new MetadataProvider(), actions ?? new FileActionsProvider()]);
 
     private OperationContext CreateContext() => new()

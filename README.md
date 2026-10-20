@@ -16,11 +16,11 @@
 
 **Recommended: [OrbitDrop on the Microsoft Store](https://apps.microsoft.com/detail/9NJQRMQLL2SZ).** Free, installs without any security warning, and the Store keeps it up to date.
 
-Prefer not to use the Store? [Installer](https://github.com/i3sam/OrbitDrop/releases/download/v0.2.10-alpha/OrbitDrop-Setup.exe) · [portable .zip](https://github.com/i3sam/OrbitDrop/releases/download/v0.2.10-alpha/OrbitDrop-Portable.zip) · [all releases](https://github.com/i3sam/OrbitDrop/releases). No admin rights or .NET needed. These downloads aren't code-signed yet, so if Windows shows "Windows protected your PC", click **More info → Run anyway**.
+Prefer not to use the Store? [Installer](https://github.com/i3sam/OrbitDrop/releases/download/v0.3.0-alpha/OrbitDrop-Setup.exe) · [portable .zip](https://github.com/i3sam/OrbitDrop/releases/download/v0.3.0-alpha/OrbitDrop-Portable.zip) · [all releases](https://github.com/i3sam/OrbitDrop/releases). No admin rights or .NET needed. These downloads aren't code-signed yet, so if Windows shows "Windows protected your PC", click **More info → Run anyway**.
 
 > **Switching from the GitHub version to the Store?** Uninstall the old one first (Settings → Apps → OrbitDrop → Uninstall), so only one OrbitDrop runs.
 
-> **Status: 0.2.10-alpha.** The core gesture is validated on Windows 11 (single monitor, 100% scale). Multi-monitor, mixed-DPI and Windows 10 sign-off are still pending; see [the feasibility report](docs/research/02-feasibility-report.md).
+> **Status: 0.3.0-alpha.** The core gesture is validated on Windows 11 (single monitor, 100% scale). Multi-monitor, mixed-DPI and Windows 10 sign-off are still pending; see [the feasibility report](docs/research/02-feasibility-report.md).
 
 ## How it works
 
@@ -53,7 +53,7 @@ The app includes the same guide with a hands-on practice step (tray menu → **H
 | Mode | 0.2 capabilities |
 |---|---|
 | Convert | **Images:** PNG, JPG, BMP, TIFF, GIF, PDF (reads WebP, HEIC, AVIF, JPEG XL and camera RAW when Windows has the codec) · **PDF:** pages to PNG or JPG · **Video:** MP4, WMV, animated GIF, or extract audio as MP3 / M4A / WAV / WMA / FLAC · **Audio:** MP3, M4A, WAV, WMA, FLAC |
-| Tools | **Images:** edit (crop, adjust, markup, redact), compress (by % or under 1 MB / 500 KB / 200 KB), resize, rotate & flip, grayscale, copy text (OCR), combine into PDF · **Video:** trim, compress (720p / 1080p / 480p / half size), remove audio, snapshot, join · **Audio:** trim, compress, normalize, mono / stereo · **Archives:** extract ZIP, TAR, TAR.GZ, GZ · **Any file:** info, edit details, remove metadata or location |
+| Tools | **Images:** edit (crop, adjust, markup, redact), compress (by % or under 1 MB / 500 KB / 200 KB), resize, rotate & flip, grayscale, copy text (OCR), combine into PDF · **PDF:** merge, split into pages, compress, rotate pages · **Video:** trim, compress (720p / 1080p / 480p / half size), remove audio, snapshot, join · **Audio:** trim, compress, normalize, mono / stereo · **Archives:** extract ZIP, TAR, TAR.GZ, GZ · **Any file:** info, edit details, remove metadata or location |
 | Actions | Copy path or name, show in folder, copy to / move to (recent and common folders), float (a shelf to drag files out later), share (Nearby Share), zip, terminal, set as wallpaper. Works on folders too |
 
 **Private by design:** everything runs locally. No uploads, no account, no telemetry. The only network request is the update check against GitHub Releases, every few hours. Updates install automatically when you are not using OrbitDrop, after their checksum is verified (Settings → About: turn either off any time).

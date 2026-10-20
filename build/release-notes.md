@@ -1,4 +1,14 @@
-## What's new in 0.2.10-alpha
+## What's new in 0.3.0-alpha
+
+- **PDF tools.** Drag PDFs, tap Shift twice for Tools:
+  - **Merge** several PDFs into one, in the order you picked.
+  - **Split** a PDF into a folder with one PDF per page.
+  - **Compress**: the photos inside get smaller; text stays sharp, selectable text.
+  - **Rotate pages** right, left or 180°.
+- **Ctrl + Alt + Space in VS Code.** Select files in VS Code's Explorer (or just have a file open) and press the shortcut. OrbitDrop uses VS Code's own "Copy Path" to find them, then puts your clipboard back exactly as it was. Also works in Cursor, Windsurf and VSCodium.
+- After you've used OrbitDrop a few times, it asks once if you'd like to rate it. It never asks again.
+
+## In 0.2.10-alpha
 
 - **Fixed: dragging from VS Code.** In 0.2.9 the wheel opened but said "No files". It now reads the real file and folder paths VS Code sends, so drag from its Explorer sidebar, tap Shift, and let go on what you want. Results land next to your original, not in a temporary folder.
 

@@ -45,6 +45,26 @@ public static class AppPackage
         }
     }
 
+    /// <summary>OrbitDrop's Microsoft Store product ID.</summary>
+    public const string StoreId = "9NJQRMQLL2SZ";
+
+    /// <summary>
+    /// The Store's own "rate and review" dialog (Store version only). False if it couldn't be shown, so the caller can
+    /// open the Store's review page instead.
+    /// </summary>
+    public static async Task<bool> RequestRatingAsync(IntPtr owner)
+    {
+        if (!IsPackaged) return false;
+        try
+        {
+            var context = global::Windows.Services.Store.StoreContext.GetDefault();
+            if (owner != IntPtr.Zero) WinRT.Interop.InitializeWithWindow.Initialize(context, owner);
+            var result = await context.RequestRateAndReviewAppAsync();
+            return result.Status != global::Windows.Services.Store.StoreRateAndReviewStatus.Error;
+        }
+        catch { return false; }
+    }
+
     public static void SetStartup(bool enabled)
     {
         var task = StartupTask.GetAsync(StartupTaskId).AsTask().GetAwaiter().GetResult();

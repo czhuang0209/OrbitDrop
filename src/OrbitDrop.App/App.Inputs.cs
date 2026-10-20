@@ -95,15 +95,28 @@ public partial class App
 
     public bool KeyboardShortcutAvailable => _hotkey?.Registered ?? true;
 
-    private void OnHotkey()
+    private bool _readingSelection;
+
+    private async void OnHotkey()
     {
-        if (Paused) return;
+        if (Paused || _readingSelection) return;
         if (_interaction?.CycleIfOpenFromKeyboard() == true) return; // pressed again: next mode
-        var files = ExplorerSelection.FromForegroundWindow();
+        IReadOnlyList<string> files = ExplorerSelection.FromForegroundWindow();
+        bool vsCode = files.Count == 0 && _messages is not null && VsCodeSelection.IsForeground(out _);
+        if (vsCode)
+        {
+            _readingSelection = true;
+            try { files = await VsCodeSelection.ReadAsync(_messages!.Handle); }
+            catch (Exception ex) { Log.Warn($"Reading the VS Code selection failed: {ex.Message}"); }
+            finally { _readingSelection = false; }
+            Log.Info($"Ctrl+Alt+Space in VS Code: {files.Count} item(s)");
+        }
         if (files.Count == 0)
         {
             _toasts.ShowMessage(OrbitDrop.UI.Toasts.ToastKind.Info, "Select files first",
-                "Select files in File Explorer or on the desktop, then press Ctrl+Alt+Space.", ScreenInfo.CursorPosition);
+                vsCode ? "Select files in VS Code's Explorer (or open a file), then press Ctrl+Alt+Space."
+                       : "Select files in File Explorer, on the desktop or in VS Code, then press Ctrl+Alt+Space.",
+                ScreenInfo.CursorPosition);
             return;
         }
         _interaction?.OpenForSelection(new FileSet(files));

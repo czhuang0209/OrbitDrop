@@ -60,7 +60,7 @@ Device families: tick **Windows 10/11 Desktop** only.
 ```
 Convert, edit and manage files without opening an app.
 
-Drag any file in File Explorer or on the desktop, tap Shift, and a wheel of choices opens right under your pointer. Let go on what you want: the result appears next to the original. Your original is never changed, and nothing is ever uploaded. Everything happens on your PC.
+Drag any file in File Explorer, on the desktop or in VS Code, tap Shift, and a wheel of choices opens right under your pointer. Let go on what you want: the result appears next to the original. Your original is never changed, and nothing is ever uploaded. Everything happens on your PC.
 
 CONVERT
 • Images to JPG, PNG, GIF, BMP, TIFF or PDF. Reads WebP, HEIC, AVIF, JPEG XL and camera RAW when Windows has the codec.
@@ -70,6 +70,7 @@ CONVERT
 TOOLS
 • A built-in photo editor: crop, adjust brightness, contrast, saturation and warmth, mark up with pen, arrows, boxes and text, and redact.
 • Compress photos to half the size or under 1 MB, 500 KB or 200 KB. Compress videos to 1080p, 720p or 480p.
+• PDF tools: merge several PDFs into one, split into pages, compress, rotate pages.
 • Resize, rotate, flip and grayscale.
 • Copy the text out of an image (offline text recognition).
 • Trim video and audio, join clips, make a GIF from a video, take a snapshot.
@@ -108,6 +109,7 @@ Drag a file, tap Shift, let go on what you want
 Results appear next to the original; the original is never changed
 Works offline; nothing is uploaded
 Convert images to JPG, PNG, GIF, BMP, TIFF or PDF
+Merge, split and compress PDFs
 Built-in photo editor: crop, adjust, mark up, redact
 Compress photos to a target size like 1 MB or 200 KB
 Compress, trim and join videos; make GIFs

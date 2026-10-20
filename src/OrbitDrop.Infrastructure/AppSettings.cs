@@ -56,6 +56,10 @@ public sealed class AppSettings
     // Actions: the last few folders used with Copy to / Move to (most recent first).
     public string[] RecentFolders { get; set; } = [];
 
+    // Rating: jobs that produced a result, and whether OrbitDrop has asked for a rating (it asks once, ever).
+    public int SuccessfulJobs { get; set; }
+    public bool RatingAsked { get; set; }
+
     public AppSettings Clone() => (AppSettings)MemberwiseClone();
 
     /// <summary>Clamps values that may have been hand-edited into an invalid range.</summary>
