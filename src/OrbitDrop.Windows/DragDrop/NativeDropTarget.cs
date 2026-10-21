@@ -39,6 +39,9 @@ public sealed class NativeDropTarget : Ole.IDropTarget
         catch (Exception ex) { Diagnostics.Write($"IDropTargetHelper unavailable: {ex.Message}"); }
     }
 
+    /// <summary>The current drag carries no real files, only "virtual" ones (dragged out of a ZIP, a phone or an email).</summary>
+    public bool LastDragFromArchive { get; private set; }
+
     public int Register()
     {
         Win32.RevokeDragDrop(_hwnd); // WPF may have registered its own target on this HWND
@@ -57,7 +60,14 @@ public sealed class NativeDropTarget : Ole.IDropTarget
             string[] files = [];
             try { files = DataObjectReader.ReadFileDrop(pDataObj); }
             catch (Exception ex) { Diagnostics.Write($"File list read failed: {ex.Message}"); }
-            if (files.Length == 0) Diagnostics.Write($"Drag has no files; formats: {string.Join(", ", DataObjectReader.ListFormats(pDataObj))}");
+            LastDragFromArchive = false;
+            if (files.Length == 0)
+            {
+                var formats = DataObjectReader.ListFormats(pDataObj);
+                Diagnostics.Write($"Drag has no files; formats: {string.Join(", ", formats)}");
+                // Files inside a ZIP (or a phone, or an email) exist only as a description and a stream, not on disk.
+                LastDragFromArchive = formats.Contains("FileGroupDescriptorW") || formats.Contains("FileGroupDescriptor");
+            }
 
             var p = new Win32.POINT(pt.X, pt.Y);
             _sink.OnDragEnter(files, p);

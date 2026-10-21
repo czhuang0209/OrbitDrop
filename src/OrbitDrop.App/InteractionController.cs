@@ -30,6 +30,8 @@ public sealed class InteractionController : IDropSink, IDisposable
         public bool ClickMode;
         public int LastHit = WheelGeometry.HitOutside;
         public bool EnterSeen, OverWheel, Dropped;
+        /// <summary>The drag came from inside a ZIP (or a phone or an email): there are no real files to work on.</summary>
+        public bool FromArchive;
         /// <summary>Set when Convert had nothing for these files and the wheel opened in another mode.</summary>
         public string? UnsupportedNote;
         public Win32.POINT Anchor;
@@ -164,7 +166,7 @@ public sealed class InteractionController : IDropSink, IDisposable
     {
         if (!s.EnterSeen) return ("Move here", "");
         if (s.OpenGroup is { } g) return (g.Label, s.ClickMode ? "Click the centre to go back" : "Rest on the centre to go back");
-        if (s.Files.IsEmpty) return ("No files", "Only files can be dropped here");
+        if (s.Files.IsEmpty) return s.FromArchive ? ("Extract it first", "Files inside a ZIP aren't on disk yet") : ("No files", "Only files can be dropped here");
         if (s.Items.Count == 0) return ("Not supported", $"{KindSummary(s.Files)} isn't supported yet");
         if (s.Files.Count > 1) return ($"{s.Files.Count} files", s.UnsupportedNote ?? KindSummary(s.Files));
         string size;
@@ -240,6 +242,7 @@ public sealed class InteractionController : IDropSink, IDisposable
         {
             s.EnterSeen = true;
             s.Files = new FileSet(files);
+            s.FromArchive = files.Length == 0 && _dropTarget.LastDragFromArchive;
             Log.Info($"DragEnter after {Stopwatch.GetElapsedTime(s.OpenedAt).TotalMilliseconds:F1} ms: {s.Files.Count} file(s)");
             // Never open on an empty ring: start in the first mode that has options and say why.
             var start = NextMode(s, OperationMode.Convert, includeCurrent: true);

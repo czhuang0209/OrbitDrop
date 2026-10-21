@@ -1,4 +1,10 @@
-## What's new in 0.3.7-alpha
+## What's new in 0.3.8-alpha
+
+- **PDF to Word.** Drag a PDF, tap Shift, let go on DOCX: you get an editable Word document. Uses the Word (or LibreOffice) on your PC.
+- **Fixed: documents and CorelDRAW files with long names.** Files with very long names (common for downloads from design sites) failed with "That didn't work". They convert now.
+- **Dragging from inside a ZIP** now tells you to extract it first, instead of "No files": files inside a ZIP aren't on disk until they're extracted.
+
+## In 0.3.7-alpha
 
 - **Fixed: long file names in the wheel.** A long name no longer spills over the centre of the wheel. It's shortened in the middle, so you still see how it starts and its extension ("Filee is a free,… computer.mp4").
 

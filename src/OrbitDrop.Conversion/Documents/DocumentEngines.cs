@@ -5,7 +5,7 @@ using Microsoft.Win32;
 
 namespace OrbitDrop.Conversion.Documents;
 
-public enum DocumentKind { Text, Sheet, Slides, Drawing }
+public enum DocumentKind { Text, Sheet, Slides, Drawing, Pdf }
 
 /// <summary>
 /// The apps that do the actual conversion, found on this PC: Microsoft Word, Excel and PowerPoint (driven through COM,
@@ -23,6 +23,7 @@ public sealed class DocumentEngines : IDisposable
         [".ppt"] = DocumentKind.Slides, [".pptx"] = DocumentKind.Slides, [".pptm"] = DocumentKind.Slides, [".pps"] = DocumentKind.Slides,
         [".ppsx"] = DocumentKind.Slides, [".odp"] = DocumentKind.Slides,
         [".cdr"] = DocumentKind.Drawing,
+        [".pdf"] = DocumentKind.Pdf, // to Word: Word (or LibreOffice) rebuilds the text and layout as an editable document
     };
 
     /// <summary>Some password is needed so Office fails instead of asking; a file without one ignores it.</summary>
@@ -41,6 +42,7 @@ public sealed class DocumentEngines : IDisposable
         DocumentKind.Text => Word.Value || LibreOffice.Value is not null,
         DocumentKind.Sheet => Excel.Value || LibreOffice.Value is not null,
         DocumentKind.Slides => PowerPoint.Value || LibreOffice.Value is not null,
+        DocumentKind.Pdf => Word.Value || LibreOffice.Value is not null,
         _ => Inkscape.Value is not null || LibreOffice.Value is not null,
     };
 
@@ -51,34 +53,40 @@ public sealed class DocumentEngines : IDisposable
         (LibreOffice.Value is not null, "LibreOffice"), (Inkscape.Value is not null, "Inkscape"),
     }.Where(a => a.Found).Select(a => a.Name).ToArray();
 
-    private readonly string _temp = Path.Combine(Path.GetTempPath(), "OrbitDrop", "documents", Guid.NewGuid().ToString("N"));
+    // Short names all the way down: a long file name inside a deep temp folder passes Windows' 260-character path
+    // limit, which Inkscape, LibreOffice and Office can't write to. The real name is only used for the final result.
+    private readonly string _temp = Path.Combine(Path.GetTempPath(), "OrbitDrop", "docs", Guid.NewGuid().ToString("N")[..8]);
+    private int _jobs;
 
     /// <summary>Converts <paramref name="file"/> to <paramref name="extension"/> in a private temp folder; returns the new file.</summary>
     public async Task<string> ConvertToTempAsync(string file, string extension, CancellationToken ct)
     {
         var kind = KindOf(file) ?? throw new NotSupportedException(Path.GetExtension(file));
         if (!File.Exists(file)) throw new FileNotFoundException(null, file);
-        string dir = Path.Combine(_temp, Guid.NewGuid().ToString("N"));
+        string dir = Path.Combine(_temp, (++_jobs).ToString());
         Directory.CreateDirectory(dir);
-        string output = Path.Combine(dir, Path.GetFileNameWithoutExtension(file) + extension);
+        string input = Path.Combine(dir, "source" + Path.GetExtension(file).ToLowerInvariant());
+        File.Copy(file, input);
+        string output = Path.Combine(dir, "source" + extension); // LibreOffice names it after the input, too
 
         string? office = kind switch
         {
-            DocumentKind.Text when Word.Value => "Word.Application",
+            DocumentKind.Text or DocumentKind.Pdf when Word.Value => "Word.Application",
             DocumentKind.Sheet when Excel.Value => "Excel.Application",
             DocumentKind.Slides when PowerPoint.Value => "PowerPoint.Application",
             _ => null,
         };
         if (office is not null)
-            await StaWorker.RunAsync(() => ConvertWithOffice(office, kind, file, output), "OrbitDrop Office");
+            await StaWorker.RunAsync(() => ConvertWithOffice(office, kind, input, output), "OrbitDrop Office");
         else if (kind == DocumentKind.Drawing && Inkscape.Value is { } inkscape)
-            await RunAsync(inkscape, [file, "--export-filename=" + output], ct);
+            await RunAsync(inkscape, [input, "--export-filename=" + output], ct);
         else if (LibreOffice.Value is { } soffice)
         {
             // A profile of its own: works while the user has LibreOffice open, and never touches their settings.
             string profile = new Uri(Path.Combine(Path.GetTempPath(), "OrbitDrop", "libreoffice-profile")).AbsoluteUri;
+            string[] import = kind == DocumentKind.Pdf ? ["--infilter=writer_pdf_import"] : []; // open a PDF in Writer, not Draw
             await RunAsync(soffice, ["--headless", "--norestore", "--nologo", "--nodefault", "--nolockcheck", $"-env:UserInstallation={profile}",
-                "--convert-to", LibreOfficeFilter(extension), "--outdir", dir, file], ct);
+                .. import, "--convert-to", LibreOfficeFilter(extension), "--outdir", dir, input], ct);
         }
         else throw new NotSupportedException("No app on this PC can open this file.");
 
@@ -106,7 +114,7 @@ public sealed class DocumentEngines : IDisposable
         {
             switch (kind)
             {
-                case DocumentKind.Text:
+                case DocumentKind.Text or DocumentKind.Pdf:
                     app.DisplayAlerts = 0; // wdAlertsNone
                     dynamic doc = app.Documents.Open(file, false, true, false, NoPassword); // ConfirmConversions, ReadOnly, AddToRecentFiles
                     try
@@ -139,7 +147,7 @@ public sealed class DocumentEngines : IDisposable
         {
             try
             {
-                if (kind == DocumentKind.Text) app.Quit(0);
+                if (kind is DocumentKind.Text or DocumentKind.Pdf) app.Quit(0);
                 else if (kind == DocumentKind.Sheet) app.Quit();
                 else if (!wasRunning && app.Presentations.Count == 0) app.Quit();
             }

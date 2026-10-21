@@ -39,6 +39,7 @@ public sealed class DocumentProvider : IOperationProvider
             DocumentKind.Sheet => ext == ".xlsx" ? [Pdf] : [Pdf, Xlsx],
             DocumentKind.Slides => ext == ".pptx" ? [Pdf] : [Pdf, Pptx],
             DocumentKind.Drawing => [Pdf, Svg, Png, Jpg, Tiff, Bmp, Eps],
+            DocumentKind.Pdf => [Docx],
             _ => [],
         };
     }
@@ -99,7 +100,7 @@ public sealed class DocumentProvider : IOperationProvider
         if (apps.Length == 0)
             yield return ("Documents", "Word, Excel, PowerPoint and CorelDRAW files convert when Microsoft Office, LibreOffice or Inkscape is installed");
         else
-            yield return ("Documents", $"Documents to PDF (and DOCX, XLSX, PPTX){(DocumentEngines.CanOpen(DocumentKind.Drawing) ? " · CorelDRAW to PDF, SVG, EPS, PNG, JPG, TIFF, BMP" : "")} · using {string.Join(", ", apps)}");
+            yield return ("Documents", $"Documents to PDF (and DOCX, XLSX, PPTX) · PDF to Word{(DocumentEngines.CanOpen(DocumentKind.Drawing) ? " · CorelDRAW to PDF, SVG, EPS, PNG, JPG, TIFF, BMP" : "")} · using {string.Join(", ", apps)}");
     }
 
     private static string Friendly(Exception ex) => ex switch

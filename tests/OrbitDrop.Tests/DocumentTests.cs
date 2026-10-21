@@ -53,6 +53,23 @@ public class DocumentTests
         Assert.Empty(SafeOutput.LeftoverTemps(t.Path));
     }
 
+    [OfficeFact("Word.Application")]
+    public async Task Pdf_becomes_a_word_document_even_with_a_long_name()
+    {
+        using var t = new TempFolder();
+        string rtf = t.File("letter.rtf");
+        File.WriteAllText(rtf, @"{\rtf1\ansi{\fonttbl{\f0 Arial;}}\f0\fs28 Hello from OrbitDrop.\par}");
+        string pdf = (await Run("convert.document.pdf", rtf)).Output!;
+        string longName = t.File(new string('x', 120) + " & a very long quarterly report name.pdf");
+        File.Move(pdf, longName);
+
+        var docx = await Run("convert.document.docx", longName);
+        Assert.True(docx.Status == OutcomeStatus.Succeeded, docx.Message);
+        Assert.Equal(Path.ChangeExtension(longName, ".docx"), docx.Output);
+        using var zip = System.IO.Compression.ZipFile.OpenRead(docx.Output!);
+        Assert.NotNull(zip.GetEntry("word/document.xml"));
+    }
+
     [OfficeFact("Excel.Application")]
     public async Task Xlsx_becomes_a_pdf_through_excel()
     {
@@ -96,7 +113,9 @@ public class DocumentTests
 /// <summary>A real CorelDRAW conversion, when Inkscape or LibreOffice and a sample drawing (ORBITDROP_CDR_SAMPLE) are on this PC.</summary>
 public class DrawingTests
 {
-    private static string? Sample => Environment.GetEnvironmentVariable("ORBITDROP_CDR_SAMPLE") is { } p && File.Exists(p) ? p : null;
+    private static string? Sample => Environment.GetEnvironmentVariable("ORBITDROP_CDR_SAMPLE") is { Length: > 0 } p
+        ? File.Exists(p) ? p : throw new FileNotFoundException("ORBITDROP_CDR_SAMPLE points to a missing file", p)
+        : null;
 
     [Fact]
     public void Cdr_offers_every_drawing_format_when_an_app_can_open_it()
@@ -116,7 +135,8 @@ public class DrawingTests
     {
         if (Sample is not { } sample || !DocumentEngines.CanOpen(DocumentKind.Drawing)) return;
         using var t = new TempFolder();
-        string src = t.File("drawing.cdr");
+        // A long name like the ones design sites give their downloads: the temp path must not pass 260 characters.
+        string src = t.File("People Who Like to Eat Are Always the Best People Typography Vector Design - Funny Food Lover Quote Poster & Kitchen Wall Art Design For Free In Coreldrawdesign.cdr");
         File.Copy(sample, src);
         var provider = new DocumentProvider();
         var op = provider.GetOperations(new FileSet([src]), OperationMode.Convert).Single(d => d.Id == id);
