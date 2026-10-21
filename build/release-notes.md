@@ -1,4 +1,14 @@
-## What's new in 0.3.9-alpha
+## What's new in 0.4.0-alpha
+
+The wheel works exactly as before. Everything new is optional, and the extras that change the wheel are off until you turn them on.
+
+- **Right-click menu.** Right-click files or folders in File Explorer and choose **OrbitDrop**: the wheel opens for them, ready to click. On Windows 11 it's in the main menu with the Microsoft Store version (in "Show more options" with the GitHub version). Turn it off in Settings → Shortcuts.
+- **Undo.** Every finished conversion offers **Undo** for a few seconds. It moves what was just made to the Recycle Bin, so even an undo can be undone. It never touches your originals, or files you moved. Turn it off in Settings → General.
+- **The clipboard.** Copied a screenshot or an image from a website? Press **Ctrl + Alt + Space** with nothing selected, and the wheel opens for it: save it as PNG, convert it to JPG or WebP, compress it… The result lands in the folder you're in, or in Pictures. Copied files work too. Settings → Shortcuts.
+- **Estimated size** *(Settings → Wheel → Extras, off by default)*. Rest on a format, Compress or Resize and the centre of the wheel shows about how big the result will be, like "≈ 640 KB · −73%", before you let go.
+- **Put my last choice first** *(Settings → Wheel → Extras, off by default)*. The option you used last for a kind of file moves to the top of its wheel.
+
+## In 0.3.9-alpha
 
 - **SVG files.** Drag an SVG, tap Shift, and convert it to PNG, JPG, WebP, PDF and more, or rotate, resize and compress it. Small icons come out 1024 px wide, so they stay sharp; transparency is kept.
 - **Safe with any SVG.** An SVG can point to images on the internet or to other files. OrbitDrop never follows those links: it only draws what is inside the file, so opening an SVG never contacts anyone.

@@ -80,6 +80,9 @@ public interface IShellIntegration
 
     /// <summary>Parks the files on the floating shelf to drag out later.</summary>
     void Float(IReadOnlyList<string> paths) => throw new NotSupportedException("The shelf isn't available here.");
+
+    /// <summary>Sends files and folders to the Recycle Bin (never a permanent delete). Returns how many went.</summary>
+    int Recycle(IReadOnlyList<string> paths) => throw new NotSupportedException("The Recycle Bin isn't available here.");
 }
 
 /// <summary>
@@ -102,4 +105,14 @@ public interface IOperationProvider
 
     /// <summary>Human-readable capability summary for Settings, e.g. ("Images", "PNG, JPG, BMP, TIFF, GIF").</summary>
     IEnumerable<(string Category, string Detail)> DescribeCapabilities() => [];
+}
+
+/// <summary>
+/// Optional for providers: the likely size of a result before it's made, for the wheel's "≈ 640 KB · −73%" hint
+/// (Settings → Wheel → Show estimated size). Runs in the background while the wheel is open; must be read-only.
+/// </summary>
+public interface IEstimatesSize
+{
+    /// <summary>(operation id, estimated bytes) for the options this provider can estimate for <paramref name="file"/>.</summary>
+    IEnumerable<(string OperationId, long Bytes)> EstimateSizes(string file, OperationContext context);
 }

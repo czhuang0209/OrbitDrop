@@ -3,7 +3,7 @@ using OrbitDrop.Core;
 namespace OrbitDrop.Conversion.Imaging;
 
 /// <summary>Image format conversion: PNG, JPG, WebP, BMP, TIFF, GIF, JFIF ↔ each other (WIC, plus Skia for WebP).</summary>
-public sealed class ImageConversionProvider : IOperationProvider
+public sealed class ImageConversionProvider : IOperationProvider, IEstimatesSize
 {
     public const string ProviderId = "image.convert";
     public string Id => ProviderId;
@@ -14,11 +14,13 @@ public sealed class ImageConversionProvider : IOperationProvider
 
         // Hide a target only when every file is already in it; mixed selections keep it and skip per file.
         var sourceFormats = files.Select(f => WicImageCodec.FormatOf(f)!.Name).Distinct().ToList();
+        // A copied image is saved as PNG first; "PNG" then simply saves it, so it stays on the wheel.
+        bool captures = files.All(ClipboardCaptures.IsCapture);
         int order = 0;
         foreach (var format in WicImageCodec.OutputFormats)
         {
             order++;
-            if (sourceFormats.Count == 1 && sourceFormats[0] == format.Name) continue;
+            if (sourceFormats.Count == 1 && sourceFormats[0] == format.Name && !captures) continue;
             yield return new OperationDescriptor(
                 Id: $"convert.image.{format.Name.ToLowerInvariant()}",
                 ProviderId: ProviderId,
@@ -41,6 +43,11 @@ public sealed class ImageConversionProvider : IOperationProvider
             foreach (var file in files)
             {
                 ct.ThrowIfCancellationRequested();
+                if (WicImageCodec.FormatOf(file)?.Name == target.Name && ClipboardCaptures.IsCapture(file))
+                {
+                    progress.Report(new FileOutcome(file, OutcomeStatus.Succeeded, Rename(file, target, context, ct)));
+                    continue;
+                }
                 if (WicImageCodec.FormatOf(file)?.Name == target.Name)
                 {
                     progress.Report(new FileOutcome(file, OutcomeStatus.Skipped, Message: $"Already {target.Name}"));
@@ -70,6 +77,12 @@ public sealed class ImageConversionProvider : IOperationProvider
             write: s => { using var src = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete); src.CopyTo(s); },
             validate: temp => new FileInfo(temp).Length == new FileInfo(file).Length ? null : "the copy is incomplete",
             ct);
+
+    public IEnumerable<(string OperationId, long Bytes)> EstimateSizes(string file, OperationContext context)
+    {
+        if (!WicImageCodec.IsSupportedInput(file)) return [];
+        return SizeEstimate.Formats(file, context.JpegQuality).Select(p => ($"convert.image.{p.Key.ToLowerInvariant()}", p.Value)).ToList();
+    }
 
     public IEnumerable<(string Category, string Detail)> DescribeCapabilities()
     {

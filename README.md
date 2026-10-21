@@ -42,6 +42,8 @@ Prefer not to use the Store? [Installer](https://github.com/i3sam/OrbitDrop/rele
 
 **No dragging?** Select files, press **Ctrl + Alt + Space** and click an option. Click the centre of the wheel (or tap Shift, or press the shortcut again) for **Tools** and **Actions**; **Esc** closes it.
 
+**Or right-click.** Right-click files or folders in File Explorer and choose **OrbitDrop**. Copied a screenshot? Press **Ctrl + Alt + Space** with nothing selected and the wheel opens for the image. Every result can be **undone** for a few seconds (it goes to the Recycle Bin).
+
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/guide/guide-keyboard-dark.gif"><img src="docs/guide/guide-keyboard.gif" width="600" alt="With a file selected, Ctrl+Alt+Space opens the wheel and a click converts it"></picture>
 
 **Make it yours.** Settings → **Wheel** shows your wheel: click a slice to hide it (click again to bring it back), drag a slice to move it, then **Save**.

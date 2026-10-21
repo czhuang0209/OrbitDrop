@@ -17,6 +17,8 @@ public sealed class MessageWindow : IDisposable
         _source.AddHook(Hook);
     }
 
+    private const int WM_COPYDATA = 0x004A;
+
     public IntPtr Handle => _source.Handle;
 
     /// <summary>(msg, wParam, lParam) → return true if handled.</summary>
@@ -26,7 +28,7 @@ public sealed class MessageWindow : IDisposable
     {
         if (Message is { } handlers)
             foreach (Func<int, IntPtr, IntPtr, bool> h in handlers.GetInvocationList())
-                if (h(msg, wParam, lParam)) { handled = true; break; }
+                if (h(msg, wParam, lParam)) { handled = true; return msg == WM_COPYDATA ? 1 : IntPtr.Zero; } // WM_COPYDATA: TRUE = received
         return IntPtr.Zero;
     }
 

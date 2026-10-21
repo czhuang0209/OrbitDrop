@@ -34,6 +34,9 @@ dotnet publish (Join-Path $root 'src\OrbitDrop.App\OrbitDrop.App.csproj') -c Rel
     -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=$Version -o $layout --nologo | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'dotnet publish failed' }
 Get-ChildItem $layout -Filter *.pdb | Remove-Item
+Write-Host '> Right-click menu'
+& (Join-Path $root 'build\shell\build-shell.ps1') | Out-Null
+Copy-Item (Join-Path $root 'artifacts\shell\OrbitDropShell.dll') $layout
 Copy-Item (Join-Path $root 'LICENSE') (Join-Path $layout 'LICENSE.txt')
 
 Write-Host '> Icons'

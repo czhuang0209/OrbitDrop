@@ -41,6 +41,7 @@ internal static class UiReview
                     ("actions", OperationMode.Actions, ["report.pdf"], 2, "Copy to", "Hold for options · drop: Choose…", null),
                     ("actions-copy-to", OperationMode.Actions, ["report.pdf"], 1, "Desktop", "Copy to Desktop", "actions.copy-to"),
                     ("video", OperationMode.Convert, ["clip.mp4"], 1, "MP3", "Extract audio as MP3", null),
+                    ("convert-estimate", OperationMode.Convert, ["photo.jpg"], 1, "WEBP", "≈ 640 KB · −73%", null),
                     ("long-name", OperationMode.Convert, ["clip.mp4"], -2, "3.4 MB", InteractionController.ShortName("Filee is a free, open-source converter that turns your files into other formats right on your computer.mp4"), null),
                     ("long-detail", OperationMode.Convert, ["clip.mp4"], -2, "3.4 MB", "Filee is a free, open-source converter that turns your files into other formats right on your computer", null),
                     ("video-tools", OperationMode.Tools, ["clip.mp4"], 0, "Compress", "Hold for options · drop: 720p", null),
@@ -64,6 +65,8 @@ internal static class UiReview
             {
                 ("running", w => w.SetRunning("Converting to PNG", "2 of 5 · holiday-photo.jpg", 0.4, false)),
                 ("success", w => w.SetResult(ToastKind.Success, "Saved holiday-photo.png", "In Pictures", true, TimeSpan.Zero)),
+                ("success-undo", w => { w.SetResult(ToastKind.Success, "Saved holiday-photo.webp", "In Pictures", true, TimeSpan.Zero); w.SetUndo(true); }),
+                ("undone", w => w.SetResult(ToastKind.Info, "Undone", "Moved to the Recycle Bin", false, TimeSpan.Zero)),
                 ("partial", w => w.SetResult(ToastKind.Warning, "4 saved · 1 failed", "scan.tif: The file isn't a readable image.", true, TimeSpan.Zero)),
                 ("error", w => w.SetResult(ToastKind.Error, "That didn't work", "notes.png: Windows denied access (read-only folder or file in use).", false, TimeSpan.Zero)),
                 ("canceled", w => w.SetResult(ToastKind.Info, "Canceled", "3 of 8 finished before you canceled; nothing partial was left behind.", false, TimeSpan.Zero)),

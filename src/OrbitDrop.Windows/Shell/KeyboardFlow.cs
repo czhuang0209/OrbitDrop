@@ -56,8 +56,12 @@ public static class ExplorerSelection
     /// <summary>What happened, for the log: which window, which tab, how many items.</summary>
     public static string LastResult { get; private set; } = "";
 
+    /// <summary>The folder open in that File Explorer tab (or the desktop), when there was one: where new files belong.</summary>
+    public static string? LastFolder { get; private set; }
+
     public static IReadOnlyList<string> FromForegroundWindow()
     {
+        LastFolder = null;
         IntPtr foreground = GetForegroundWindow();
         string cls = ClassOf(foreground);
         if (cls is not ("Progman" or "WorkerW" or "CabinetWClass")) { LastResult = $"foreground is {cls}, not File Explorer"; return []; }
@@ -109,6 +113,7 @@ public static class ExplorerSelection
         }
         if (view is null) { LastResult = "no Explorer view found"; return []; }
 
+        try { string? folder = view.Document.Folder.Self.Path; if (!string.IsNullOrEmpty(folder) && Directory.Exists(folder)) LastFolder = folder; } catch { /* a virtual folder (This PC, a ZIP …) */ }
         var paths = new List<string>();
         foreach (dynamic item in view.Document.SelectedItems())
         {

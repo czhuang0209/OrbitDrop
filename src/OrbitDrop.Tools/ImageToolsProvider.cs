@@ -10,7 +10,7 @@ namespace OrbitDrop.Tools;
 /// One-click image tools. Output keeps the source format with a suffix ("photo (rotated).jpg"), except compression,
 /// which may turn an opaque PNG/BMP/TIFF into a JPEG because that is what actually makes it small.
 /// </summary>
-public sealed class ImageToolsProvider : IOperationProvider
+public sealed class ImageToolsProvider : IOperationProvider, IEstimatesSize
 {
     public const string ProviderId = "image.tools";
     public const string EditId = "tool.image.edit";
@@ -152,6 +152,22 @@ public sealed class ImageToolsProvider : IOperationProvider
                 return check.PixelWidth == result.Width && check.PixelHeight == result.Height ? null : "the compressed image didn't decode correctly";
             }, ct);
         return new(file, OutcomeStatus.Succeeded, output);
+    }
+
+    /// <summary>Compress: the preset's own target. Resize: the share of pixels kept (never enlarges).</summary>
+    public IEnumerable<(string OperationId, long Bytes)> EstimateSizes(string file, OperationContext context)
+    {
+        if (!WicImageCodec.IsSupportedInput(file)) yield break;
+        long size = new FileInfo(file).Length;
+        foreach (var p in CompressPresets)
+            yield return ($"tool.image.compress.{p.Key}", p.Fraction is { } f ? (long)(size * f) : Math.Min(size, p.MaxBytes ?? size));
+        var (w, h) = SizeEstimate.Dimensions(file);
+        if (w <= 0 || h <= 0) yield break;
+        foreach (var p in ResizePresets)
+        {
+            double scale = p.Scale ?? Math.Min(1.0, (double)p.LongSide!.Value / Math.Max(w, h));
+            yield return ($"tool.image.resize.{p.Key}", SizeEstimate.Resized(size, scale * scale));
+        }
     }
 
     public IEnumerable<(string Category, string Detail)> DescribeCapabilities()

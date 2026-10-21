@@ -26,6 +26,8 @@ public sealed class ShellIntegration(Dispatcher dispatcher) : IShellIntegration
     /// <summary>Opens the Windows share window at the pointer.</summary>
     public void Share(IReadOnlyList<string> paths) => dispatcher.Invoke(() => ShareSheet.Show(paths, ScreenInfo.CursorPosition));
 
+    public int Recycle(IReadOnlyList<string> paths) => RecycleBin.Send(paths);
+
     /// <summary>Opens each containing folder once and selects the given items (SHOpenFolderAndSelectItems).</summary>
     public void Reveal(IReadOnlyList<string> paths) => dispatcher.Invoke(() =>
     {

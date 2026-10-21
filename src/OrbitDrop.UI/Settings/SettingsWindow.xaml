@@ -86,6 +86,16 @@
                             </StackPanel>
                         </DockPanel>
                     </Border>
+                    <Border Style="{StaticResource Orbit.Card}">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE7A7;" />
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding OfferUndo}" AutomationProperties.Name="Undo button" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Undo button" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="Every finished conversion offers Undo for a few seconds: it moves what was just made to the Recycle Bin." Style="{StaticResource RowHint}" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
                     <TextBlock Text="Help" Style="{StaticResource Orbit.SectionHeader}" />
                     <Border Style="{StaticResource Orbit.Card}">
                         <DockPanel>
@@ -224,6 +234,26 @@
                             </StackPanel>
                         </DockPanel>
                     </Border>
+                    <Border Style="{StaticResource Orbit.Card}">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE77F;" />
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding UseClipboard}" AutomationProperties.Name="Use the clipboard" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Use the clipboard" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="With nothing selected, Ctrl + Alt + Space opens the wheel for what you copied: files, or an image such as a screenshot. Copied images are saved to the folder you're in, or Pictures." Style="{StaticResource RowHint}" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Orbit.Card}">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE8A7;" />
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding ContextMenu}" AutomationProperties.Name="Right-click menu" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Right-click menu" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="{Binding ContextMenuHint}" Style="{StaticResource RowHint}" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
                     <TextBlock Text="How it works" Style="{StaticResource Orbit.SectionHeader}" />
                     <Border Style="{StaticResource Orbit.Card}" Padding="16,14">
                         <Grid>
@@ -270,6 +300,27 @@
                             <Button x:Name="SaveWheelButton" Content="Save" Style="{StaticResource Orbit.Button.Accent}" MinWidth="96" Click="OnSaveWheel" />
                         </StackPanel>
                     </DockPanel>
+                    <TextBlock Text="Extras" Style="{StaticResource Orbit.SectionHeader}" />
+                    <Border Style="{StaticResource Orbit.Card}">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE81C;" />
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding LastUsedFirst}" AutomationProperties.Name="Put my last choice first" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Put my last choice first" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="The option you used last for a kind of file moves to the top of its wheel. Off: the wheel always keeps the order above." Style="{StaticResource RowHint}" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Orbit.Card}">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE9D2;" />
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding ShowSizeEstimates}" AutomationProperties.Name="Show estimated size" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Show estimated size" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="Rest on a format, Compress or Resize to see roughly how big the result will be, like “≈ 640 KB · −73%”." Style="{StaticResource RowHint}" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
                 </StackPanel>
 
                 <!-- Conversions -->

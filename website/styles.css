@@ -488,3 +488,4 @@ html.lenis, html.lenis body { height: auto; }
 .pill.solid:hover { box-shadow: 0 8px 26px color-mix(in srgb, var(--ink) 34%, transparent); }
 .pill:active { scale: .96; }
 .fb-row { align-items: end; }
+.what .lede { margin: 0 0 14px; max-width: none; font-size: 16px; color: var(--ink-2); }

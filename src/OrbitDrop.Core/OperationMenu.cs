@@ -81,3 +81,21 @@ public static class WheelOrder
             .Select(x => x.Op).ToList();
     }
 }
+
+/// <summary>
+/// "Put my last choice first" (Settings → Wheel, off by default): remembers the slice last used per wheel mode and
+/// kind of file, and moves it to the top of that wheel (12 o'clock). Everything else keeps its place.
+/// </summary>
+public static class WheelMemory
+{
+    /// <summary>"Convert|.jpg" or "Tools|.jpg,.png": the same mode with the same kinds of file shares one memory.</summary>
+    public static string KeyFor(OperationMode mode, FileSet files) =>
+        $"{mode}|{string.Join(",", files.Extensions.Select(e => e.Length == 0 ? "(none)" : e).Order(StringComparer.Ordinal))}";
+
+    /// <summary>The remembered slice (a group's key or an option id) moved to the front; options of a group stay together.</summary>
+    public static IReadOnlyList<OperationDescriptor> Apply(IReadOnlyList<OperationDescriptor> options, string? slot)
+    {
+        if (slot is null || !options.Any(o => WheelOrder.SlotKey(o) == slot)) return options;
+        return options.Where(o => WheelOrder.SlotKey(o) == slot).Concat(options.Where(o => WheelOrder.SlotKey(o) != slot)).ToList();
+    }
+}

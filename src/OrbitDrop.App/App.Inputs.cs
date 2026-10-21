@@ -112,15 +112,38 @@ public partial class App
             finally { _readingSelection = false; }
             Log.Info($"Ctrl+Alt+Space in VS Code: {files.Count} item(s)");
         }
+        if (files.Count == 0 && !vsCode && _settings.UseClipboard && FromClipboard(ExplorerSelection.LastFolder) is { } clip)
+        {
+            Log.Info($"Ctrl+Alt+Space: nothing selected, using the clipboard ({clip.Files.Count} item(s))");
+            _interaction?.OpenForSelection(clip.Files, clip.OutputFolder, clip.Label);
+            return;
+        }
         if (files.Count == 0)
         {
             _toasts.ShowMessage(OrbitDrop.UI.Toasts.ToastKind.Info, "Select files first",
                 vsCode ? "Select files in VS Code's Explorer (or open a file), then press Ctrl+Alt+Space."
-                       : "Select files in File Explorer, on the desktop or in VS Code, then press Ctrl+Alt+Space.",
+                : _settings.UseClipboard ? "Select files in File Explorer, on the desktop or in VS Code, or copy an image, then press Ctrl+Alt+Space."
+                : "Select files in File Explorer, on the desktop or in VS Code, then press Ctrl+Alt+Space.",
                 ScreenInfo.CursorPosition);
             return;
         }
         _interaction?.OpenForSelection(new FileSet(files));
+    }
+
+    /// <summary>"OrbitDrop" in File Explorer's right-click menu (Settings → Shortcuts): registered or removed to match.</summary>
+    private void ApplyContextMenu()
+    {
+        bool ok = ContextMenu.Apply(_settings.ContextMenu, AppPackage.IsPackaged, AppContext.BaseDirectory);
+        Log.Info($"Right-click menu {(_settings.ContextMenu ? "on" : "off")}{(ok ? "" : " (couldn't update the registration)")}");
+    }
+
+    /// <summary>The right-click menu sent files (WM_COPYDATA, checked by <see cref="ContextMenu.TryReadFiles"/>): open the wheel for them.</summary>
+    private bool OnShellMessage(int msg, IntPtr wParam, IntPtr lParam)
+    {
+        if (ContextMenu.TryReadFiles(msg, lParam) is not { } files) return false;
+        Log.Info($"Right-click menu: {files.Count} item(s)");
+        if (files.Count > 0 && !Paused) Dispatcher.BeginInvoke(() => _interaction?.OpenForSelection(new FileSet(files)));
+        return true;
     }
 
     /// <summary>Puts a Copy to / Move to destination at the top of the recent folders.</summary>

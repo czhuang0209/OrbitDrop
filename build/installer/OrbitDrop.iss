@@ -44,6 +44,8 @@ WizardStyle=modern
 ; Ask to close a running OrbitDrop (mutex created by SingleInstance) instead of failing to overwrite it.
 AppMutex=OrbitDrop.Running
 CloseApplications=yes
+; Only ever offer to close OrbitDrop itself: File Explorer keeps the right-click DLL loaded, and must never be closed.
+CloseApplicationsFilter=OrbitDrop.exe
 ; Ends with SHChangeNotify(SHCNE_ASSOCCHANGED) so Explorer and Start drop cached icons. Without it, an upgrade
 ; that changes the app icon keeps showing the old one (the cache is keyed by the unchanged exe path).
 ChangesAssociations=yes
@@ -53,7 +55,9 @@ Name: "startup"; Description: "Start OrbitDrop when I sign in to Windows"; Group
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Options:"; Flags: unchecked
 
 [Files]
-Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\*"; DestDir: "{app}"; Excludes: "OrbitDropShell.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
+; The right-click menu entry. File Explorer may have it loaded: then it's swapped at the next restart, never forced.
+Source: "{#SourceDir}\OrbitDropShell.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace uninsrestartdelete
 
 [Icons]
 Name: "{autoprograms}\OrbitDrop"; Filename: "{app}\OrbitDrop.exe"; Comment: "Convert, edit and manage files without opening an app"
@@ -79,6 +83,13 @@ end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
+  if CurUninstallStep = usUninstall then
+  begin
+    { The right-click menu entry OrbitDrop registers for the current user (see ContextMenuRegistration.cs). }
+    RegDeleteKeyIncludingSubkeys(HKEY_CURRENT_USER, 'Software\Classes\AllFilesystemObjects\shell\OrbitDrop');
+    RegDeleteKeyIncludingSubkeys(HKEY_CURRENT_USER, 'Software\Classes\CLSID\{EF221BF9-D0CA-4698-95F2-5452942E7A5E}');
+    RegDeleteKeyIncludingSubkeys(HKEY_CURRENT_USER, 'Software\OrbitDrop');
+  end;
   if CurUninstallStep = usPostUninstall then
   begin
     { The app can enable "launch at sign-in" itself, so always remove the value. }

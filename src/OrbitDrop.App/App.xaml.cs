@@ -135,6 +135,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
 
         ThemeManager.Current.Apply(_settings.Theme, _settings.UseWindowsAccent, _settings.ReduceMotion);
 
+        ClipboardCaptures.Folder = Path.Combine(_paths.LocalDirectory, "Clipboard");
         _registry = BuildRegistry(new FileActionsProvider(() => _settings.RecentFolders, RememberFolder));
         _jobs = new JobQueue(_registry, maxConcurrentJobs: 2);
         var jobs = _jobs;
@@ -143,6 +144,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
 
         _messages = new MessageWindow();
         _systemTheme = new SystemTheme(_messages);
+        _messages.Message += OnShellMessage; // files chosen in File Explorer's right-click menu
         _systemTheme.Changed += () => Dispatcher.BeginInvoke(ApplyAppearance);
 
         _detector = new DragSessionDetector();
@@ -155,6 +157,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         RegisterInputs();
         _interaction = new InteractionController(wheel, _detector, _registry, jobs, _toasts, () => _settings, CreateContext, _shell, _inputs.AskAsync);
         _interaction.JobFinished += (_, outputs) => { if (outputs.Count > 0) OnSuccessfulJob(); };
+        _interaction.RememberChoice = (key, slot) => Update(s => s.LastUsed[key] = slot);
 
         var iconStream = GetResourceStream(new Uri("pack://application:,,,/OrbitDrop.UI;component/Assets/orbitdrop.ico"))!.Stream;
         using (var ms = new MemoryStream()) { iconStream.CopyTo(ms); _tray = new TrayIcon(_messages, ms.ToArray(), TrayTooltip); }
@@ -168,6 +171,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         else StartStoreUpdates();                      // Store version: install Store updates as soon as idle
 
         ApplyHotkey();
+        ApplyContextMenu();
         _instance.ListenForActivation(() => Dispatcher.BeginInvoke(() => OpenSettings()));
 
         // The silent installer relaunches with --updated after an in-app update.
@@ -294,6 +298,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         if (before.Theme != _settings.Theme || before.UseWindowsAccent != _settings.UseWindowsAccent || before.ReduceMotion != _settings.ReduceMotion)
             ApplyAppearance();
         if (before.KeyboardShortcut != _settings.KeyboardShortcut) ApplyHotkey();
+        if (before.ContextMenu != _settings.ContextMenu) ApplyContextMenu();
         if (before.TriggerKey != _settings.TriggerKey || before.ExtendedDragDetection != _settings.ExtendedDragDetection)
         {
             ApplyInteractionSettings();

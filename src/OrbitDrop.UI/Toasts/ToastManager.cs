@@ -17,9 +17,11 @@ public sealed class ToastManager
 
     public Func<bool> NotifyOnCompletion { get; set; } = () => true;
 
-    public void ShowJob(Job job, Win32.POINT anchor, Action<IReadOnlyList<string>> reveal)
+    /// <param name="recycle">When set, a finished card offers Undo: what the job made goes to the Recycle Bin (see <see cref="Undo"/>).</param>
+    public void ShowJob(Job job, Win32.POINT anchor, Action<IReadOnlyList<string>> reveal, Func<IReadOnlyList<string>, int>? recycle = null)
     {
         var toast = Create(anchor);
+        if (recycle is not null) toast.UndoRequested += () => UndoJob(toast, job, recycle);
         toast.CancelRequested += job.Cancel;
         toast.ShowRequested += () =>
         {
@@ -27,8 +29,25 @@ public sealed class ToastManager
             reveal(outputs.Count > 0 ? outputs : job.Files.ToList());
             toast.FadeOutAndClose();
         };
-        Update(toast, job);
-        job.Changed += j => Update(toast, j);
+        Update(toast, job, recycle is not null);
+        job.Changed += j => Update(toast, j, recycle is not null);
+    }
+
+    private static IReadOnlyList<string> UndoTargets(Job job) => Undo.Targets(job.Operation, job.Files.ToList(), job.Outcomes, job.CreatedUtc);
+
+    private static void UndoJob(ToastWindow toast, Job job, Func<IReadOnlyList<string>, int> recycle)
+    {
+        toast.SetUndo(false);
+        try
+        {
+            int n = recycle(UndoTargets(job));
+            toast.SetResult(ToastKind.Info, "Undone", n == 1 ? "Moved to the Recycle Bin" : $"{n} items moved to the Recycle Bin",
+                canShow: false, TimeSpan.FromSeconds(3));
+        }
+        catch (Exception ex)
+        {
+            toast.SetResult(ToastKind.Warning, "Couldn't undo", ex.Message, canShow: false, TimeSpan.FromSeconds(8));
+        }
     }
 
     public void ShowMessage(ToastKind kind, string title, string detail, Win32.POINT anchor, TimeSpan? duration = null)
@@ -64,7 +83,7 @@ public sealed class ToastManager
         return toast;
     }
 
-    private void Update(ToastWindow toast, Job job)
+    private void Update(ToastWindow toast, Job job, bool offerUndo)
     {
         if (!job.IsFinished)
         {
@@ -85,7 +104,12 @@ public sealed class ToastManager
             ToastKind.Success or ToastKind.Info => TimeSpan.FromSeconds(4),
             _ => TimeSpan.FromSeconds(12),
         };
+        // Undo when the job made something new; the card then stays a little longer, so there's time to reach it.
+        // (Not when completion cards are turned off: those close at once, and stay out of the way.)
+        bool undo = offerUndo && (kind == ToastKind.Warning || (kind == ToastKind.Success && NotifyOnCompletion())) && UndoTargets(job).Count > 0;
+        if (undo && close < TimeSpan.FromSeconds(8)) close = TimeSpan.FromSeconds(8);
         toast.SetResult(kind, title, detail, canShow, close);
+        toast.SetUndo(undo);
     }
 
     /// <summary>Plain-language summary of a finished job. Public for unit tests.</summary>

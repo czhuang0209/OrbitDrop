@@ -43,6 +43,10 @@ if ($LASTEXITCODE -ne 0) { throw "Publish failed" }
 Copy-Item (Join-Path $root "LICENSE") (Join-Path $publish "LICENSE.txt")
 Copy-Item (Join-Path $root "THIRD-PARTY-NOTICES.md") (Join-Path $publish "THIRD-PARTY-NOTICES.md")
 
+Write-Host "> Right-click menu"
+& (Join-Path $root "build\shell\build-shell.ps1") | Out-Null
+Copy-Item (Join-Path $root "artifacts\shell\OrbitDropShell.dll") $publish
+
 Write-Host "> Portable zip"
 $zip = Join-Path $artifacts "OrbitDrop-$Version-$Runtime-portable.zip"
 if (Test-Path $zip) { Remove-Item $zip -Force }

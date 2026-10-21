@@ -24,6 +24,8 @@ public sealed class Job
     }
 
     public int Id { get; }
+    /// <summary>When the job was queued (UTC): anything it made is newer than this.</summary>
+    public DateTime CreatedUtc { get; } = DateTime.UtcNow;
     public OperationDescriptor Operation { get; }
     public FileSet Files { get; }
     public JobState State { get; private set; } = JobState.Queued;

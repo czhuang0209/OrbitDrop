@@ -14,6 +14,7 @@ public sealed class AppSettings
 {
     public const int CurrentSchemaVersion = 1;
     public const int MaxRecentFolders = 4;
+    public const int MaxLastUsed = 200;
 
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
 
@@ -34,6 +35,22 @@ public sealed class AppSettings
     public bool KeyboardShortcut { get; set; } = true;
     /// <summary>Letting go of a drag in the wheel's centre keeps the wheel open, to choose with clicks instead of holding.</summary>
     public bool KeepOpenOnCentre { get; set; }
+    /// <summary>Ctrl+Alt+Space with nothing selected opens the wheel for what's on the clipboard: copied files or an image.</summary>
+    public bool UseClipboard { get; set; } = true;
+    /// <summary>"OrbitDrop" in File Explorer's right-click menu.</summary>
+    public bool ContextMenu { get; set; } = true;
+
+    // Wheel extras: off by default, so the wheel stays exactly as people know it unless they choose otherwise.
+    /// <summary>The option last used for a kind of file moves to the top of its wheel.</summary>
+    public bool LastUsedFirst { get; set; }
+    /// <summary>Hovering a format or compress option shows the estimated result size.</summary>
+    public bool ShowSizeEstimates { get; set; }
+    /// <summary>The last option used, per wheel mode and kind of file ("Convert|.png" → "convert.image.webp").</summary>
+    public Dictionary<string, string> LastUsed { get; set; } = [];
+
+    // Results
+    /// <summary>An Undo button on the "done" card: moves what was just made to the Recycle Bin.</summary>
+    public bool OfferUndo { get; set; } = true;
 
     // Conversions
     public OutputLocation OutputLocation { get; set; } = OutputLocation.BesideOriginal;
@@ -62,7 +79,12 @@ public sealed class AppSettings
     public int SuccessfulJobs { get; set; }
     public bool RatingAsked { get; set; }
 
-    public AppSettings Clone() => (AppSettings)MemberwiseClone();
+    public AppSettings Clone()
+    {
+        var copy = (AppSettings)MemberwiseClone();
+        copy.LastUsed = new Dictionary<string, string>(LastUsed, StringComparer.Ordinal);
+        return copy;
+    }
 
     /// <summary>Clamps values that may have been hand-edited into an invalid range.</summary>
     public void Normalize()
@@ -75,6 +97,8 @@ public sealed class AppSettings
             OutputLocation = OutputLocation.BesideOriginal;
         HiddenOptions = (HiddenOptions ?? []).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct(StringComparer.Ordinal).ToArray();
         OptionOrder = (OptionOrder ?? []).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct(StringComparer.Ordinal).ToArray();
+        LastUsed = (LastUsed ?? []).Where(p => !string.IsNullOrWhiteSpace(p.Key) && !string.IsNullOrWhiteSpace(p.Value))
+            .Take(MaxLastUsed).ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
         RecentFolders = (RecentFolders ?? []).Where(f => !string.IsNullOrWhiteSpace(f)).Distinct(StringComparer.OrdinalIgnoreCase).Take(MaxRecentFolders).ToArray();
     }
 }

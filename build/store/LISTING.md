@@ -101,7 +101,7 @@ Free and open source (MIT): github.com/i3sam/OrbitDrop
 ### What's new in this version
 
 ```
-New: SVG to PNG, JPG, WebP and more. PDF to Word (DOCX). Fixed: documents and CorelDRAW files with very long names now convert. Fixed: long file names no longer spill over the centre of the wheel. New: let go in the centre of the wheel and pick with a click instead of holding (turn it on in Settings → Shortcuts). Word, Excel and PowerPoint files to PDF using your Microsoft Office or LibreOffice, and CorelDRAW (.cdr) files to PDF, SVG, EPS and images using Inkscape or LibreOffice. Also in this update: convert images to WebP and JFIF.
+OrbitDrop 0.4: right-click files and choose OrbitDrop; Undo after every conversion (to the Recycle Bin); copy a screenshot or image and press Ctrl + Alt + Space to save or convert it; optional size estimates on the wheel and "last choice first". The wheel itself works exactly as before. Also new recently: SVG, PDF to Word, documents to PDF, WebP and JFIF.
 ```
 
 ### Product features (one per box, up to 20)

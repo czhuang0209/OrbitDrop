@@ -33,6 +33,10 @@ public partial class ToastWindow : Window
 
     public event Action? CancelRequested;
     public event Action? ShowRequested;
+    public event Action? UndoRequested;
+
+    /// <summary>Shows or hides the Undo link (only on a finished card).</summary>
+    public void SetUndo(bool visible) => UndoButton.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
 
     public IntPtr Handle => new WindowInteropHelper(this).EnsureHandle();
 
@@ -115,6 +119,8 @@ public partial class ToastWindow : Window
     }
 
     private void OnShow(object sender, RoutedEventArgs e) => ShowRequested?.Invoke();
+
+    private void OnUndo(object sender, RoutedEventArgs e) => UndoRequested?.Invoke();
 
     private void SetIndeterminate(bool on)
     {
