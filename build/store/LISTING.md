@@ -66,6 +66,8 @@ CONVERT
 • Images to JPG, PNG, WebP, JFIF, GIF, BMP, TIFF or PDF. Also reads HEIC, AVIF, JPEG XL and camera RAW when Windows has the codec.
 • Several images into one PDF, or PDF pages into PNG or JPG.
 • Video to MP4 or WMV; audio to MP3, M4A, WAV, WMA or FLAC; the soundtrack out of a video.
+• Word, Excel and PowerPoint files to PDF, when Microsoft Office or LibreOffice is installed.
+• CorelDRAW (.cdr) to PDF, SVG, EPS, PNG, JPG, TIFF or BMP, when Inkscape or LibreOffice is installed.
 
 TOOLS
 • A built-in photo editor: crop, adjust brightness, contrast, saturation and warmth, mark up with pen, arrows, boxes and text, and redact.
@@ -99,7 +101,7 @@ Free and open source (MIT): github.com/i3sam/OrbitDrop
 ### What's new in this version
 
 ```
-New: convert images to WebP and JFIF. WebP keeps transparency; JPG to JFIF (and back) keeps the file exactly as it was. WebP pictures now open even without Microsoft's WebP extension. Don't need them? Hide either one in Settings → Wheel.
+New: let go in the centre of the wheel and pick with a click instead of holding (turn it on in Settings → Shortcuts). Word, Excel and PowerPoint files to PDF using your Microsoft Office or LibreOffice, and CorelDRAW (.cdr) files to PDF, SVG, EPS and images using Inkscape or LibreOffice. Also in this update: convert images to WebP and JFIF.
 ```
 
 ### Product features (one per box, up to 20)

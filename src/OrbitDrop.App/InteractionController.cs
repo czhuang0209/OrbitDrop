@@ -176,6 +176,7 @@ public sealed class InteractionController : IDropSink, IDisposable
     {
         if (_session is not { } s) return;
         if (s.ClickMode) { OnClick(s); return; }
+        if (CanKeepOpen(s) && _wheel.HitTest(ScreenInfo.CursorPosition) == WheelGeometry.HitHub) { KeepOpen(s); return; }
         // If the pointer is over the wheel, OLE's Drop may still be on its way: wait briefly for it.
         if (s.OverWheel && !s.Dropped)
         {
@@ -185,6 +186,26 @@ public sealed class InteractionController : IDropSink, IDisposable
             _deferredDismiss.Start();
         }
         else Dismiss(confirmed: false, "released");
+    }
+
+    /// <summary>Settings → Shortcuts allows it, and the files are known, so there is something to click.</summary>
+    private bool CanKeepOpen(Session s) => _settings().KeepOpenOnCentre && s.EnterSeen && !s.Files.IsEmpty && s.Items.Count > 0;
+
+    /// <summary>
+    /// The drag was let go in the centre: nothing is dropped, and the wheel stays open in click mode (as from the
+    /// keyboard shortcut). Hover and click a choice; the centre or the wheel key switches mode; clicking outside or Esc closes.
+    /// </summary>
+    private void KeepOpen(Session s)
+    {
+        _deferredDismiss?.Stop();
+        _dwell.Stop();
+        s.ClickMode = true;
+        s.OverWheel = true;
+        s.LastHit = WheelGeometry.HitOutside;
+        _detector.EnsurePolling();
+        _hover.Start();
+        OnDragOver(ScreenInfo.CursorPosition);
+        Log.Info("Wheel kept open (let go in the centre)");
     }
 
     private void Dismiss(bool confirmed, string reason)
@@ -253,7 +274,7 @@ public sealed class InteractionController : IDropSink, IDisposable
             _wheel.SetHub(value, (s.OpenGroup is null, s.ClickMode) switch
             {
                 (true, true) => HasOtherMode(s) ? $"Click for {NextModeLabel(s)}" : "Esc to close",
-                (true, false) => "Release to cancel",
+                (true, false) => CanKeepOpen(s) ? "Let go to keep it open" : "Release to cancel",
                 (false, true) => "Click to go back",
                 _ => "Going back…",
             });

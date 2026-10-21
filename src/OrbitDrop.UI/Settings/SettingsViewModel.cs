@@ -92,6 +92,8 @@ public sealed class SettingsViewModel : ObservableObject
     public string KeyboardShortcutHint => _host.KeyboardShortcutAvailable
         ? "Select files in File Explorer, on the desktop or in VS Code, press it, then click an option. Click the centre (or press it again) for Tools and Actions."
         : "Another app is using this shortcut, so OrbitDrop couldn't claim it.";
+    public bool KeepOpenOnCentre { get => S.KeepOpenOnCentre; set => Set(s => s.KeepOpenOnCentre = value, nameof(KeepOpenOnCentre), nameof(CentreReleaseHint)); }
+    public string CentreReleaseHint => S.KeepOpenOnCentre ? "Keep the wheel open: click an option, or outside to close" : "Cancel without doing anything";
     private void SetTrigger(TriggerKey k) => Set(s => s.TriggerKey = k, nameof(TriggerShift), nameof(TriggerCtrl), nameof(TriggerName));
 
     // ---- Conversions

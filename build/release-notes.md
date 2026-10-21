@@ -1,4 +1,10 @@
-## What's new in 0.3.5-alpha
+## What's new in 0.3.6-alpha
+
+- **Click instead of holding.** Turn it on in Settings → Shortcuts. Then drag files, tap Shift, and let go in the centre of the wheel: it stays open, and you click what you want. Click outside or press Esc to close. Off by default.
+- **Documents to PDF.** Drag Word, Excel or PowerPoint files (DOC, DOCX, RTF, ODT, XLS, XLSX, ODS, PPT, PPTX, ODP), tap Shift, let go on PDF. Old formats also convert to DOCX, XLSX or PPTX. OrbitDrop uses the Microsoft Office or LibreOffice already on your PC, invisibly; your file is only read.
+- **CorelDRAW files.** With Inkscape or LibreOffice installed, .cdr drawings convert to PDF, SVG, EPS, PNG, JPG, TIFF or BMP.
+
+## In 0.3.5-alpha
 
 - **Convert to WebP.** Drag any image, tap Shift, let go on WEBP. Transparency is kept, so PNG logos and stickers stay see-through.
 - **Convert to and from JFIF.** Got a .jfif a website won't take? Drop it on JPG. Going JPG ↔ JFIF only renames the file, so the picture isn't re-compressed at all.

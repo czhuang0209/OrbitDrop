@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Threading;
+using OrbitDrop.Conversion.Documents;
 using OrbitDrop.Conversion.Imaging;
 using OrbitDrop.Conversion.Media;
 using OrbitDrop.Conversion.Pdf;
@@ -183,7 +184,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
     }
 
     private static OperationRegistry BuildRegistry(FileActionsProvider? actions = null) =>
-        new([new ImageConversionProvider(), new PdfProvider(), new PdfToolsProvider(), new MediaFoundationProvider(), new MediaEditingProvider(),
+        new([new ImageConversionProvider(), new PdfProvider(), new PdfToolsProvider(), new DocumentProvider(), new MediaFoundationProvider(), new MediaEditingProvider(),
              new ImageToolsProvider(), new ImageTextProvider(), new ArchiveProvider(), new MetadataProvider(), actions ?? new FileActionsProvider()]);
 
     private OperationContext CreateContext() => new()

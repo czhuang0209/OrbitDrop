@@ -17,7 +17,8 @@ internal static class WheelCatalogBuilder
         new("Video", "", [["clip.mp4"], ["clip-1.mp4", "clip-2.mp4"]]),
         new("Audio", "", [["song.mp3"]]),
         new("PDF", "", [["document.pdf"], ["document-1.pdf", "document-2.pdf"]]),
-        new("Archives", "", [["archive.zip"]]),
+        new("Documents", "", [["report.docx"], ["report.doc"], ["sheet.xls"], ["slides.ppt"], ["drawing.cdr"]]),
+        new("Archives","", [["archive.zip"]]),
         new("Any file", "", [["notes.txt"]]),
     ];
 

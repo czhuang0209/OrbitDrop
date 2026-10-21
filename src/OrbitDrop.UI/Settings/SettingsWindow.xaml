@@ -206,6 +206,16 @@
                     </Border>
                     <Border Style="{StaticResource Orbit.Card}">
                         <DockPanel>
+                            <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE8B0;" />
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding KeepOpenOnCentre}" AutomationProperties.Name="Click instead of holding" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Click instead of holding" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="Let go of the files in the centre of the wheel and it stays open: click what you want, or click outside to close." Style="{StaticResource RowHint}" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Orbit.Card}">
+                        <DockPanel>
                             <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE92E;" />
                             <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding KeyboardShortcut}" AutomationProperties.Name="Keyboard shortcut" />
                             <StackPanel VerticalAlignment="Center">
@@ -226,7 +236,7 @@
                             <TextBlock Grid.Row="2" Style="{StaticResource Orbit.Text.BodyStrong}" Margin="0,4" Text="Release on an option" />
                             <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource Orbit.Text.Body}" Margin="0,4" Text="Run it; the result appears next to the original" />
                             <TextBlock Grid.Row="3" Style="{StaticResource Orbit.Text.BodyStrong}" Margin="0,4" Text="Release on the centre" />
-                            <TextBlock Grid.Row="3" Grid.Column="1" Style="{StaticResource Orbit.Text.Body}" Margin="0,4" Text="Cancel without doing anything" />
+                            <TextBlock Grid.Row="3" Grid.Column="1" Style="{StaticResource Orbit.Text.Body}" Margin="0,4" Text="{Binding CentreReleaseHint}" />
                             <TextBlock Grid.Row="4" Style="{StaticResource Orbit.Text.BodyStrong}" Margin="0,4" Text="Esc" />
                             <TextBlock Grid.Row="4" Grid.Column="1" Style="{StaticResource Orbit.Text.Body}" Margin="0,4" Text="Cancel the drag and close the wheel" />
                             <TextBlock Grid.Row="5" Style="{StaticResource Orbit.Text.BodyStrong}" Margin="0,4" Text="Ctrl + Alt + Space" />

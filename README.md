@@ -52,7 +52,7 @@ The app includes the same guide with a hands-on practice step (tray menu → **H
 
 | Mode | 0.2 capabilities |
 |---|---|
-| Convert | **Images:** PNG, JPG, WebP, JFIF, BMP, TIFF, GIF, PDF (also reads HEIC, AVIF, JPEG XL and camera RAW when Windows has the codec) · **PDF:** pages to PNG or JPG · **Video:** MP4, WMV, animated GIF, or extract audio as MP3 / M4A / WAV / WMA / FLAC · **Audio:** MP3, M4A, WAV, WMA, FLAC |
+| Convert | **Images:** PNG, JPG, WebP, JFIF, BMP, TIFF, GIF, PDF (also reads HEIC, AVIF, JPEG XL and camera RAW when Windows has the codec) · **PDF:** pages to PNG or JPG · **Video:** MP4, WMV, animated GIF, or extract audio as MP3 / M4A / WAV / WMA / FLAC · **Audio:** MP3, M4A, WAV, WMA, FLAC · **Documents:** Word, Excel and PowerPoint to PDF (with Microsoft Office or LibreOffice installed) · **CorelDRAW:** CDR to PDF, SVG, EPS, PNG, JPG, TIFF, BMP (with Inkscape or LibreOffice installed) |
 | Tools | **Images:** edit (crop, adjust, markup, redact), compress (by % or under 1 MB / 500 KB / 200 KB), resize, rotate & flip, grayscale, copy text (OCR), combine into PDF · **PDF:** merge, split into pages, compress, rotate pages · **Video:** trim, compress (720p / 1080p / 480p / half size), remove audio, snapshot, join · **Audio:** trim, compress, normalize, mono / stereo · **Archives:** extract ZIP, TAR, TAR.GZ, GZ · **Any file:** info, edit details, remove metadata or location |
 | Actions | Copy path or name, show in folder, copy to / move to (recent and common folders), float (a shelf to drag files out later), share (Nearby Share), zip, terminal, set as wallpaper. Works on folders too |
 

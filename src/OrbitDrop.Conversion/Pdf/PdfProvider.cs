@@ -82,11 +82,11 @@ public sealed class PdfProvider : IOperationProvider
 
             case "convert.pdf.png" or "convert.pdf.jpg":
             {
-                bool png = operation.Id.EndsWith("png", StringComparison.Ordinal);
+                var format = operation.Id.EndsWith("png", StringComparison.Ordinal) ? WicImageCodec.Png : WicImageCodec.Jpg;
                 foreach (var file in files)
                 {
                     ct.ThrowIfCancellationRequested();
-                    try { progress.Report(new FileOutcome(file, OutcomeStatus.Succeeded, await RenderPagesAsync(file, png, context, ct))); }
+                    try { progress.Report(new FileOutcome(file, OutcomeStatus.Succeeded, await RenderPagesAsync(file, file, format, context, ct))); }
                     catch (OperationCanceledException) { throw; }
                     catch (Exception ex) { progress.Report(new FileOutcome(file, OutcomeStatus.Failed, Message: Friendly(ex))); }
                 }
@@ -122,14 +122,18 @@ public sealed class PdfProvider : IOperationProvider
         return new PdfImage(WicImageCodec.EncodeToBytes(image, WicImageCodec.Jpg, Math.Max(jpegQuality, 85)), image.PixelWidth, image.PixelHeight);
     }
 
-    /// <summary>One page → "doc.png"; several → a "doc (PNG)" folder with "Page 01.png" … next to the PDF.</summary>
-    private static async Task<string> RenderPagesAsync(string file, bool png, OperationContext context, CancellationToken ct)
+    /// <summary>
+    /// One page → "doc.png"; several → a "doc (PNG)" folder with "Page 01.png" … Renders <paramref name="pdf"/>; the
+    /// output is named after, and placed next to, <paramref name="file"/> (the same file, or the drawing a PDF was made from).
+    /// </summary>
+    public static async Task<string> RenderPagesAsync(string pdf, string file, ImageFormat format, OperationContext context, CancellationToken ct)
     {
-        var storage = await StorageFile.GetFileFromPathAsync(file);
+        var storage = await StorageFile.GetFileFromPathAsync(pdf);
         var document = await PdfDocument.LoadFromFileAsync(storage);
         if (document.IsPasswordProtected) throw new InvalidDataException("This PDF is password-protected.");
         uint count = document.PageCount;
-        string ext = png ? ".png" : ".jpg";
+        string ext = format.Extension;
+        bool png = format == WicImageCodec.Png;
 
         var pages = new List<byte[]>();
         for (uint i = 0; i < count; i++)
@@ -151,8 +155,8 @@ public sealed class PdfProvider : IOperationProvider
             context.ReportFileFraction?.Invoke((i + 1.0) / count);
         }
 
-        // JPEG pages are re-encoded from the PNG render at the user's quality (white page background, no alpha).
-        byte[] Encode(byte[] pngBytes) => png ? pngBytes : ToJpeg(pngBytes, context.JpegQuality);
+        // Other formats are re-encoded from the PNG render (JPEG at the user's quality, on a white page background).
+        byte[] Encode(byte[] pngBytes) => png ? pngBytes : Reencode(pngBytes, format, context.JpegQuality);
 
         if (count == 1)
             return SafeOutput.Write(file, context.Output, ext, null, s => s.Write(Encode(pages[0])), _ => null, ct);
@@ -166,7 +170,7 @@ public sealed class PdfProvider : IOperationProvider
         }, ct);
     }
 
-    private static byte[] ToJpeg(byte[] pngBytes, int quality)
+    private static byte[] Reencode(byte[] pngBytes, ImageFormat format, int quality)
     {
         byte[] result = [];
         StaWorker.RunAsync(() =>
@@ -174,7 +178,7 @@ public sealed class PdfProvider : IOperationProvider
             using var ms = new MemoryStream(pngBytes);
             var frame = BitmapDecoder.Create(ms, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad).Frames[0];
             var bgra = new FormatConvertedBitmap(frame, PixelFormats.Bgra32, null, 0);
-            result = WicImageCodec.EncodeToBytes(bgra, WicImageCodec.Jpg, quality);
+            result = WicImageCodec.EncodeToBytes(bgra, format, quality);
         }).GetAwaiter().GetResult();
         return result;
     }
