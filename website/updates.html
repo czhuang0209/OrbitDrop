@@ -25,7 +25,7 @@
       <nav aria-label="Main">
         <a href="/#features" data-magnetic>Features</a>
         <a href="/updates" data-magnetic aria-current="page">Updates</a>
-        <a href="/#faq" data-magnetic>FAQ</a>
+        <a href="/feedback" data-magnetic>Feedback</a>
         <a href="https://github.com/i3sam/OrbitDrop" data-magnetic>GitHub</a>
       </nav>
       <a class="nav-cta" href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ?mode=direct&amp;cid=website-updates" data-magnetic>Get it free</a>
@@ -323,9 +323,9 @@
       <h2>Got an idea for the next one?</h2>
       <p>Most of these updates started as a comment or a message. Tell us what you'd like OrbitDrop to do.</p>
       <div class="review-buttons">
-        <a class="store-btn" data-magnetic href="https://github.com/i3sam/OrbitDrop/issues">
-          <svg viewBox="0 0 16 16" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-          <span><small>Suggest a feature on</small>GitHub</span>
+        <a class="store-btn" data-magnetic href="/feedback#feature">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 9.5h8M8 12.5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span><small>Suggest a feature</small>Send us your idea</span>
         </a>
         <a class="store-btn" data-magnetic href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ?mode=direct&amp;cid=website-updates">
           <svg viewBox="0 0 23 23" width="24" height="24" aria-hidden="true"><path fill="#F25022" d="M1 1h10v10H1z"/><path fill="#7FBA00" d="M12 1h10v10H12z"/><path fill="#00A4EF" d="M1 12h10v10H1z"/><path fill="#FFB900" d="M12 12h10v10H12z"/></svg>
@@ -342,19 +342,14 @@
         <a href="/">Home</a>
         <a href="/privacy">Privacy</a>
         <a href="https://github.com/i3sam/OrbitDrop">GitHub</a>
-        <a href="https://github.com/i3sam/OrbitDrop/issues">Support</a>
+        <a href="/feedback#feature">Request a feature</a>
+        <a href="/feedback#bug">Report a bug</a>
       </nav>
     </div>
   </footer>
 
-  <script>
-    // Releases rise in as they scroll into view (motion.js handles the heading, cursor and smooth scrolling).
-    (() => {
-      const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: 0.12 });
-      document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
-    })();
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js" defer></script>
+  <script src="/page.js" defer></script>
+  <script src="/vendor/lenis-1.1.20.min.js" defer></script>
   <script src="/motion.js" defer></script>
 </body>
 </html>

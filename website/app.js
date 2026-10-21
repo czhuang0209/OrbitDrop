@@ -271,6 +271,30 @@
   $$(".reveal").forEach((el) => io.observe(el));
 
   $$("[data-store]").forEach((a) => { a.href = STORE + a.dataset.store; });
+  // FAQ: answers glide open and closed (the browser's own instant toggle when motion is reduced).
+  $$(".faq details").forEach((d) => {
+    const summary = $("summary", d), body = $(".faq-a", d);
+    if (!summary || !body || reduceMotion) return;
+    let anim = null;
+    const ease = "cubic-bezier(.16, 1, .3, 1)";
+    summary.addEventListener("click", (e) => {
+      e.preventDefault();
+      const opening = !d.open || d.classList.contains("closing");
+      const from = `${body.getBoundingClientRect().height}px`;
+      anim?.cancel();
+      if (opening) {
+        d.classList.remove("closing");
+        d.open = true;
+        anim = body.animate([{ height: from, opacity: 0.2 }, { height: `${body.scrollHeight}px`, opacity: 1 }], { duration: 460, easing: ease });
+        anim.onfinish = () => { anim = null; };
+      } else {
+        d.classList.add("closing");
+        anim = body.animate([{ height: from, opacity: 1 }, { height: "0px", opacity: 0 }], { duration: 340, easing: ease });
+        anim.onfinish = () => { d.open = false; d.classList.remove("closing"); anim = null; };
+      }
+    });
+  });
+
   // Testimonials: a second copy of each row (hidden from screen readers) makes the drift loop seamlessly.
   if (!reduceMotion) $$(".track").forEach((t) => [...t.children].forEach((f) => {
     const c = f.cloneNode(true); c.setAttribute("aria-hidden", "true"); t.appendChild(c);
