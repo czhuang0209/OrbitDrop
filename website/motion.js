@@ -83,13 +83,12 @@
     }));
   }
 
-  // ------------------------------------------------------------------ floating header: compact once you scroll, hides going down
+  // ------------------------------------------------------------------ floating header: compact once you scroll, always visible
   const nav = $("#nav");
-  let lastY = scrollY;
   const onScroll = (y) => {
     if (nav) {
       nav.classList.toggle("scrolled", y > 24);
-      if (Math.abs(y - lastY) > 6) { nav.classList.toggle("hidden", y > lastY && y > 320); lastY = y; }
+      // The header stays on screen all the time, so the download button is always one click away.
     }
     breathe();
   };
