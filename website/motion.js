@@ -87,8 +87,10 @@
   const nav = $("#nav");
   let lastY = scrollY;
   const onScroll = (y) => {
-    nav.classList.toggle("scrolled", y > 24);
-    if (Math.abs(y - lastY) > 6) { nav.classList.toggle("hidden", y > lastY && y > 320); lastY = y; }
+    if (nav) {
+      nav.classList.toggle("scrolled", y > 24);
+      if (Math.abs(y - lastY) > 6) { nav.classList.toggle("hidden", y > lastY && y > 320); lastY = y; }
+    }
     breathe();
   };
   if (lenis) lenis.on("scroll", ({ scroll }) => onScroll(scroll));
@@ -108,6 +110,9 @@
   if (!fine) return;
 
   // ------------------------------------------------------------------ cursor
+  // Pages without the cursor markup get it here, so the native cursor is never hidden with nothing in its place.
+  if (!$(".cursor")) document.body.insertAdjacentHTML("beforeend",
+    '<div class="cursor" aria-hidden="true"><div class="cursor-ring"><span class="cursor-label"></span></div><div class="cursor-dot"></div></div>');
   const cursor = $(".cursor"), ring = $(".cursor-ring"), dot = $(".cursor-dot"), label = $(".cursor-label");
   root.classList.add("has-cursor");
   let mx = innerWidth / 2, my = innerHeight / 2, rx = mx, ry = my, seen = false;
