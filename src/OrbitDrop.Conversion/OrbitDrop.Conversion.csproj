@@ -10,5 +10,6 @@
   <ItemGroup>
     <!-- Pinned: 6.2.4 is the last MIT release. PDFsharp 6.5+ is AGPL-3.0, which OrbitDrop must not take. -->
     <PackageReference Include="PDFsharp" Version="6.2.4" />
+    <PackageReference Include="SkiaSharp" Version="3.116.1" />
   </ItemGroup>
 </Project>

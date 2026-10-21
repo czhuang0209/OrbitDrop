@@ -8,7 +8,8 @@ namespace OrbitDrop.Conversion.Imaging;
 public sealed record ImageFormat(string Name, string Extension, bool SupportsAlpha);
 
 /// <summary>
-/// Image engine on the Windows Imaging Component (via WPF imaging). Built into Windows: no dependency to ship.
+/// Image engine on the Windows Imaging Component (via WPF imaging), built into Windows. WebP, which Windows can't
+/// write (and reads only with a Store extension), goes through <see cref="WebpCodec"/>.
 /// Must be used from an STA thread (see <see cref="StaWorker"/>).
 /// Limitations (documented in the capability matrix): EXIF orientation is not applied, animated GIF/multi-page TIFF
 /// use the first frame, colour profiles are not carried over.
@@ -20,13 +21,16 @@ public static class WicImageCodec
     public static readonly ImageFormat Bmp = new("BMP", ".bmp", false);
     public static readonly ImageFormat Tiff = new("TIFF", ".tiff", true);
     public static readonly ImageFormat Gif = new("GIF", ".gif", true);
+    public static readonly ImageFormat Webp = new("WEBP", ".webp", true);
+    /// <summary>A JPEG under the .jfif name (what some browsers save images as): same encoder as JPG.</summary>
+    public static readonly ImageFormat Jfif = new("JFIF", ".jfif", false);
 
     /// <summary>Output formats, in wheel order.</summary>
-    public static IReadOnlyList<ImageFormat> OutputFormats { get; } = [Png, Jpg, Bmp, Tiff, Gif];
+    public static IReadOnlyList<ImageFormat> OutputFormats { get; } = [Png, Jpg, Webp, Bmp, Tiff, Gif, Jfif];
 
     private static readonly Dictionary<string, ImageFormat> InputByExtension = new(StringComparer.OrdinalIgnoreCase)
     {
-        [".png"] = Png, [".jpg"] = Jpg, [".jpeg"] = Jpg, [".jpe"] = Jpg, [".jfif"] = Jpg,
+        [".png"] = Png, [".jpg"] = Jpg, [".jpeg"] = Jpg, [".jpe"] = Jpg, [".jfif"] = Jfif, [".webp"] = Webp,
         [".bmp"] = Bmp, [".dib"] = Bmp, [".tif"] = Tiff, [".tiff"] = Tiff, [".gif"] = Gif,
     };
 
@@ -36,7 +40,7 @@ public static class WicImageCodec
     /// </summary>
     private static readonly Dictionary<string, ImageFormat> OptionalInputs = new(StringComparer.OrdinalIgnoreCase)
     {
-        [".webp"] = new("WEBP", ".webp", true), [".heic"] = new("HEIC", ".heic", false), [".heif"] = new("HEIC", ".heif", false),
+        [".heic"] = new("HEIC", ".heic", false), [".heif"] = new("HEIC", ".heif", false),
         [".avif"] = new("AVIF", ".avif", true), [".jxl"] = new("JXL", ".jxl", true), [".jxr"] = new("JXR", ".jxr", true),
         [".wdp"] = new("JXR", ".wdp", true), [".dng"] = new("RAW", ".dng", false), [".cr2"] = new("RAW", ".cr2", false),
         [".cr3"] = new("RAW", ".cr3", false), [".nef"] = new("RAW", ".nef", false), [".arw"] = new("RAW", ".arw", false),
@@ -70,7 +74,16 @@ public static class WicImageCodec
     public static BitmapSource Load(string path)
     {
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
-        var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+        BitmapDecoder decoder;
+        try
+        {
+            decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+        }
+        catch (Exception ex) when (ex is NotSupportedException or FileFormatException)
+        {
+            // No Windows codec for it (WebP without the Store extension): Skia reads it, or it really isn't an image.
+            return WebpCodec.TryDecode(path) ?? throw ex;
+        }
         if (decoder.Frames.Count == 0) throw new InvalidDataException("The image contains no frames.");
         var frame = decoder.Frames[0];
         BitmapSource bgra = new FormatConvertedBitmap(frame, PixelFormats.Bgra32, null, 0);
@@ -157,10 +170,15 @@ public static class WicImageCodec
 
     public static void Encode(BitmapSource image, ImageFormat format, Stream stream, int jpegQuality)
     {
+        if (format == Webp)
+        {
+            WebpCodec.Encode(image, stream, jpegQuality);
+            return;
+        }
         BitmapEncoder encoder = format.Extension switch
         {
             ".png" => new PngBitmapEncoder(),
-            ".jpg" => new JpegBitmapEncoder { QualityLevel = Math.Clamp(jpegQuality, 1, 100) },
+            ".jpg" or ".jfif" => new JpegBitmapEncoder { QualityLevel = Math.Clamp(jpegQuality, 1, 100) },
             ".bmp" => new BmpBitmapEncoder(),
             ".tiff" => new TiffBitmapEncoder { Compression = TiffCompressOption.Lzw },
             ".gif" => new GifBitmapEncoder(),

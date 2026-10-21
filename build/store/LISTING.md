@@ -63,7 +63,7 @@ Convert, edit and manage files without opening an app.
 Drag any file in File Explorer, on the desktop or in VS Code, tap Shift, and a wheel of choices opens right under your pointer. Let go on what you want: the result appears next to the original. Your original is never changed, and nothing is ever uploaded. Everything happens on your PC.
 
 CONVERT
-• Images to JPG, PNG, GIF, BMP, TIFF or PDF. Reads WebP, HEIC, AVIF, JPEG XL and camera RAW when Windows has the codec.
+• Images to JPG, PNG, WebP, JFIF, GIF, BMP, TIFF or PDF. Also reads HEIC, AVIF, JPEG XL and camera RAW when Windows has the codec.
 • Several images into one PDF, or PDF pages into PNG or JPG.
 • Video to MP4 or WMV; audio to MP3, M4A, WAV, WMA or FLAC; the soundtrack out of a video.
 
@@ -99,7 +99,7 @@ Free and open source (MIT): github.com/i3sam/OrbitDrop
 ### What's new in this version
 
 ```
-The first Microsoft Store release. Updates now arrive through the Store, and "Start OrbitDrop when I sign in" works with Windows' startup apps.
+New: convert images to WebP and JFIF. WebP keeps transparency; JPG to JFIF (and back) keeps the file exactly as it was. WebP pictures now open even without Microsoft's WebP extension. Don't need them? Hide either one in Settings → Wheel.
 ```
 
 ### Product features (one per box, up to 20)
@@ -108,7 +108,7 @@ The first Microsoft Store release. Updates now arrive through the Store, and "St
 Drag a file, tap Shift, let go on what you want
 Results appear next to the original; the original is never changed
 Works offline; nothing is uploaded
-Convert images to JPG, PNG, GIF, BMP, TIFF or PDF
+Convert images to JPG, PNG, WebP, JFIF, GIF, BMP, TIFF or PDF
 Merge, split and compress PDFs
 Built-in photo editor: crop, adjust, mark up, redact
 Compress photos to a target size like 1 MB or 200 KB

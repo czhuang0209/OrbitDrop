@@ -29,7 +29,7 @@ public sealed class PdfProvider : IOperationProvider
         if (files.All(WicImageCodec.IsSupportedInput))
         {
             if (mode == OperationMode.Convert)
-                yield return new("convert.image.pdf", ProviderId, OperationMode.Convert, "PDF", null, "Convert to %1", "PDF", "Making PDF", 6);
+                yield return new("convert.image.pdf", ProviderId, OperationMode.Convert, "PDF", null, "Convert to %1", "PDF", "Making PDF", 8);
             if (mode == OperationMode.Tools && files.Count > 1)
                 yield return new("tool.image.pdf-combine", ProviderId, OperationMode.Tools, "Combine to PDF", "",
                     "One PDF, a page per image", "", "Making PDF", 145);
@@ -109,7 +109,7 @@ public sealed class PdfProvider : IOperationProvider
     /// </summary>
     public static PdfImage ToPdfImage(string file, int jpegQuality)
     {
-        if (WicImageCodec.FormatOf(file)?.Name == "JPG")
+        if (WicImageCodec.FormatOf(file)?.Name is "JPG" or "JFIF")
         {
             byte[] bytes = File.ReadAllBytes(file);
             using var ms = new MemoryStream(bytes, writable: false);

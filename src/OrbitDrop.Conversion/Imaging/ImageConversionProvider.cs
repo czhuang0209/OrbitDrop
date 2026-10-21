@@ -2,7 +2,7 @@ using OrbitDrop.Core;
 
 namespace OrbitDrop.Conversion.Imaging;
 
-/// <summary>Image format conversion: PNG, JPG, BMP, TIFF, GIF ↔ each other, via WIC.</summary>
+/// <summary>Image format conversion: PNG, JPG, WebP, BMP, TIFF, GIF, JFIF ↔ each other (WIC, plus Skia for WebP).</summary>
 public sealed class ImageConversionProvider : IOperationProvider
 {
     public const string ProviderId = "image.convert";
@@ -48,8 +48,9 @@ public sealed class ImageConversionProvider : IOperationProvider
                 }
                 try
                 {
-                    var image = WicImageCodec.Load(file);
-                    string output = WicImageCodec.WriteOutput(image, file, target, suffix: null, context, ct);
+                    string output = IsJpeg(WicImageCodec.FormatOf(file)) && IsJpeg(target)
+                        ? Rename(file, target, context, ct)
+                        : WicImageCodec.WriteOutput(WicImageCodec.Load(file), file, target, suffix: null, context, ct);
                     progress.Report(new FileOutcome(file, OutcomeStatus.Succeeded, output));
                 }
                 catch (OperationCanceledException) { throw; }
@@ -60,6 +61,15 @@ public sealed class ImageConversionProvider : IOperationProvider
             }
         }, "OrbitDrop image conversion");
     }
+
+    private static bool IsJpeg(ImageFormat? f) => f == WicImageCodec.Jpg || f == WicImageCodec.Jfif;
+
+    /// <summary>JPG ↔ JFIF is the same file under another name: copy it byte for byte, so nothing is re-compressed.</summary>
+    private static string Rename(string file, ImageFormat target, OperationContext context, CancellationToken ct) =>
+        SafeOutput.Write(file, context.Output, target.Extension, suffix: null,
+            write: s => { using var src = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete); src.CopyTo(s); },
+            validate: temp => new FileInfo(temp).Length == new FileInfo(file).Length ? null : "the copy is incomplete",
+            ct);
 
     public IEnumerable<(string Category, string Detail)> DescribeCapabilities()
     {

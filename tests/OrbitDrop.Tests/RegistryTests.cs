@@ -15,13 +15,13 @@ public class RegistryTests
     public void Single_jpg_offers_every_other_format_in_order()
     {
         var labels = Registry.Query(Files("a.jpg"), OperationMode.Convert).Select(d => d.Label);
-        Assert.Equal(["PNG", "BMP", "TIFF", "GIF"], labels);
+        Assert.Equal(["PNG", "WEBP", "BMP", "TIFF", "GIF", "JFIF"], labels);
     }
 
     [Fact]
     public void Mixed_image_selection_keeps_all_targets_and_skips_per_file()
     {
-        Assert.Equal(5, Registry.Query(Files("a.jpg", "b.png"), OperationMode.Convert).Count);
+        Assert.Equal(7, Registry.Query(Files("a.jpg", "b.png"), OperationMode.Convert).Count);
     }
 
     [Fact]

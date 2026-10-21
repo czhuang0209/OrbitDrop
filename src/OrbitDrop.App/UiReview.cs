@@ -33,7 +33,7 @@ internal static class UiReview
             {
                 var cases = new (string Name, OperationMode Mode, string[] Files, int Hi, string Value, string Detail, string? Group)[]
                 {
-                    ("convert", OperationMode.Convert, ["photo.jpg"], 1, "BMP", "Convert to BMP", null),
+                    ("convert", OperationMode.Convert, ["photo.jpg"], 1, "WEBP", "Convert to WEBP", null),
                     ("convert-batch", OperationMode.Convert, ["a.jpg", "b.png", "c.gif"], -2, "3 files", "JPG · PNG · GIF", null),
                     ("tools", OperationMode.Tools, ["photo.jpg"], 0, "Compress", "Hold for options · drop: 50%", null),
                     ("tools-compress", OperationMode.Tools, ["photo.jpg"], 3, "Under 1 MB", "Compress to under 1 MB", "image.compress"),

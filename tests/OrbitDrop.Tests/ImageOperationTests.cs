@@ -30,6 +30,8 @@ public class ImageOperationTests
     [InlineData("bmp")]
     [InlineData("tiff")]
     [InlineData("gif")]
+    [InlineData("webp")]
+    [InlineData("jfif")]
     public async Task Jpg_converts_to_each_format_with_identical_dimensions(string target)
     {
         using var t = new TempFolder();
@@ -52,6 +54,58 @@ public class ImageOperationTests
         byte[] px = new byte[4];
         await StaWorker.RunAsync(() => WicImageCodec.Load(r[0].Output!).CopyPixels(new Int32Rect(100, 80, 1, 1), px, 4, 0));
         Assert.All(px.Take(3), v => Assert.True(v > 235, $"channel {v} should be near white"));
+    }
+
+    [Fact]
+    public async Task Transparent_png_to_webp_keeps_its_transparency()
+    {
+        using var t = new TempFolder();
+        string src = t.Image("hole.png", 200, 160, hole: true);
+        var r = await Run(new ImageConversionProvider(), "convert.image.webp", new FileSet([src]));
+        Assert.Equal(t.File("hole.webp"), r[0].Output);
+        byte[] px = new byte[4];
+        await StaWorker.RunAsync(() => WicImageCodec.Load(r[0].Output!).CopyPixels(new Int32Rect(100, 80, 1, 1), px, 4, 0));
+        Assert.True(px[3] < 20, $"alpha {px[3]} should stay transparent");
+    }
+
+    [Fact]
+    public async Task Webp_reads_without_the_windows_codec()
+    {
+        using var t = new TempFolder();
+        string src = t.Image("hole.png", 90, 70, hole: true);
+        var r = await Run(new ImageConversionProvider(), "convert.image.webp", new FileSet([src]));
+        // Skia directly, as on a PC without Microsoft's WebP Image Extensions.
+        (int, int, byte) got = default;
+        await StaWorker.RunAsync(() =>
+        {
+            var b = WebpCodec.TryDecode(r[0].Output!)!;
+            byte[] px = new byte[4];
+            b.CopyPixels(new Int32Rect(45, 35, 1, 1), px, 4, 0);
+            got = (b.PixelWidth, b.PixelHeight, px[3]);
+        });
+        Assert.Equal((90, 70), (got.Item1, got.Item2));
+        Assert.True(got.Item3 < 20);
+
+        File.WriteAllText(t.File("junk.webp"), "not an image");
+        await StaWorker.RunAsync(() => Assert.Null(WebpCodec.TryDecode(t.File("junk.webp"))));
+    }
+
+    [Fact]
+    public async Task Jpg_to_jfif_and_back_copies_the_bytes_unchanged()
+    {
+        using var t = new TempFolder();
+        string src = t.Image("photo.jpg", 120, 80);
+        var toJfif = await Run(new ImageConversionProvider(), "convert.image.jfif", new FileSet([src]));
+        Assert.Equal(SafeOutput.Sha256(src), SafeOutput.Sha256(toJfif[0].Output!));
+
+        // A .jfif is offered JPG (what sites accept), not JFIF again.
+        var ops = new ImageConversionProvider().GetOperations(new FileSet([toJfif[0].Output!]), OperationMode.Convert).Select(o => o.Label).ToList();
+        Assert.Contains("JPG", ops);
+        Assert.DoesNotContain("JFIF", ops);
+        File.Delete(src);
+        var back = await Run(new ImageConversionProvider(), "convert.image.jpg", new FileSet([toJfif[0].Output!]));
+        Assert.Equal(t.File("photo.jpg"), back[0].Output);
+        Assert.Equal(SafeOutput.Sha256(toJfif[0].Output!), SafeOutput.Sha256(back[0].Output!));
     }
 
     [Fact]

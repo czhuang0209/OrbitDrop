@@ -1,4 +1,11 @@
-## What's new in 0.3.4-alpha
+## What's new in 0.3.5-alpha
+
+- **Convert to WebP.** Drag any image, tap Shift, let go on WEBP. Transparency is kept, so PNG logos and stickers stay see-through.
+- **Convert to and from JFIF.** Got a .jfif a website won't take? Drop it on JPG. Going JPG ↔ JFIF only renames the file, so the picture isn't re-compressed at all.
+- **WebP files open everywhere.** Rotating, resizing, compressing and converting WebP pictures no longer needs Microsoft's WebP extension.
+- Don't need the new formats? Click them away in Settings → Wheel.
+
+## In 0.3.4-alpha
 
 - **Windows accent colour works in dark mode.** OrbitDrop now uses the same shade of your accent that Windows itself uses: lighter in dark mode, darker in light mode. Dark accents no longer fall back to black and white.
 
