@@ -101,7 +101,7 @@ Free and open source (MIT): github.com/i3sam/OrbitDrop
 ### What's new in this version
 
 ```
-New: let go in the centre of the wheel and pick with a click instead of holding (turn it on in Settings → Shortcuts). Word, Excel and PowerPoint files to PDF using your Microsoft Office or LibreOffice, and CorelDRAW (.cdr) files to PDF, SVG, EPS and images using Inkscape or LibreOffice. Also in this update: convert images to WebP and JFIF.
+Fixed: long file names no longer spill over the centre of the wheel. New: let go in the centre of the wheel and pick with a click instead of holding (turn it on in Settings → Shortcuts). Word, Excel and PowerPoint files to PDF using your Microsoft Office or LibreOffice, and CorelDRAW (.cdr) files to PDF, SVG, EPS and images using Inkscape or LibreOffice. Also in this update: convert images to WebP and JFIF.
 ```
 
 ### Product features (one per box, up to 20)

@@ -1,4 +1,8 @@
-## What's new in 0.3.6-alpha
+## What's new in 0.3.7-alpha
+
+- **Fixed: long file names in the wheel.** A long name no longer spills over the centre of the wheel. It's shortened in the middle, so you still see how it starts and its extension ("Filee is a free,… computer.mp4").
+
+## In 0.3.6-alpha
 
 - **Click instead of holding.** Turn it on in Settings → Shortcuts. Then drag files, tap Shift, and let go in the centre of the wheel: it stays open, and you click what you want. Click outside or press Esc to close. Off by default.
 - **Documents to PDF.** Drag Word, Excel or PowerPoint files (DOC, DOCX, RTF, ODT, XLS, XLSX, ODS, PPT, PPTX, ODP), tap Shift, let go on PDF. Old formats also convert to DOCX, XLSX or PPTX. OrbitDrop uses the Microsoft Office or LibreOffice already on your PC, invisibly; your file is only read.

@@ -169,7 +169,17 @@ public sealed class InteractionController : IDropSink, IDisposable
         if (s.Files.Count > 1) return ($"{s.Files.Count} files", s.UnsupportedNote ?? KindSummary(s.Files));
         string size;
         try { size = HumanSize(new FileInfo(s.Files[0]).Length); } catch { size = "1 file"; }
-        return (size, s.UnsupportedNote ?? Path.GetFileName(s.Files[0]));
+        return (size, s.UnsupportedNote ?? ShortName(Path.GetFileName(s.Files[0])));
+    }
+
+    /// <summary>Long names lose their middle, never their end: "Filee is a free, open…converter.mp4".</summary>
+    internal static string ShortName(string name, int max = 30)
+    {
+        if (name.Length <= max) return name;
+        string ext = Path.GetExtension(name);
+        int tail = Math.Min(name.Length - ext.Length, 8) + ext.Length, head = max - tail - 1;
+        if (head < 6) return name[..(max - 1)] + "…"; // an absurdly long extension: plain trim
+        return name[..head].TrimEnd() + "…" + name[^tail..].TrimStart();
     }
 
     private void OnDragButtonReleased()

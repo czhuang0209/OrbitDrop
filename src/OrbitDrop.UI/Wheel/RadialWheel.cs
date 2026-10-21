@@ -90,6 +90,10 @@ public sealed class RadialWheel : Window
         _hubMode.Margin = new Thickness(0, 0, 0, 1);
         _hubValue = HubText(16, FontWeights.SemiBold, 1);
         _hubDetail = HubText(10.5, FontWeights.Normal, 0.62);
+        // Two lines at most: anything longer ends in "…" instead of running into the mode dots.
+        _hubDetail.LineStackingStrategy = LineStackingStrategy.BlockLineHeight;
+        _hubDetail.LineHeight = 13;
+        _hubDetail.MaxHeight = 26;
         var dots = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 5, 0, 0) };
         for (int i = 0; i < 3; i++)
         {

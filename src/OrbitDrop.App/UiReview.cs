@@ -41,6 +41,8 @@ internal static class UiReview
                     ("actions", OperationMode.Actions, ["report.pdf"], 2, "Copy to", "Hold for options · drop: Choose…", null),
                     ("actions-copy-to", OperationMode.Actions, ["report.pdf"], 1, "Desktop", "Copy to Desktop", "actions.copy-to"),
                     ("video", OperationMode.Convert, ["clip.mp4"], 1, "MP3", "Extract audio as MP3", null),
+                    ("long-name", OperationMode.Convert, ["clip.mp4"], -2, "3.4 MB", InteractionController.ShortName("Filee is a free, open-source converter that turns your files into other formats right on your computer.mp4"), null),
+                    ("long-detail", OperationMode.Convert, ["clip.mp4"], -2, "3.4 MB", "Filee is a free, open-source converter that turns your files into other formats right on your computer", null),
                     ("video-tools", OperationMode.Tools, ["clip.mp4"], 0, "Compress", "Hold for options · drop: 720p", null),
                     ("unsupported", OperationMode.Convert, ["report.pdf"], -2, "No conversions yet", "Tap Shift for more", null),
                 };
