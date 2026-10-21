@@ -16,9 +16,21 @@ public sealed class ImageTextProvider : IOperationProvider
     public const string ProviderId = "image.text";
     public string Id => ProviderId;
 
+    /// <summary>
+    /// Text recognition and the wallpaper both hand the file to Windows itself, so only formats a Windows codec reads
+    /// qualify: not SVG (drawn by OrbitDrop), and WebP only where Microsoft's WebP extension is installed.
+    /// </summary>
+    private static bool WindowsCanRead(string path)
+    {
+        if (!WicImageCodec.IsSupportedInput(path)) return false;
+        var decoders = WicCodecs.DecoderExtensions;
+        string ext = Path.GetExtension(path).ToLowerInvariant();
+        return decoders.Count > 0 ? decoders.Contains(ext) : ext is not (".svg" or ".webp");
+    }
+
     public IEnumerable<OperationDescriptor> GetOperations(FileSet files, OperationMode mode)
     {
-        if (!files.All(WicImageCodec.IsSupportedInput)) yield break;
+        if (!files.All(WindowsCanRead)) yield break;
         if (mode == OperationMode.Tools)
             yield return new("tool.image.ocr", ProviderId, OperationMode.Tools, "Copy text", "",
                 "Copy the text in the image", "", "Reading text", 146, DoneTitle: "Text copied");

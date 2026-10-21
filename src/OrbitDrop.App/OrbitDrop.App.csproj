@@ -18,4 +18,10 @@
     <ProjectReference Include="../OrbitDrop.Windows/OrbitDrop.Windows.csproj" />
     <ProjectReference Include="../OrbitDrop.UI/OrbitDrop.UI.csproj" />
   </ItemGroup>
+  <!-- SkiaSharp and HarfBuzzSharp ship native debug symbols (~100 MB) next to their DLLs; users never need them. -->
+  <Target Name="DropNativeDebugSymbols" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.pdb'" />
+    </ItemGroup>
+  </Target>
 </Project>

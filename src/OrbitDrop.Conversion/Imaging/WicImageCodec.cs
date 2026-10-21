@@ -24,6 +24,8 @@ public static class WicImageCodec
     public static readonly ImageFormat Webp = new("WEBP", ".webp", true);
     /// <summary>A JPEG under the .jfif name (what some browsers save images as): same encoder as JPG.</summary>
     public static readonly ImageFormat Jfif = new("JFIF", ".jfif", false);
+    /// <summary>Read only (drawn by <see cref="SvgCodec"/>); results that keep the format become PNG.</summary>
+    public static readonly ImageFormat Svg = new("SVG", ".svg", true);
 
     /// <summary>Output formats, in wheel order.</summary>
     public static IReadOnlyList<ImageFormat> OutputFormats { get; } = [Png, Jpg, Webp, Bmp, Tiff, Gif, Jfif];
@@ -31,7 +33,7 @@ public static class WicImageCodec
     private static readonly Dictionary<string, ImageFormat> InputByExtension = new(StringComparer.OrdinalIgnoreCase)
     {
         [".png"] = Png, [".jpg"] = Jpg, [".jpeg"] = Jpg, [".jpe"] = Jpg, [".jfif"] = Jfif, [".webp"] = Webp,
-        [".bmp"] = Bmp, [".dib"] = Bmp, [".tif"] = Tiff, [".tiff"] = Tiff, [".gif"] = Gif,
+        [".bmp"] = Bmp, [".dib"] = Bmp, [".tif"] = Tiff, [".tiff"] = Tiff, [".gif"] = Gif, [".svg"] = Svg,
     };
 
     /// <summary>
@@ -73,6 +75,7 @@ public static class WicImageCodec
     /// </summary>
     public static BitmapSource Load(string path)
     {
+        if (Path.GetExtension(path).Equals(".svg", StringComparison.OrdinalIgnoreCase)) return SvgCodec.Load(path);
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
         BitmapDecoder decoder;
         try

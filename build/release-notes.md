@@ -1,4 +1,9 @@
-## What's new in 0.3.8-alpha
+## What's new in 0.3.9-alpha
+
+- **SVG files.** Drag an SVG, tap Shift, and convert it to PNG, JPG, WebP, PDF and more, or rotate, resize and compress it. Small icons come out 1024 px wide, so they stay sharp; transparency is kept.
+- **Safe with any SVG.** An SVG can point to images on the internet or to other files. OrbitDrop never follows those links: it only draws what is inside the file, so opening an SVG never contacts anyone.
+
+## In 0.3.8-alpha
 
 - **PDF to Word.** Drag a PDF, tap Shift, let go on DOCX: you get an editable Word document. Uses the Word (or LibreOffice) on your PC.
 - **Fixed: documents and CorelDRAW files with long names.** Files with very long names (common for downloads from design sites) failed with "That didn't work". They convert now.

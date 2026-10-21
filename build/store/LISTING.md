@@ -63,7 +63,7 @@ Convert, edit and manage files without opening an app.
 Drag any file in File Explorer, on the desktop or in VS Code, tap Shift, and a wheel of choices opens right under your pointer. Let go on what you want: the result appears next to the original. Your original is never changed, and nothing is ever uploaded. Everything happens on your PC.
 
 CONVERT
-• Images to JPG, PNG, WebP, JFIF, GIF, BMP, TIFF or PDF. Also reads HEIC, AVIF, JPEG XL and camera RAW when Windows has the codec.
+• Images to JPG, PNG, WebP, JFIF, GIF, BMP, TIFF or PDF, including SVG drawings. Also reads HEIC, AVIF, JPEG XL and camera RAW when Windows has the codec.
 • Several images into one PDF, or PDF pages into PNG or JPG.
 • Video to MP4 or WMV; audio to MP3, M4A, WAV, WMA or FLAC; the soundtrack out of a video.
 • Word, Excel and PowerPoint files to PDF, when Microsoft Office or LibreOffice is installed.
@@ -101,7 +101,7 @@ Free and open source (MIT): github.com/i3sam/OrbitDrop
 ### What's new in this version
 
 ```
-New: PDF to Word (DOCX). Fixed: documents and CorelDRAW files with very long names now convert. Fixed: long file names no longer spill over the centre of the wheel. New: let go in the centre of the wheel and pick with a click instead of holding (turn it on in Settings → Shortcuts). Word, Excel and PowerPoint files to PDF using your Microsoft Office or LibreOffice, and CorelDRAW (.cdr) files to PDF, SVG, EPS and images using Inkscape or LibreOffice. Also in this update: convert images to WebP and JFIF.
+New: SVG to PNG, JPG, WebP and more. PDF to Word (DOCX). Fixed: documents and CorelDRAW files with very long names now convert. Fixed: long file names no longer spill over the centre of the wheel. New: let go in the centre of the wheel and pick with a click instead of holding (turn it on in Settings → Shortcuts). Word, Excel and PowerPoint files to PDF using your Microsoft Office or LibreOffice, and CorelDRAW (.cdr) files to PDF, SVG, EPS and images using Inkscape or LibreOffice. Also in this update: convert images to WebP and JFIF.
 ```
 
 ### Product features (one per box, up to 20)
