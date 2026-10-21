@@ -203,6 +203,27 @@ section h2 { font-size: clamp(34px, 5vw, 56px); }
 .faq details[open] summary::after { transform: rotate(45deg); }
 .faq p { color: var(--ink-2); margin: 10px 0 0; }
 
+.love h2 { text-align: center; margin-bottom: 40px; }
+.quotes { columns: 3 280px; column-gap: 20px; }
+.quotes figure { break-inside: avoid; margin: 0 0 20px; padding: 26px 26px 22px; background: var(--bg-soft); border-radius: 24px; transition: translate .4s var(--ease); }
+.quotes figure:hover { translate: 0 -3px; }
+.quotes blockquote { margin: 0; font-size: 19px; line-height: 1.45; font-weight: 500; letter-spacing: -0.015em; }
+.quotes blockquote::before { content: "\201C"; }
+.quotes blockquote::after { content: "\201D"; }
+.quotes figcaption { margin-top: 16px; font-size: 14px; font-weight: 600; }
+.quotes figcaption span { color: var(--ink-3); font-weight: 400; margin-left: 6px; }
+.review { text-align: center; margin-top: 30px; }
+.review p { color: var(--ink-2); margin: 0 0 18px; }
+.review-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.pill {
+  display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 600; font-size: 15px; padding: 13px 22px; border-radius: 999px;
+  color: var(--ink); border: 1px solid var(--line); background: var(--card); transition: box-shadow .35s, scale .35s var(--spring), border-color .25s;
+}
+.pill:hover { scale: 1.04; border-color: color-mix(in srgb, var(--ink) 25%, transparent); }
+.pill.solid { background: var(--ink); color: var(--bg); border-color: transparent; box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 22%, transparent); }
+.pill.solid:hover { box-shadow: 0 8px 26px color-mix(in srgb, var(--ink) 34%, transparent); }
+.pill:active { scale: .96; }
+
 .closing { text-align: center; padding: 150px 0 130px; }
 .closing img { margin: 0 auto 26px; filter: drop-shadow(0 18px 36px rgba(0,0,0,0.2)); }
 .closing h2 { margin-bottom: 30px; }

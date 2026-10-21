@@ -271,6 +271,8 @@
   $$(".reveal").forEach((el) => io.observe(el));
 
   $$("[data-store]").forEach((a) => { a.href = STORE + a.dataset.store; });
+  // On Windows, go straight to the Store app's review box; elsewhere the Store web page.
+  if (/Windows/.test(navigator.userAgent)) $$("[data-review]").forEach((a) => { a.href = "ms-windows-store://review/?ProductId=9NJQRMQLL2SZ"; });
 
   // The trailer: one big play button, then the browser's own controls.
   const film = $(".film-frame"), filmVideo = film && $("video", film);
