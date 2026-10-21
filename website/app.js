@@ -279,18 +279,23 @@
     const ease = "cubic-bezier(.16, 1, .3, 1)";
     summary.addEventListener("click", (e) => {
       e.preventDefault();
-      const opening = !d.open || d.classList.contains("closing");
-      const from = `${body.getBoundingClientRect().height}px`;
+      const closing = d.classList.contains("closing");
+      // A closed answer can still report its full height, so a fresh open always starts from zero; only an answer
+      // caught mid-animation starts from where it is.
+      const from = !d.open ? 0 : body.getBoundingClientRect().height;
       anim?.cancel();
-      if (opening) {
+      anim = null;
+      if (!d.open || closing) {
         d.classList.remove("closing");
         d.open = true;
-        anim = body.animate([{ height: from, opacity: 0.2 }, { height: `${body.scrollHeight}px`, opacity: 1 }], { duration: 460, easing: ease });
+        anim = body.animate([{ height: `${from}px`, opacity: from ? 1 : 0 }, { height: `${body.scrollHeight}px`, opacity: 1 }], { duration: 460, easing: ease });
         anim.onfinish = () => { anim = null; };
       } else {
         d.classList.add("closing");
-        anim = body.animate([{ height: from, opacity: 1 }, { height: "0px", opacity: 0 }], { duration: 340, easing: ease });
-        anim.onfinish = () => { d.open = false; d.classList.remove("closing"); anim = null; };
+        // "forwards" holds it at zero until it's really closed, so the answer never flashes back for a frame.
+        const a = body.animate([{ height: `${from}px`, opacity: 1 }, { height: "0px", opacity: 0 }], { duration: 340, easing: ease, fill: "forwards" });
+        anim = a;
+        a.onfinish = () => { d.open = false; d.classList.remove("closing"); a.cancel(); if (anim === a) anim = null; };
       }
     });
   });
