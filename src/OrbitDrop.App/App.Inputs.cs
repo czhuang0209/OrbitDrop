@@ -133,7 +133,8 @@ public partial class App
     /// <summary>"OrbitDrop" in File Explorer's right-click menu (Settings → Shortcuts): registered or removed to match.</summary>
     private void ApplyContextMenu()
     {
-        bool ok = ContextMenu.Apply(_settings.ContextMenu, AppPackage.IsPackaged, AppContext.BaseDirectory);
+        string version = $"{UpdateManager.Current.Major}.{UpdateManager.Current.Minor}.{UpdateManager.Current.Patch}";
+        bool ok = ContextMenu.Apply(_settings.ContextMenu, AppPackage.IsPackaged, AppContext.BaseDirectory, version);
         Log.Info($"Right-click menu {(_settings.ContextMenu ? "on" : "off")}{(ok ? "" : " (couldn't update the registration)")}");
     }
 

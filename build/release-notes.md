@@ -1,4 +1,9 @@
-## What's new in 0.4.3-alpha
+## What's new in 0.4.4-alpha
+
+- **Fixed: updates that didn't install, and OrbitDrop not coming back afterwards.** The installer could stop because it thought OrbitDrop was still open, or because File Explorer was holding the right-click menu. Now OrbitDrop is closed for the update the standard Windows way, the right-click menu gets a new file name with every version, and if an update ever can't be installed, the version you had starts again by itself.
+- Updates keep a log next to OrbitDrop's own (Settings → Advanced → Open logs), so any problem can be explained.
+
+## In 0.4.3-alpha
 
 - **Clearer clipboard setting.** "Use the clipboard" works through Ctrl + Alt + Space, so when that shortcut is turned off, the clipboard setting now greys out and says so, instead of seeming to do nothing.
 

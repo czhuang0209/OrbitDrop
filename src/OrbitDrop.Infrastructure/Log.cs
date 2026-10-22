@@ -8,6 +8,9 @@ public static class Log
 {
     private static readonly object Gate = new();
     private static string? _directory;
+
+    /// <summary>Where the logs go (null before <see cref="Initialize"/>).</summary>
+    public static string? Folder => _directory;
     private static StreamWriter? _writer;
     private static DateOnly _day;
 

@@ -210,8 +210,10 @@ public sealed class UpdateManager
         _releaseInstance();
         try
         {
-            // /RELAUNCH=1 makes the installer start the new OrbitDrop once it has finished (see OrbitDrop.iss).
-            Process.Start(new ProcessStartInfo(setup, "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RELAUNCH=1")
+            // /RELAUNCH=1 makes the installer start the new OrbitDrop once it has finished (see OrbitDrop.iss). Its own
+            // log goes next to OrbitDrop's, so a failed update can always be explained.
+            string setupLog = Path.Combine(Log.Folder ?? Path.GetTempPath(), $"setup-{release.Version}.log");
+            Process.Start(new ProcessStartInfo(setup, $"/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RELAUNCH=1 \"/LOG={setupLog}\"")
             {
                 UseShellExecute = false,
                 WorkingDirectory = Path.GetDirectoryName(setup)!,

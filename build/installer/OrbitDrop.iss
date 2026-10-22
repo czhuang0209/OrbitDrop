@@ -41,8 +41,8 @@ LicenseFile=..\..\LICENSE
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
-; Ask to close a running OrbitDrop (mutex created by SingleInstance) instead of failing to overwrite it.
-AppMutex=OrbitDrop.Running
+; A running OrbitDrop is closed through Windows' Restart Manager (and restarted after silent updates, see [Run]).
+; No AppMutex: in a silent update its "OrbitDrop is running" check can only abort, never wait, so it made updates fail.
 CloseApplications=yes
 ; Only ever offer to close OrbitDrop itself: File Explorer keeps the right-click DLL loaded, and must never be closed.
 CloseApplicationsFilter=OrbitDrop.exe
@@ -55,9 +55,14 @@ Name: "startup"; Description: "Start OrbitDrop when I sign in to Windows"; Group
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Options:"; Flags: unchecked
 
 [Files]
-Source: "{#SourceDir}\*"; DestDir: "{app}"; Excludes: "OrbitDropShell.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
-; The right-click menu entry. File Explorer may have it loaded: then it's swapped at the next restart, never forced.
-Source: "{#SourceDir}\OrbitDropShell.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace uninsrestartdelete
+; The right-click menu entry ships as OrbitDropShell-<version>.dll: File Explorer keeps the DLL it has loaded open, and
+; a per-user install can't replace an open file, so every version gets a new name. OrbitDrop points the menu at its
+; own and deletes the old ones once Explorer has let go of them.
+Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+[UninstallDelete]
+; Right-click DLLs from earlier versions (any File Explorer still has open stay until it lets go).
+Type: files; Name: "{app}\OrbitDropShell*.dll"
 
 [Icons]
 Name: "{autoprograms}\OrbitDrop"; Filename: "{app}\OrbitDrop.exe"; Comment: "Convert, edit and manage files without opening an app"
@@ -76,9 +81,38 @@ Filename: "{app}\OrbitDrop.exe"; Parameters: "--updated"; Flags: nowait; Check: 
 Filename: "{sys}\taskkill.exe"; Parameters: "/im OrbitDrop.exe /f"; Flags: runhidden; RunOnceId: "StopOrbitDrop"
 
 [Code]
+var
+  Installed: Boolean;
+
 function IsUpdateRelaunch: Boolean;
 begin
   Result := WizardSilent and (ExpandConstant('{param:RELAUNCH|0}') = '1');
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then Installed := True;
+end;
+
+{ An in-app update that didn't go through (Setup rolled back, nothing changed): start the copy that was running
+  again, so OrbitDrop never just disappears. It will offer the update again later. }
+procedure DeinitializeSetup();
+var
+  Exe, Dir: String;
+  Code: Integer;
+begin
+  if not IsUpdateRelaunch or Installed then Exit;
+  Exe := '';
+  try
+    Exe := ExpandConstant('{app}\OrbitDrop.exe');
+  except
+    Exe := '';
+  end;
+  if ((Exe = '') or not FileExists(Exe)) and
+     RegQueryStringValue(HKEY_CURRENT_USER, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{8F3C2E5A-7B1D-4C9E-A6F2-0D4B9E7C1A35}_is1', 'InstallLocation', Dir) then
+    Exe := AddBackslash(Dir) + 'OrbitDrop.exe';
+  if (Exe <> '') and FileExists(Exe) then
+    Exec(Exe, '--background', '', SW_SHOWNORMAL, ewNoWait, Code);
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);

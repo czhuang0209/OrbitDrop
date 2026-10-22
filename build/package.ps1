@@ -48,7 +48,8 @@ if ($LASTEXITCODE -ne 0) { throw "Publish failed" }
 Copy-Item (Join-Path $root "LICENSE") (Join-Path $publish "LICENSE.txt")
 Copy-Item (Join-Path $root "THIRD-PARTY-NOTICES.md") (Join-Path $publish "THIRD-PARTY-NOTICES.md")
 
-Copy-Item (Join-Path $root "artifacts\shell\OrbitDropShell.dll") $publish
+# A new name per version: File Explorer keeps the loaded DLL open, and updates must never need to replace it.
+Copy-Item (Join-Path $root "artifacts\shell\OrbitDropShell.dll") (Join-Path $publish "OrbitDropShell-$(($Version -split '-')[0]).dll")
 Copy-Item (Join-Path $root "artifacts\cdr\OrbitDropCdr.exe") $publish
 Copy-Item (Join-Path $root "artifacts\cdr\licenses") (Join-Path $publish "licenses") -Recurse
 

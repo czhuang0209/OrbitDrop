@@ -13,7 +13,14 @@ namespace OrbitDrop.Windows.Shell;
 public static class ContextMenu
 {
     public const string Clsid = "{EF221BF9-D0CA-4698-95F2-5452942E7A5E}";
+    /// <summary>The Store package's name for the DLL (its manifest names it). The GitHub version uses <see cref="VersionedDll"/>.</summary>
     public const string DllName = "OrbitDropShell.dll";
+
+    /// <summary>
+    /// "OrbitDropShell-0.4.4.dll": the GitHub version gives the DLL a new name every release. File Explorer keeps the
+    /// DLL it loaded open, and a per-user installer can't replace an open file, so a fixed name would block updates.
+    /// </summary>
+    public static string VersionedDll(string version) => $"OrbitDropShell-{version}.dll";
     /// <summary>COPYDATASTRUCT.dwData of an "open these files" message from the DLL.</summary>
     public const int OpenFilesMessage = 0x0D0F;
     private const int WM_COPYDATA = 0x004A, MaxItems = 500;
@@ -26,15 +33,17 @@ public static class ContextMenu
     /// Applies the setting. Always records it where the DLL looks (so the Store version's entry hides itself when off);
     /// on the GitHub version, also adds or removes the registration. Returns false if registering failed.
     /// </summary>
-    public static bool Apply(bool enabled, bool packaged, string appDirectory)
+    public static bool Apply(bool enabled, bool packaged, string appDirectory, string version)
     {
         try
         {
             using (var key = Registry.CurrentUser.CreateSubKey(SettingsKey)) key.SetValue("ContextMenu", enabled ? 1 : 0, RegistryValueKind.DWord);
             if (packaged) return true;
-            string dll = Path.Combine(appDirectory, DllName);
+            string dll = Path.Combine(appDirectory, VersionedDll(version));
+            if (!File.Exists(dll)) dll = Path.Combine(appDirectory, DllName); // a build made without a version
             if (enabled && File.Exists(dll)) Register(dll);
             else Unregister();
+            RemoveOldDlls(appDirectory, keep: dll);
             return true;
         }
         catch (Exception ex)
@@ -59,6 +68,16 @@ public static class ContextMenu
             verb.SetValue("Icon", Path.Combine(Path.GetDirectoryName(dll)!, "OrbitDrop.exe") + ",0");
         }
         Notify();
+    }
+
+    /// <summary>Deletes the right-click DLLs of earlier versions; one File Explorer still has open goes next time.</summary>
+    private static void RemoveOldDlls(string appDirectory, string keep)
+    {
+        foreach (var old in Directory.EnumerateFiles(appDirectory, "OrbitDropShell*.dll"))
+        {
+            if (string.Equals(old, keep, StringComparison.OrdinalIgnoreCase)) continue;
+            try { File.Delete(old); } catch (IOException) { /* still loaded by File Explorer */ } catch (UnauthorizedAccessException) { }
+        }
     }
 
     public static void Unregister()
