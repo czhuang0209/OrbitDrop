@@ -15,6 +15,17 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        if (args.Length > 0 && args[0] == "--pfp")
+        {
+            // Profile pictures (Instagram, TikTok, X …): full-bleed, so the round crop shows the mark, not a tile corner.
+            string dir = args.Length > 1 ? args[1] : "marketing/brand";
+            Directory.CreateDirectory(dir);
+            File.WriteAllBytes(Path.Combine(dir, "pfp-orbitdrop.png"), Png(RenderAvatar(1080, glow: false)));
+            File.WriteAllBytes(Path.Combine(dir, "pfp-orbitdrop-glow.png"), Png(RenderAvatar(1080, glow: true)));
+            Console.WriteLine($"Wrote profile pictures to {Path.GetFullPath(dir)}");
+            return 0;
+        }
+
         string outDir = args.Length > 0 ? args[0] : "assets/brand";
         Directory.CreateDirectory(outDir);
 
@@ -52,6 +63,43 @@ internal static class Program
                 dc.DrawGeometry(null, new Pen(new LinearGradientBrush(Rgb(255, 255, 255, 70), Rgb(255, 255, 255, 0), 90), Math.Max(1, s * 0.006)), tile);
             }
 
+            DrawMark(dc, s, small);
+        }
+
+        var bmp = new RenderTargetBitmap(px, px, 96, 96, PixelFormats.Pbgra32);
+        bmp.Render(dv);
+        bmp.Freeze();
+        return bmp;
+    }
+
+    /// <summary>
+    /// The mark on a full-bleed background of the tile's own colours, for round profile pictures. The mark is drawn a
+    /// little smaller so the circle keeps a calm margin; <paramref name="glow"/> adds soft light behind the drop.
+    /// </summary>
+    private static BitmapSource RenderAvatar(int px, bool glow)
+    {
+        double s = px;
+        var dv = new DrawingVisual();
+        using (var dc = dv.RenderOpen())
+        {
+            dc.DrawRectangle(new LinearGradientBrush(Rgb(0x2E, 0x2E, 0x34), Rgb(0x08, 0x08, 0x0A), 90), null, new Rect(0, 0, s, s));
+            dc.DrawEllipse(new RadialGradientBrush(Rgb(255, 255, 255, 30), Rgb(255, 255, 255, 0)), null, new Point(s * 0.5, s * 0.08), s * 0.7, s * 0.45);
+            if (glow)
+                dc.DrawEllipse(new RadialGradientBrush(Rgb(255, 255, 255, 46), Rgb(255, 255, 255, 0)), null, new Point(s * 0.5, s * 0.52), s * 0.36, s * 0.36);
+            dc.PushTransform(new ScaleTransform(0.86, 0.86, s * 0.5, s * 0.5));
+            DrawMark(dc, s, small: false);
+            dc.Pop();
+        }
+        var bmp = new RenderTargetBitmap(px, px, 96, 96, PixelFormats.Pbgra32);
+        bmp.Render(dv);
+        bmp.Freeze();
+        return bmp;
+    }
+
+    /// <summary>The droplet, its ring (behind and in front) and the satellite, for an <paramref name="s"/>-pixel square.</summary>
+    private static void DrawMark(DrawingContext dc, double s, bool small)
+    {
+        {
             var c = new Point(s * 0.5, s * 0.54);
             double r = s * (small ? 0.2 : 0.165);
             var drop = Droplet(c, r, tipY: s * (small ? 0.2 : 0.235));
@@ -104,11 +152,6 @@ internal static class Program
             dc.DrawEllipse(moon, null, sat, satR, satR);
             dc.Pop();
         }
-
-        var bmp = new RenderTargetBitmap(px, px, 96, 96, PixelFormats.Pbgra32);
-        bmp.Render(dv);
-        bmp.Freeze();
-        return bmp;
     }
 
     /// <summary>Teardrop pointing up: round base centred at <paramref name="c"/>, tip at <paramref name="tipY"/>.</summary>
