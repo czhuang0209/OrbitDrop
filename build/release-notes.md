@@ -1,4 +1,9 @@
-## What's new in 0.4.0-alpha
+## What's new in 0.4.1-alpha
+
+- **CorelDRAW files, made easy.** Converting .cdr files needs the free app Inkscape (or LibreOffice). If neither is on your PC, dropping a .cdr now offers **Get Inkscape**, which opens its free Microsoft Store page, instead of showing nothing. As soon as it's installed, OrbitDrop picks it up: no restart needed.
+- **Finds Inkscape and LibreOffice wherever they are:** the Microsoft Store versions, per-user installs, scoop and anything on your PATH, not only Program Files.
+
+## In 0.4.0-alpha
 
 The wheel works exactly as before. Everything new is optional, and the extras that change the wheel are off until you turn them on.
 

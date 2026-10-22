@@ -126,7 +126,7 @@ public sealed class ToastManager
 
         if (failed == 0 && ok > 0)
         {
-            if (job.Operation.Mode == OperationMode.Actions)
+            if (job.Operation.Mode == OperationMode.Actions || outputs.Count == 0) // nothing new was written: say what happened
                 return (ToastKind.Success, job.Operation.DoneTitle ?? job.Operation.Label, ok == 1 ? Path.GetFileName(job.Files[0]) : $"{ok} files");
             string? folder = outputs.Count > 0 ? Path.GetFileName(Path.GetDirectoryName(outputs[0])?.TrimEnd('\\')) : null;
             string where = folder is { Length: > 0 } ? $"In {folder}" : "";

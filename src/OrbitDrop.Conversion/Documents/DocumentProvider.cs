@@ -12,6 +12,7 @@ namespace OrbitDrop.Conversion.Documents;
 public sealed class DocumentProvider : IOperationProvider
 {
     public const string ProviderId = "document";
+    public const string GetInkscapeId = "convert.drawing.get-inkscape";
     public string Id => ProviderId;
 
     private sealed record Target(string Name, string Extension);
@@ -47,6 +48,13 @@ public sealed class DocumentProvider : IOperationProvider
     public IEnumerable<OperationDescriptor> GetOperations(FileSet files, OperationMode mode)
     {
         if (mode != OperationMode.Convert || files.IsEmpty || !files.All(f => DocumentEngines.KindOf(f) is not null)) yield break;
+        // CorelDRAW files on a PC with nothing that can open them: offer the free app that can, instead of nothing.
+        if (files.All(f => DocumentEngines.KindOf(f) == DocumentKind.Drawing) && !DocumentEngines.CanOpen(DocumentKind.Drawing))
+        {
+            yield return new OperationDescriptor(GetInkscapeId, ProviderId, OperationMode.Convert, "Get Inkscape", "",
+                "Free · opens CorelDRAW files", "", "Opening the Microsoft Store", 1, DoneTitle: "Opening the Microsoft Store");
+            yield break;
+        }
         // Only what every file can become (a mixed selection usually leaves just PDF).
         var common = files.Select(f => TargetsFor(f).ToHashSet()).Aggregate((a, b) => { a.IntersectWith(b); return a; });
         int order = 0;
@@ -63,6 +71,13 @@ public sealed class DocumentProvider : IOperationProvider
     public async Task ExecuteAsync(OperationDescriptor operation, FileSet files, OperationContext context,
         IProgress<FileOutcome> progress, CancellationToken ct)
     {
+        if (operation.Id == GetInkscapeId)
+        {
+            // Inkscape's own page in the Microsoft Store (free). Once it's installed, OrbitDrop finds it within seconds.
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(DocumentEngines.InkscapeStoreLink) { UseShellExecute = true });
+            foreach (var file in files) progress.Report(new FileOutcome(file, OutcomeStatus.Succeeded));
+            return;
+        }
         var target = All.Single(t => operation.Id.EndsWith("." + t.Name.ToLowerInvariant(), StringComparison.Ordinal));
         using var engines = new DocumentEngines();
         foreach (var file in files)

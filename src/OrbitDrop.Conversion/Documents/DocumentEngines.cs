@@ -32,8 +32,37 @@ public sealed class DocumentEngines : IDisposable
 
     private static readonly Lazy<bool> Word = new(() => HasProgId("Word.Application")), Excel = new(() => HasProgId("Excel.Application")),
         PowerPoint = new(() => HasProgId("PowerPoint.Application"));
-    private static readonly Lazy<string?> LibreOffice = new(() => FindApp("soffice.exe", @"LibreOffice\program\soffice.exe")),
-        Inkscape = new(() => FindApp("inkscape.exe", @"Inkscape\bin\inkscape.exe"));
+    private static readonly AppFinder LibreOffice = new(() => FindApp("soffice.exe", @"LibreOffice\program\soffice.exe", @"scoop\apps\libreoffice\current\LibreOffice\program\soffice.exe"));
+    private static readonly AppFinder Inkscape = new(() => FindApp("inkscape.exe", @"Inkscape\bin\inkscape.exe", @"scoop\apps\inkscape\current\bin\inkscape.exe"));
+
+    /// <summary>The Microsoft Store page that installs Inkscape (free, published by Inkscape), offered when a drawing can't be opened.</summary>
+    public const string InkscapeStoreLink = "ms-windows-store://pdp/?ProductId=9PD9BHGLFC7H";
+
+    /// <summary>
+    /// Finds an app and remembers it. While it isn't there, looks again every 15 seconds, so an app installed while
+    /// OrbitDrop is running (after "Get Inkscape", say) is picked up without a restart.
+    /// </summary>
+    private sealed class AppFinder(Func<string?> find)
+    {
+        private readonly object _gate = new();
+        private string? _path;
+        private bool _searched;
+        private long _searchedAt;
+
+        public string? Value
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    long now = Environment.TickCount64;
+                    bool stale = !_searched || (_path is null ? now - _searchedAt > 15_000 : !File.Exists(_path));
+                    if (stale) { _path = find(); _searched = true; _searchedAt = now; }
+                    return _path;
+                }
+            }
+        }
+    }
 
     public static DocumentKind? KindOf(string path) => Kinds.TryGetValue(Path.GetExtension(path), out var k) ? k : null;
 
@@ -169,8 +198,11 @@ public sealed class DocumentEngines : IDisposable
 
     // ------------------------------------------------------------------ LibreOffice and Inkscape (command line)
 
-    /// <summary>Registered under App Paths, or in Program Files. Prefers the console launcher (.com), which waits for the result.</summary>
-    private static string? FindApp(string exe, string programFilesPath)
+    /// <summary>
+    /// App Paths, Program Files, per-user installs, scoop, the Microsoft Store version (its command-line alias) and
+    /// PATH. Prefers the console launcher (.com), which waits for the result.
+    /// </summary>
+    private static string? FindApp(string exe, string programFilesPath, string homePath)
     {
         var candidates = new List<string?>();
         foreach (var hive in new[] { Registry.LocalMachine, Registry.CurrentUser })
@@ -184,6 +216,14 @@ public sealed class DocumentEngines : IDisposable
         }
         candidates.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), programFilesPath));
         candidates.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), programFilesPath));
+        string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        candidates.Add(Path.Combine(local, "Programs", programFilesPath));                                     // per-user installer
+        candidates.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), homePath)); // scoop
+        candidates.Add(Path.Combine(local, "Microsoft", "WindowsApps", exe));                                 // Microsoft Store alias
+        foreach (var dir in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            try { candidates.Add(Path.Combine(dir.Trim('"'), exe)); } catch (ArgumentException) { /* a malformed PATH entry */ }
+        }
         foreach (var c in candidates)
         {
             if (string.IsNullOrWhiteSpace(c)) continue;

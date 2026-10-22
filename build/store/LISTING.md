@@ -101,7 +101,7 @@ Free and open source (MIT): github.com/i3sam/OrbitDrop
 ### What's new in this version
 
 ```
-OrbitDrop 0.4: right-click files and choose OrbitDrop; Undo after every conversion (to the Recycle Bin); copy a screenshot or image and press Ctrl + Alt + Space to save or convert it; optional size estimates on the wheel and "last choice first". The wheel itself works exactly as before. Also new recently: SVG, PDF to Word, documents to PDF, WebP and JFIF.
+OrbitDrop 0.4.1: CorelDRAW files now offer "Get Inkscape" (free) when needed. OrbitDrop 0.4: right-click files and choose OrbitDrop; Undo after every conversion (to the Recycle Bin); copy a screenshot or image and press Ctrl + Alt + Space to save or convert it; optional size estimates on the wheel and "last choice first". The wheel itself works exactly as before. Also new recently: SVG, PDF to Word, documents to PDF, WebP and JFIF.
 ```
 
 ### Product features (one per box, up to 20)
