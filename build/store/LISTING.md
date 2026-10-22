@@ -67,7 +67,7 @@ CONVERT
 • Several images into one PDF, or PDF pages into PNG or JPG.
 • Video to MP4 or WMV; audio to MP3, M4A, WAV, WMA or FLAC; the soundtrack out of a video.
 • Word, Excel and PowerPoint files to PDF, when Microsoft Office or LibreOffice is installed.
-• CorelDRAW (.cdr) to PDF, SVG, EPS, PNG, JPG, TIFF or BMP, when Inkscape or LibreOffice is installed.
+• CorelDRAW (.cdr, .cmx) to PDF, SVG, PNG, JPG, WebP, TIFF or BMP. Built in: nothing else to install.
 
 TOOLS
 • A built-in photo editor: crop, adjust brightness, contrast, saturation and warmth, mark up with pen, arrows, boxes and text, and redact.
@@ -101,7 +101,7 @@ Free and open source (MIT): github.com/i3sam/OrbitDrop
 ### What's new in this version
 
 ```
-OrbitDrop 0.4.1: CorelDRAW files now offer "Get Inkscape" (free) when needed. OrbitDrop 0.4: right-click files and choose OrbitDrop; Undo after every conversion (to the Recycle Bin); copy a screenshot or image and press Ctrl + Alt + Space to save or convert it; optional size estimates on the wheel and "last choice first". The wheel itself works exactly as before. Also new recently: SVG, PDF to Word, documents to PDF, WebP and JFIF.
+OrbitDrop 0.4.2: CorelDRAW files convert with nothing else installed (to PDF, SVG, PNG, JPG, WebP, TIFF, BMP). OrbitDrop 0.4: right-click files and choose OrbitDrop; Undo after every conversion (to the Recycle Bin); copy a screenshot or image and press Ctrl + Alt + Space to save or convert it; optional size estimates on the wheel and "last choice first". The wheel itself works exactly as before. Also new recently: SVG, PDF to Word, documents to PDF, WebP and JFIF.
 ```
 
 ### Product features (one per box, up to 20)

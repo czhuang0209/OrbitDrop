@@ -1,4 +1,9 @@
-## What's new in 0.4.1-alpha
+## What's new in 0.4.2-alpha
+
+- **CorelDRAW, built in.** OrbitDrop now reads CorelDRAW drawings (.cdr, and Corel's .cmx) itself: nothing else to install. Drag one, tap Shift, and convert it to PDF, SVG, PNG, JPG, WebP, TIFF or BMP. Pictures come out sharp, and a drawing with several pages becomes a folder with one file per page.
+- **Safe with any drawing.** Each drawing is read in a separate, time- and memory-limited helper, so a damaged or unusual file can only fail its own conversion, never OrbitDrop.
+
+## In 0.4.1-alpha
 
 - **CorelDRAW files, made easy.** Converting .cdr files needs the free app Inkscape (or LibreOffice). If neither is on your PC, dropping a .cdr now offers **Get Inkscape**, which opens its free Microsoft Store page, instead of showing nothing. As soon as it's installed, OrbitDrop picks it up: no restart needed.
 - **Finds Inkscape and LibreOffice wherever they are:** the Microsoft Store versions, per-user installs, scoop and anything on your PATH, not only Program Files.

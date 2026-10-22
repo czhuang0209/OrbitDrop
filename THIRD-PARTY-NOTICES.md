@@ -15,6 +15,20 @@ OrbitDrop is MIT-licensed (see `LICENSE`). This file lists everything a **releas
 | ExCSS | 4.3.1 | MIT, © Tyler Brinks | CSS inside SVG files |
 | HarfBuzzSharp, HarfBuzzSharp.NativeAssets.Win32 | 8.3.1.3 | MIT, © Microsoft Corporation (HarfBuzz: MIT, © HarfBuzz contributors) | Text inside SVG files |
 
+### In OrbitDropCdr.exe (the built-in CorelDRAW reader)
+
+Compiled from these unmodified upstream source releases by `build/cdr/build-cdr.ps1`, which pins each archive's SHA-256. Their licence texts ship in the `licenses` folder next to OrbitDrop.
+
+| Component | Version | Licence | Source |
+|---|---|---|---|
+| libcdr | 0.1.9 | MPL 2.0, © The Document Foundation and libcdr contributors | https://dev-www.libreoffice.org/src/libcdr/libcdr-0.1.9.tar.xz |
+| librevenge | 0.0.6 | MPL 2.0 (dual-licensed MPL 2.0 / LGPL 2.1+; used under the MPL 2.0), © librevenge contributors | https://dev-www.libreoffice.org/src/librevenge-0.0.6.tar.bz2 |
+| Little CMS (lcms2) | 2.16 | MIT, © Marti Maria Saguer | https://github.com/mm2/Little-CMS/releases/tag/lcms2.16 |
+| zlib | 1.3.1 | zlib licence, © Jean-loup Gailly and Mark Adler | https://github.com/madler/zlib/releases/tag/v1.3.1 |
+| Boost (header-only parts) | 1.86.0 | Boost Software License 1.0 | https://archives.boost.io/release/1.86.0/source/boost_1_86_0.tar.bz2 |
+
+The MPL 2.0 covered files are used as published; their source code is available at the links above. The reader's own code is `src/OrbitDrop.CdrReader` in this repository (MIT). Text-encoding support comes from the copy of ICU built into Windows (not redistributed).
+
 ## Used from Windows, not redistributed
 
 - **Windows Imaging Component (WIC):** image decoding and encoding.
@@ -29,6 +43,10 @@ OrbitDrop is MIT-licensed (see `LICENSE`). This file lists everything a **releas
 | xUnit, xunit.runner.visualstudio | Apache-2.0 |
 | Microsoft.NET.Test.Sdk | MIT |
 | Inno Setup (installer compiler) | Inno Setup License (modified BSD-style) |
+
+## Trademarks
+
+CorelDRAW is a trademark of Corel Corporation (Alludo). Microsoft Word, Excel, PowerPoint and Windows are trademarks of Microsoft. Adobe, Illustrator and Photoshop are trademarks of Adobe. OrbitDrop is an independent project: it isn't affiliated with, sponsored or endorsed by any of them, and it mentions their file formats only to say which files it can open.
 
 ## Brand assets
 

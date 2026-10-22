@@ -28,6 +28,11 @@ Write-Host "OrbitDrop $Version ($Runtime)" -ForegroundColor Cyan
 if (Test-Path $publish) { Remove-Item $publish -Recurse -Force }
 New-Item -ItemType Directory -Force $artifacts | Out-Null
 
+# Native parts first: the tests exercise them too.
+Write-Host "> Right-click menu and CorelDRAW reader (C++)"
+& (Join-Path $root "build\shell\build-shell.ps1") | Out-Null
+& (Join-Path $root "build\cdr\build-cdr.ps1") | Out-Null
+
 if (-not $SkipTests) {
     Write-Host "> Tests"
     dotnet test (Join-Path $root "tests\OrbitDrop.Tests") -c Release --nologo
@@ -43,9 +48,9 @@ if ($LASTEXITCODE -ne 0) { throw "Publish failed" }
 Copy-Item (Join-Path $root "LICENSE") (Join-Path $publish "LICENSE.txt")
 Copy-Item (Join-Path $root "THIRD-PARTY-NOTICES.md") (Join-Path $publish "THIRD-PARTY-NOTICES.md")
 
-Write-Host "> Right-click menu"
-& (Join-Path $root "build\shell\build-shell.ps1") | Out-Null
 Copy-Item (Join-Path $root "artifacts\shell\OrbitDropShell.dll") $publish
+Copy-Item (Join-Path $root "artifacts\cdr\OrbitDropCdr.exe") $publish
+Copy-Item (Join-Path $root "artifacts\cdr\licenses") (Join-Path $publish "licenses") -Recurse
 
 Write-Host "> Portable zip"
 $zip = Join-Path $artifacts "OrbitDrop-$Version-$Runtime-portable.zip"

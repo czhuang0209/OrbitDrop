@@ -1,5 +1,6 @@
 using OrbitDrop.Conversion;
 using OrbitDrop.Conversion.Documents;
+using OrbitDrop.Conversion.Imaging;
 using OrbitDrop.Conversion.Pdf;
 using OrbitDrop.Core;
 
@@ -110,44 +111,88 @@ public class DocumentTests
     }
 }
 
-/// <summary>A real CorelDRAW conversion, when Inkscape or LibreOffice and a sample drawing (ORBITDROP_CDR_SAMPLE) are on this PC.</summary>
+/// <summary>Runs where OrbitDropCdr.exe has been built (build/cdr/build-cdr.ps1); package.ps1 builds it before the tests.</summary>
+public sealed class CdrReaderFactAttribute : FactAttribute
+{
+    public static string Reader => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, @"..\..\..\..\..\artifacts\cdr\OrbitDropCdr.exe"));
+    public CdrReaderFactAttribute() { if (!File.Exists(Reader)) Skip = "OrbitDropCdr.exe isn't built"; }
+}
+
+/// <summary>
+/// CorelDRAW, read by OrbitDrop's own reader (no Inkscape, no LibreOffice), on LibreOffice's public test drawing and,
+/// when ORBITDROP_CDR_SAMPLE points at one, a real-world download.
+/// </summary>
 public class DrawingTests
 {
+    private static string Fixture => Path.Combine(AppContext.BaseDirectory, "Fixtures", "fdo65220-2.cdr");
     private static string? Sample => Environment.GetEnvironmentVariable("ORBITDROP_CDR_SAMPLE") is { Length: > 0 } p
         ? File.Exists(p) ? p : throw new FileNotFoundException("ORBITDROP_CDR_SAMPLE points to a missing file", p)
         : null;
 
-    [Fact]
-    public void Cdr_offers_every_drawing_format_when_an_app_can_open_it()
-    {
-        if (!DocumentEngines.CanOpen(DocumentKind.Drawing)) return;
-        var labels = new DocumentProvider().GetOperations(new FileSet([@"C:\x\logo.cdr"]), OperationMode.Convert).Select(o => o.Label);
-        Assert.Equal(["PDF", "SVG", "PNG", "JPG", "TIFF", "BMP", "EPS"], labels);
-    }
+    public DrawingTests() => CorelDraw.ReaderPath = CdrReaderFactAttribute.Reader;
 
-    [Theory]
-    [InlineData("convert.document.pdf", ".pdf")]
-    [InlineData("convert.drawing.svg", ".svg")]
-    [InlineData("convert.drawing.eps", ".eps")]
-    [InlineData("convert.drawing.png", ".png")]
-    [InlineData("convert.drawing.jpg", ".jpg")]
-    public async Task Cdr_converts(string id, string ext)
+    private static async Task<FileOutcome> Convert(string src, string id)
     {
-        if (Sample is not { } sample || !DocumentEngines.CanOpen(DocumentKind.Drawing)) return;
-        using var t = new TempFolder();
-        // A long name like the ones design sites give their downloads: the temp path must not pass 260 characters.
-        string src = t.File("People Who Like to Eat Are Always the Best People Typography Vector Design - Funny Food Lover Quote Poster & Kitchen Wall Art Design For Free In Coreldrawdesign.cdr");
-        File.Copy(sample, src);
         var provider = new DocumentProvider();
         var op = provider.GetOperations(new FileSet([src]), OperationMode.Convert).Single(d => d.Id == id);
         var c = new Collector();
         await provider.ExecuteAsync(op, new FileSet([src]), Ctx.Default(), c, CancellationToken.None);
-        var outcome = Assert.Single(c.Outcomes);
+        return Assert.Single(c.Outcomes);
+    }
+
+    [CdrReaderFact]
+    public void Cdr_offers_every_drawing_format_with_nothing_installed()
+    {
+        var labels = new DocumentProvider().GetOperations(new FileSet([@"C:\x\logo.cdr"]), OperationMode.Convert).Select(o => o.Label);
+        Assert.Equal(["PDF", "SVG", "PNG", "JPG", "WEBP", "TIFF", "BMP"], labels);
+        Assert.NotEmpty(new DocumentProvider().GetOperations(new FileSet([@"C:\x\exchange.CMX"]), OperationMode.Convert));
+    }
+
+    [CdrReaderFact]
+    public async Task Cdr_converts_to_every_format_even_with_a_long_name()
+    {
+        using var t = new TempFolder();
+        foreach (var (id, ext) in new[] { ("convert.drawing.svg", ".svg"), ("convert.drawing.png", ".png"), ("convert.drawing.jpg", ".jpg"),
+            ("convert.drawing.webp", ".webp"), ("convert.drawing.tiff", ".tiff"), ("convert.drawing.bmp", ".bmp"), ("convert.drawing.pdf", ".pdf") })
+        {
+            // A long name like the ones design sites give their downloads (with "&"): paths must stay under 260 characters.
+            string src = t.File($"Kitchen Wall Art Poster - Typography Vector Design & Quote For Free In Coreldraw Design Download ({ext.TrimStart('.')}) - {new string('x', 40)}.cdr");
+            File.Copy(Fixture, src);
+            var outcome = await Convert(src, id);
+            Assert.True(outcome.Status == OutcomeStatus.Succeeded, $"{id}: {outcome.Message}");
+            Assert.Equal(Path.ChangeExtension(src, ext), outcome.Output);
+            if (ext == ".svg") Assert.Contains("<svg", File.ReadAllText(outcome.Output!));
+            else if (ext == ".pdf") Assert.Null(PdfProvider.ValidatePdf(outcome.Output!));
+            else
+            {
+                (int W, int H) size = default;
+                await StaWorker.RunAsync(() => { var b = WicImageCodec.Load(outcome.Output!); size = (b.PixelWidth, b.PixelHeight); });
+                Assert.True(size.W >= 1000 || size.H >= 1000, $"{ext} is only {size.W}×{size.H}"); // drawn big enough to be sharp
+            }
+        }
+        Assert.Empty(SafeOutput.LeftoverTemps(t.Path));
+    }
+
+    [CdrReaderFact]
+    public async Task A_broken_or_fake_cdr_fails_with_a_clear_message()
+    {
+        using var t = new TempFolder();
+        string fake = t.File("not really.cdr");
+        File.WriteAllText(fake, "this is not a CorelDRAW drawing");
+        var outcome = await Convert(fake, "convert.drawing.png");
+        Assert.Equal(OutcomeStatus.Failed, outcome.Status);
+        Assert.Contains("CorelDRAW", outcome.Message);
+        Assert.Empty(SafeOutput.LeftoverTemps(t.Path));
+    }
+
+    [CdrReaderFact]
+    public async Task A_real_world_download_converts()
+    {
+        if (Sample is not { } sample) return;
+        using var t = new TempFolder();
+        string src = t.File(Path.GetFileName(sample));
+        File.Copy(sample, src);
+        var outcome = await Convert(src, "convert.drawing.png");
         Assert.True(outcome.Status == OutcomeStatus.Succeeded, outcome.Message);
-        string output = outcome.Output!;
-        // One page is a file; several are a folder of pages.
-        if (Directory.Exists(output)) output = Directory.GetFiles(output)[0];
-        Assert.EndsWith(ext, output);
-        Assert.True(new FileInfo(output).Length > 100);
     }
 }

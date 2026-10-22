@@ -9,9 +9,9 @@ public enum DocumentKind { Text, Sheet, Slides, Drawing, Pdf }
 
 /// <summary>
 /// The apps that do the actual conversion, found on this PC: Microsoft Word, Excel and PowerPoint (driven through COM,
-/// invisibly, files opened read-only), LibreOffice (headless, with its own private profile) and Inkscape (for drawings).
-/// Office is preferred for its own formats; Inkscape for drawings. Results go to a private temp folder that is deleted
-/// on <see cref="Dispose"/>; the provider copies them to their place with SafeOutput.
+/// invisibly, files opened read-only) and LibreOffice (headless, with its own private profile); Office is preferred for
+/// its own formats. CorelDRAW drawings need neither: OrbitDrop reads them itself (<see cref="CorelDraw"/>). Results go
+/// to a private temp folder that is deleted on <see cref="Dispose"/>; the provider copies them to their place with SafeOutput.
 /// </summary>
 public sealed class DocumentEngines : IDisposable
 {
@@ -22,7 +22,7 @@ public sealed class DocumentEngines : IDisposable
         [".xls"] = DocumentKind.Sheet, [".xlsx"] = DocumentKind.Sheet, [".xlsm"] = DocumentKind.Sheet, [".ods"] = DocumentKind.Sheet,
         [".ppt"] = DocumentKind.Slides, [".pptx"] = DocumentKind.Slides, [".pptm"] = DocumentKind.Slides, [".pps"] = DocumentKind.Slides,
         [".ppsx"] = DocumentKind.Slides, [".odp"] = DocumentKind.Slides,
-        [".cdr"] = DocumentKind.Drawing,
+        [".cdr"] = DocumentKind.Drawing, [".cmx"] = DocumentKind.Drawing,
         [".pdf"] = DocumentKind.Pdf, // to Word: Word (or LibreOffice) rebuilds the text and layout as an editable document
     };
 
@@ -33,14 +33,9 @@ public sealed class DocumentEngines : IDisposable
     private static readonly Lazy<bool> Word = new(() => HasProgId("Word.Application")), Excel = new(() => HasProgId("Excel.Application")),
         PowerPoint = new(() => HasProgId("PowerPoint.Application"));
     private static readonly AppFinder LibreOffice = new(() => FindApp("soffice.exe", @"LibreOffice\program\soffice.exe", @"scoop\apps\libreoffice\current\LibreOffice\program\soffice.exe"));
-    private static readonly AppFinder Inkscape = new(() => FindApp("inkscape.exe", @"Inkscape\bin\inkscape.exe", @"scoop\apps\inkscape\current\bin\inkscape.exe"));
-
-    /// <summary>The Microsoft Store page that installs Inkscape (free, published by Inkscape), offered when a drawing can't be opened.</summary>
-    public const string InkscapeStoreLink = "ms-windows-store://pdp/?ProductId=9PD9BHGLFC7H";
-
     /// <summary>
     /// Finds an app and remembers it. While it isn't there, looks again every 15 seconds, so an app installed while
-    /// OrbitDrop is running (after "Get Inkscape", say) is picked up without a restart.
+    /// OrbitDrop is running is picked up without a restart.
     /// </summary>
     private sealed class AppFinder(Func<string?> find)
     {
@@ -72,20 +67,28 @@ public sealed class DocumentEngines : IDisposable
         DocumentKind.Sheet => Excel.Value || LibreOffice.Value is not null,
         DocumentKind.Slides => PowerPoint.Value || LibreOffice.Value is not null,
         DocumentKind.Pdf => Word.Value || LibreOffice.Value is not null,
-        _ => Inkscape.Value is not null || LibreOffice.Value is not null,
+        DocumentKind.Drawing => CorelDraw.Available,
+        _ => false,
     };
 
     /// <summary>The apps found, for Settings → About's capability list.</summary>
     public static string[] Describe() => new (bool Found, string Name)[]
     {
-        (Word.Value, "Word"), (Excel.Value, "Excel"), (PowerPoint.Value, "PowerPoint"),
-        (LibreOffice.Value is not null, "LibreOffice"), (Inkscape.Value is not null, "Inkscape"),
+        (Word.Value, "Word"), (Excel.Value, "Excel"), (PowerPoint.Value, "PowerPoint"), (LibreOffice.Value is not null, "LibreOffice"),
     }.Where(a => a.Found).Select(a => a.Name).ToArray();
 
     // Short names all the way down: a long file name inside a deep temp folder passes Windows' 260-character path
-    // limit, which Inkscape, LibreOffice and Office can't write to. The real name is only used for the final result.
+    // limit, which LibreOffice and Office can't write to. The real name is only used for the final result.
     private readonly string _temp = Path.Combine(Path.GetTempPath(), "OrbitDrop", "docs", Guid.NewGuid().ToString("N")[..8]);
     private int _jobs;
+
+    /// <summary>A fresh, short-named folder inside this conversion's private temp folder (deleted with it).</summary>
+    public string NewWorkFolder()
+    {
+        string dir = Path.Combine(_temp, (++_jobs).ToString());
+        Directory.CreateDirectory(dir);
+        return dir;
+    }
 
     /// <summary>Converts <paramref name="file"/> to <paramref name="extension"/> in a private temp folder; returns the new file.</summary>
     public async Task<string> ConvertToTempAsync(string file, string extension, CancellationToken ct)
@@ -107,9 +110,7 @@ public sealed class DocumentEngines : IDisposable
         };
         if (office is not null)
             await StaWorker.RunAsync(() => ConvertWithOffice(office, kind, input, output), "OrbitDrop Office");
-        else if (kind == DocumentKind.Drawing && Inkscape.Value is { } inkscape)
-            await RunAsync(inkscape, [input, "--export-filename=" + output], ct);
-        else if (LibreOffice.Value is { } soffice)
+        else if (kind != DocumentKind.Drawing && LibreOffice.Value is { } soffice)
         {
             // A profile of its own: works while the user has LibreOffice open, and never touches their settings.
             string profile = new Uri(Path.Combine(Path.GetTempPath(), "OrbitDrop", "libreoffice-profile")).AbsoluteUri;
@@ -196,7 +197,7 @@ public sealed class DocumentEngines : IDisposable
         catch { return false; }
     }
 
-    // ------------------------------------------------------------------ LibreOffice and Inkscape (command line)
+    // ------------------------------------------------------------------ LibreOffice (command line)
 
     /// <summary>
     /// App Paths, Program Files, per-user installs, scoop, the Microsoft Store version (its command-line alias) and
