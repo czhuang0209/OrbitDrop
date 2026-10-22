@@ -88,7 +88,7 @@ public partial class App
     {
         _hotkey?.Dispose();
         _hotkey = null;
-        if (!_settings.KeyboardShortcut || _messages is null) return;
+        if (!_settings.KeyboardShortcut || _messages is null) { Log.Info("Keyboard shortcut Ctrl+Alt+Space off"); return; }
         _hotkey = new GlobalHotkey(_messages, GlobalHotkey.MOD_CONTROL | GlobalHotkey.MOD_ALT, GlobalHotkey.VK_SPACE, OnHotkey);
         Log.Info(_hotkey.Registered ? "Keyboard shortcut Ctrl+Alt+Space ready" : "Ctrl+Alt+Space is taken by another app");
     }

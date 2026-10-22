@@ -1,4 +1,8 @@
-## What's new in 0.4.2-alpha
+## What's new in 0.4.3-alpha
+
+- **Clearer clipboard setting.** "Use the clipboard" works through Ctrl + Alt + Space, so when that shortcut is turned off, the clipboard setting now greys out and says so, instead of seeming to do nothing.
+
+## In 0.4.2-alpha
 
 - **CorelDRAW, built in.** OrbitDrop now reads CorelDRAW drawings (.cdr, and Corel's .cmx) itself: nothing else to install. Drag one, tap Shift, and convert it to PDF, SVG, PNG, JPG, WebP, TIFF or BMP. Pictures come out sharp, and a drawing with several pages becomes a folder with one file per page.
 - **Safe with any drawing.** Each drawing is read in a separate, time- and memory-limited helper, so a damaged or unusual file can only fail its own conversion, never OrbitDrop.

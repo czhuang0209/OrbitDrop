@@ -237,10 +237,10 @@
                     <Border Style="{StaticResource Orbit.Card}">
                         <DockPanel>
                             <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE77F;" />
-                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding UseClipboard}" AutomationProperties.Name="Use the clipboard" />
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding UseClipboard}" IsEnabled="{Binding KeyboardShortcut}" AutomationProperties.Name="Use the clipboard" />
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="Use the clipboard" Style="{StaticResource RowTitle}" />
-                                <TextBlock Text="With nothing selected, Ctrl + Alt + Space opens the wheel for what you copied: files, or an image such as a screenshot. Copied images are saved to the folder you're in, or Pictures." Style="{StaticResource RowHint}" />
+                                <TextBlock Text="{Binding UseClipboardHint}" Style="{StaticResource RowHint}" />
                             </StackPanel>
                         </DockPanel>
                     </Border>
