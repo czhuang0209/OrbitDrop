@@ -1,11 +1,12 @@
 // Local preview of the website, with the same clean URLs as Vercel (/privacy → privacy.html), the security headers
-// from vercel.json, and the feedback function at /api/feedback. No dependencies.
+// from vercel.json, and the feedback and waitlist functions at /api/feedback and /api/waitlist. No dependencies.
 // Usage: node website/dev-server.mjs [port]   → http://localhost:4321
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import feedback from "./api/feedback.js";
+import waitlist from "./api/waitlist.js";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 const port = Number(process.argv[2] ?? 4321);
@@ -29,11 +30,12 @@ async function resolve(url) {
 
 createServer(async (req, res) => {
   for (const [k, v] of Object.entries(pageHeaders)) res.setHeader(k, v);
-  if ((req.url ?? "").split("?")[0] === "/api/feedback") {
+  const api = { "/api/feedback": feedback, "/api/waitlist": waitlist }[(req.url ?? "").split("?")[0]];
+  if (api) {
     let raw = "";
     for await (const chunk of req) { raw += chunk; if (raw.length > 100_000) break; }
     req.body = raw;
-    return feedback(req, res);
+    return api(req, res);
   }
   const file = await resolve(req.url ?? "/");
   if (!file) { res.writeHead(404, { "Content-Type": "text/plain" }); res.end("Not found"); return; }
