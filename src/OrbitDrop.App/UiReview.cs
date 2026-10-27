@@ -55,14 +55,21 @@ internal static class UiReview
             ThemeManager.Current.Apply(theme, useWindowsAccent: false, reduceMotion: true);
             var bg = (Brush)Application.Current.FindResource("Orbit.SurfaceBase");
             string t = theme.ToString().ToLowerInvariant();
-            foreach (var page in new[] { "General", "MyActions" })
+            for (int state = 0; state < 4; state++)
+            {
+                var sw = new SwitchWindow((_, ct) => Task.Delay(-1, ct).ContinueWith(_ => (false, "")), () => { }, () => { }, portable: false);
+                sw.ReviewState(state);
+                RenderElement((FrameworkElement)sw.Content, 520, double.NaN, bg, dir, $"github-switch-{state}-{t}", ref count, [1.0]);
+                sw.Close();
+            }
+            foreach (var page in new[] { "General", "About", "MyActions" })
             {
                 var host = new PreviewHost(registry);
                 host.Settings.CustomActions = samples.Select(a => a.Clone()).ToArray();
                 var window = new SettingsWindow(new SettingsViewModel(host));
                 window.ShowPage(page);
-                Settle(window.ContentRoot, 880, page == "General" ? 760 : 1000);
-                RenderElement(window.ContentRoot, 880, page == "General" ? 760 : 1000, bg, dir, $"github-settings-{page.ToLowerInvariant()}-{t}", ref count, [1.0]);
+                Settle(window.ContentRoot, 880, page == "MyActions" ? 1000 : 760);
+                RenderElement(window.ContentRoot, 880, page == "MyActions" ? 1000 : 760, bg, dir, $"github-settings-{page.ToLowerInvariant()}-{t}", ref count, [1.0]);
                 window.Close();
             }
         }

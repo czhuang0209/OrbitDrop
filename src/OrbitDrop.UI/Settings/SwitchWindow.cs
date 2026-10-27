@@ -38,6 +38,22 @@ public sealed class SwitchWindow : Window
         Confirm(portable);
     }
 
+    /// <summary>For design-review renders: 0 asking, 1 installing (at <paramref name="progress"/>), 2 installed, 3 couldn't install.</summary>
+    public void ReviewState(int state, double progress = 0.42)
+    {
+        if (state == 0) Confirm(portable: false);
+        else if (state == 2) Done();
+        else if (state == 3) Failed();
+        else
+        {
+            _ = InstallAsync();
+            var bar = _body.Children.OfType<ProgressBar>().First();
+            bar.IsIndeterminate = false;
+            bar.Value = progress;
+            ((TextBlock)_body.Children[1]).Text = $"Getting OrbitDrop from the Store… {progress:P0}";
+        }
+    }
+
     private void Confirm(bool portable)
     {
         _body.Children.Clear();
