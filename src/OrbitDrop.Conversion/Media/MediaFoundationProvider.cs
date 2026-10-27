@@ -120,7 +120,7 @@ public sealed class MediaFoundationProvider : IOperationProvider
                     continue;
                 }
                 string output = await Task.Run(() => SafeOutput.WriteToPath(file, context.Output, extension, suffix,
-                    writeToTemp: temp => TranscodeAsync(file, temp, profile, context.ReportFileFraction, ct).GetAwaiter().GetResult(),
+                    writeToTemp: temp => TranscodeWithFallback(file, temp, profile, context.ReportFileFraction, ct),
                     validate: temp => ValidateContainer(temp, extension),
                     ct, hideWhileWriting: false), ct);
                 progress.Report(new FileOutcome(file, OutcomeStatus.Succeeded, output));
@@ -153,9 +153,12 @@ public sealed class MediaFoundationProvider : IOperationProvider
             case var id when id.StartsWith("tool.video.compress."):
             {
                 var preset = VideoPresets.Single(v => id == $"tool.video.compress.{v.Key}");
-                var p = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.Auto);
+                // An explicit profile, as for trimming: Auto with a changed size leaves the frame rate unset, which
+                // some sources (60 fps game recordings) and encoders refuse with no reason given.
                 var source = await StorageFile.GetFileFromPathAsync(file);
                 var props = await source.Properties.GetVideoPropertiesAsync();
+                var p = MediaEncodingProfile.CreateMp4(props.Width > 0 && props.Height > 0 ? VideoEncodingQuality.HD1080p : VideoEncodingQuality.Auto);
+                await KeepFrameRateAsync(p, source);
                 if (preset.BoxW == 0)
                 {
                     // Same resolution, half the bitrate. Windows may not report a bitrate; estimate it from size Ã· length.
@@ -196,6 +199,17 @@ public sealed class MediaFoundationProvider : IOperationProvider
         }
     }
 
+    /// <summary>Copies the source's frame rate into the profile; left as the profile's own when Windows doesn't report one.</summary>
+    private static async Task KeepFrameRateAsync(MediaEncodingProfile profile, StorageFile source)
+    {
+        var rate = await source.Properties.RetrievePropertiesAsync(["System.Video.FrameRate"]);
+        if (rate.TryGetValue("System.Video.FrameRate", out var fr) && fr is uint milli and > 0)
+        {
+            profile.Video.FrameRate.Numerator = milli; // frames per 1000 seconds
+            profile.Video.FrameRate.Denominator = 1000;
+        }
+    }
+
     /// <summary>Length of a video or audio file, from the Windows property system (zero if unknown).</summary>
     public static async Task<TimeSpan> DurationAsync(string file)
     {
@@ -216,7 +230,9 @@ public sealed class MediaFoundationProvider : IOperationProvider
         if (IsVideo(file))
         {
             profile = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.HD720p);
-            var props = await (await StorageFile.GetFileFromPathAsync(file)).Properties.GetVideoPropertiesAsync();
+            var source = await StorageFile.GetFileFromPathAsync(file);
+            var props = await source.Properties.GetVideoPropertiesAsync();
+            await KeepFrameRateAsync(profile, source); // HD720p alone would turn a 60 fps recording into 30
             var (w, h) = FitWithin(props.Width, props.Height, 3840, 2160);
             if (w > 0 && h > 0)
             {
@@ -228,26 +244,30 @@ public sealed class MediaFoundationProvider : IOperationProvider
         }
         else (profile, extension) = SameKindAudio(file, lossyOnly: false);
         string output = await Task.Run(() => SafeOutput.WriteToPath(file, context.Output, extension, "trimmed",
-            writeToTemp: temp => TrimWithFallback(file, temp, profile, context.ReportFileFraction, ct, range, duration),
+            writeToTemp: temp => TranscodeWithFallback(file, temp, profile, context.ReportFileFraction, ct, range, duration),
             validate: temp => ValidateContainer(temp, extension),
             ct, hideWhileWriting: false), ct);
         return new FileOutcome(file, OutcomeStatus.Succeeded, output);
     }
 
     /// <summary>
-    /// Trims with hardware encoding, and if the graphics driver can't do it (no GPU, as on servers, or a broken driver:
-    /// a generic E_FAIL), once more with Windows' software encoder. The file-based transcode overwrites the output.
+    /// Transcodes with hardware encoding, and if the graphics driver can't do it (no GPU, as on servers, or a driver
+    /// that refuses the settings: a generic E_FAIL, or a transcode Windows won't prepare without saying why), once
+    /// more with Windows' software encoder. MP4 retries on the file-based pipeline, which reads some recordings the
+    /// stream-based one refuses. Each attempt starts from an empty output. (Issue #3, diagnosed by teecil.)
     /// </summary>
-    private static void TrimWithFallback(string file, string temp, MediaEncodingProfile profile, Action<double>? fraction,
-        CancellationToken ct, TrimRange range, TimeSpan duration)
+    private static void TranscodeWithFallback(string file, string temp, MediaEncodingProfile profile, Action<double>? fraction,
+        CancellationToken ct, TrimRange? range = null, TimeSpan duration = default)
     {
         try
         {
             TranscodeAsync(file, temp, profile, fraction, ct, range, duration).GetAwaiter().GetResult();
         }
-        catch (Exception ex) when (ex is not OperationCanceledException && ex.HResult == unchecked((int)0x80004005))
+        catch (Exception ex) when (ex is not OperationCanceledException
+            && (ex.HResult == unchecked((int)0x80004005) || ex is MediaFormatException { Unexplained: true }))
         {
-            TranscodeAsync(file, temp, profile, fraction, ct, range, duration, hardware: false).GetAwaiter().GetResult();
+            bool fileBased = range is not null || profile.Container?.Subtype == "MPEG4";
+            TranscodeAsync(file, temp, profile, fraction, ct, range, duration, hardware: false, fileBased).GetAwaiter().GetResult();
         }
     }
 
@@ -322,15 +342,20 @@ public sealed class MediaFoundationProvider : IOperationProvider
     }
 
     private static async Task TranscodeAsync(string file, string destinationPath, MediaEncodingProfile profile,
-        Action<double>? fraction, CancellationToken ct, TrimRange? trim = null, TimeSpan duration = default, bool hardware = true)
+        Action<double>? fraction, CancellationToken ct, TrimRange? trim = null, TimeSpan duration = default, bool hardware = true,
+        bool fileBased = false)
     {
+        fileBased |= trim is not null;
+        // A failed earlier attempt may have left bytes behind, and the file-based pipeline writes over them without
+        // shortening the file.
+        new FileStream(destinationPath, FileMode.Truncate, FileAccess.Write).Dispose();
         var source = await StorageFile.GetFileFromPathAsync(file);
         var destination = await StorageFile.GetFileFromPathAsync(destinationPath);
         // A native Windows stream: muxers such as ASF (WMV/WMA) need features a wrapped .NET stream lacks.
         // Trimming needs the file-based pipeline instead (the stream-based one refuses trim settings), which opens
         // the files itself.
-        using IRandomAccessStream? input = trim is null ? await source.OpenAsync(FileAccessMode.Read) : null;
-        using IRandomAccessStream? output = trim is null ? await destination.OpenAsync(FileAccessMode.ReadWrite) : null;
+        using IRandomAccessStream? input = fileBased ? null : await source.OpenAsync(FileAccessMode.Read);
+        using IRandomAccessStream? output = fileBased ? null : await destination.OpenAsync(FileAccessMode.ReadWrite);
         var transcoder = new MediaTranscoder { HardwareAccelerationEnabled = hardware };
         if (trim is not null)
         {
@@ -338,18 +363,18 @@ public sealed class MediaFoundationProvider : IOperationProvider
             transcoder.TrimStartTime = trim.Start;
             if (duration == TimeSpan.Zero || trim.End < duration) transcoder.TrimStopTime = trim.End;
         }
-        var prepared = trim is null
-            ? await transcoder.PrepareStreamTranscodeAsync(input!, output!, profile)
-            : await transcoder.PrepareFileTranscodeAsync(source, destination, profile);
+        var prepared = fileBased
+            ? await transcoder.PrepareFileTranscodeAsync(source, destination, profile)
+            : await transcoder.PrepareStreamTranscodeAsync(input!, output!, profile);
         if (!prepared.CanTranscode)
-            throw new MediaFormatException(prepared.FailureReason switch
+            throw prepared.FailureReason switch
             {
-                TranscodeFailureReason.CodecNotFound => "Windows doesn't have a codec for this file. Installing the matching Video Extension from the Microsoft Store may help.",
-                TranscodeFailureReason.InvalidProfile => profile.Audio is not null && profile.Video is null
+                TranscodeFailureReason.CodecNotFound => new MediaFormatException("Windows doesn't have a codec for this file. Installing the matching Video Extension from the Microsoft Store may help."),
+                TranscodeFailureReason.InvalidProfile => new MediaFormatException(profile.Audio is not null && profile.Video is null
                     ? "This file has no sound to extract."
-                    : "This file can't be converted to that format.",
-                _ => "Windows couldn't read this file.",
-            });
+                    : "This file can't be converted to that format."),
+                _ => new MediaFormatException("Windows couldn't read this file.", Unexplained: true),
+            };
         var progress = new Progress<double>(p => fraction?.Invoke(p / 100.0));
         await prepared.TranscodeAsync().AsTask(ct, progress);
         if (output is not null) await output.FlushAsync();
@@ -393,5 +418,9 @@ public sealed class MediaFoundationProvider : IOperationProvider
         yield return ("Audio", "MP3, M4A, WAV, WMA, FLAC Â· compress (128/96/64 kbps) Â· mono/stereo");
     }
 
-    private sealed class MediaFormatException(string message) : Exception(message);
+    /// <param name="Unexplained">Windows refused without a reason, which is often the hardware encoder: worth a retry.</param>
+    private sealed class MediaFormatException(string message, bool Unexplained = false) : Exception(message)
+    {
+        public bool Unexplained { get; } = Unexplained;
+    }
 }
