@@ -120,6 +120,9 @@ public partial class SettingsWindow
         return $"Opens {KindPhrase(action.Kind, action.Extensions)} in {app}";
     }
 
+    /// <summary>Cards narrower than this put Works on and Advanced on a row of their own.</summary>
+    private const double WideCard = 560;
+
     private FrameworkElement ActionCard(int index)
     {
         var action = _actions[index];
@@ -158,24 +161,46 @@ public partial class SettingsWindow
         var more = new Button { Style = (Style)FindResource("Orbit.Button.Subtle"), Content = open ? "Advanced ▴" : "Advanced ▾", Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
             FontSize = 12, ToolTip = "The program, what's passed to it, and a few options" };
         more.Click += (_, _) => { if (!_advancedOpen.Remove(index)) _advancedOpen.Add(index); BuildActions(); };
-        DockPanel.SetDock(more, Dock.Right);
-        top.Children.Add(more);
         var kind = new ComboBox { Width = 140, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, ToolTip = "Which files it shows up for" };
         foreach (var k in CustomAction.Kinds) kind.Items.Add(new ComboBoxItem { Content = k, Tag = k, IsSelected = k == action.Kind });
         AutomationProperties.SetName(kind, "Works on");
-        DockPanel.SetDock(kind, Dock.Right);
-        top.Children.Add(kind);
+        // Works on and Advanced sit beside the name, or on a row of their own when the window is narrow.
+        var controls = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        controls.Children.Add(kind);
+        controls.Children.Add(more);
+        DockPanel.SetDock(controls, Dock.Right);
+        // Its name as it shows on the wheel (renamed under Advanced), and what it does; both shorten rather than overlap.
         var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        var name = new TextBox { Text = action.Name, FontSize = 13.5, FontWeight = FontWeights.SemiBold, VerticalContentAlignment = VerticalAlignment.Center, Width = 230,
-            HorizontalAlignment = HorizontalAlignment.Left, ToolTip = "Its name on the wheel" };
-        AutomationProperties.SetName(name, "Action name");
-        name.LostFocus += (_, _) => { if (name.Text.Trim() != action.Name) { action.Name = name.Text.Trim(); Changed(); } };
-        words.Children.Add(name);
+        var title = new TextBlock { Text = action.Name, Style = (Style)FindResource("Orbit.Text.BodyStrong"), FontSize = 14, TextWrapping = TextWrapping.NoWrap, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = action.Name };
+        words.Children.Add(title);
+        summary.TextWrapping = TextWrapping.NoWrap;
+        summary.TextTrimming = TextTrimming.CharacterEllipsis;
         words.Children.Add(summary);
         if (locked)
             words.Children.Add(new TextBlock { Text = $"\U0001F451 Needs the upgrade: the first {CustomAction.FreeActions} actions are free", Style = (Style)FindResource("Orbit.Text.Caption"), Margin = new Thickness(2, 3, 0, 0) });
         top.Children.Add(words);
         panel.Children.Add(top);
+        var below = new Border { Margin = new Thickness(46, 10, 0, 0) };
+        panel.Children.Add(below);
+        void Fit(double width)
+        {
+            bool beside = width >= WideCard;
+            if (beside && controls.Parent != top)
+            {
+                below.Child = null;
+                controls.Margin = new Thickness(16, 0, 0, 0);
+                top.Children.Insert(top.Children.IndexOf(words), controls);
+            }
+            else if (!beside && controls.Parent != below)
+            {
+                top.Children.Remove(controls);
+                controls.Margin = new Thickness(0);
+                below.Child = controls;
+            }
+            below.Visibility = beside ? Visibility.Collapsed : Visibility.Visible;
+        }
+        Fit(WideCard);
+        card.SizeChanged += (_, e) => Fit(e.NewSize.Width);
 
         // Chosen types: the extensions, right under the card (it's part of "works on").
         var extensions = new TextBox { Text = action.Extensions, Width = 200, FontSize = 13, VerticalContentAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right,
@@ -191,7 +216,7 @@ public partial class SettingsWindow
         };
         panel.Children.Add(extensions);
 
-        if (open) panel.Children.Add(AdvancedEditor(action, Changed));
+        if (open) panel.Children.Add(AdvancedEditor(action, () => { title.Text = action.Name; title.ToolTip = action.Name; Changed(); }));
         panel.Children.Add(problem);
         if (open) panel.Children.Add(runs);
         Refresh();
@@ -204,6 +229,13 @@ public partial class SettingsWindow
     private StackPanel AdvancedEditor(CustomAction action, Action changed)
     {
         var editor = new StackPanel { Margin = new Thickness(46, 4, 0, 0) };
+
+        var nameRow = Labelled("Name", out var nameSlot);
+        var name = new TextBox { Text = action.Name, FontSize = 13, VerticalContentAlignment = VerticalAlignment.Center, ToolTip = "Its name on the wheel" };
+        AutomationProperties.SetName(name, "Action name");
+        name.LostFocus += (_, _) => { if (name.Text.Trim() != action.Name) { action.Name = name.Text.Trim(); changed(); } };
+        nameSlot.Children.Add(name);
+        editor.Children.Add(nameRow);
 
         var programRow = Labelled("Program", out var programSlot);
         var program = new TextBox { Text = action.Program, FontSize = 13, VerticalContentAlignment = VerticalAlignment.Center, ToolTip = "A program (Browse), or a name like code or python. Empty: the arguments are a command." };
