@@ -36,7 +36,7 @@ public sealed class ImageTextProvider : IOperationProvider
                 "Copy the text in the image", "", "Reading text", 146, DoneTitle: "Text copied");
         else if (mode == OperationMode.Actions && files.Count == 1)
             yield return new("action.wallpaper", ProviderId, OperationMode.Actions, "Wallpaper", "",
-                "Set as desktop wallpaper", "", "Setting wallpaper", 245, DoneTitle: "Wallpaper set");
+                "Set as desktop wallpaper", "", "Setting wallpaper", 234, Group: FileActionsProvider.ShareGroup, DoneTitle: "Wallpaper set");
     }
 
     public async Task ExecuteAsync(OperationDescriptor operation, FileSet files, OperationContext context,

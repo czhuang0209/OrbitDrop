@@ -19,9 +19,14 @@ public sealed class GlobalHotkey : IDisposable
     {
         _window = window;
         _pressed = pressed;
+        Modifiers = modifiers;
+        Key = key;
         Registered = RegisterHotKey(window.Handle, _id, modifiers | MOD_NOREPEAT, key);
         if (Registered) window.Message += OnMessage;
     }
+
+    public uint Modifiers { get; }
+    public uint Key { get; }
 
     /// <summary>False when another app already owns the combination.</summary>
     public bool Registered { get; }

@@ -10,8 +10,9 @@ public static class Undo
     /// <summary>Some file systems round creation times; allow a little slack before the job started.</summary>
     private static readonly TimeSpan Slack = TimeSpan.FromSeconds(2);
 
+    /// <summary>"Move to" and "Rename" leave the user's own files under a new place or name: nothing to take back.</summary>
     public static bool IsUndoable(OperationDescriptor operation) =>
-        !operation.Id.StartsWith("action.move-to", StringComparison.Ordinal);
+        !operation.Id.StartsWith("action.move-to", StringComparison.Ordinal) && !operation.Id.StartsWith("action.rename", StringComparison.Ordinal);
 
     public static IReadOnlyList<string> Targets(OperationDescriptor operation, IReadOnlyList<string> sources,
         IEnumerable<FileOutcome> outcomes, DateTime jobCreatedUtc)

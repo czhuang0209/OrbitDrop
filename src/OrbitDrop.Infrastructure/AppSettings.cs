@@ -57,6 +57,15 @@ public sealed class AppSettings
     public string? OutputFolder { get; set; }
     public int JpegQuality { get; set; } = 92;
 
+    /// <summary>Only drags that start in File Explorer or on the desktop open the wheel (off: any app's file drags do).</summary>
+    public bool WorkOnlyInExplorer { get; set; }
+
+    /// <summary>The Microsoft Store version's Premium tools show on the wheel with a crown (choosing one explains how to get them).</summary>
+    public bool ShowPremiumTools { get; set; } = true;
+
+    /// <summary>The user's own Actions: a program or command run with the dropped files (Settings → Your actions).</summary>
+    public CustomAction[] CustomActions { get; set; } = [];
+
     // Advanced
     public bool ExtendedDragDetection { get; set; }
     public bool DetailedLogging { get; set; }
@@ -83,8 +92,18 @@ public sealed class AppSettings
     {
         var copy = (AppSettings)MemberwiseClone();
         copy.LastUsed = new Dictionary<string, string>(LastUsed, StringComparer.Ordinal);
+        copy.CustomActions = CustomActions.Select(a => a.Clone()).ToArray();
         return copy;
     }
+
+    /// <summary>
+    /// Groups that no longer exist (Copy path moved into Actions › Open): a hidden old group stays hidden as its options.
+    /// </summary>
+    private static readonly Dictionary<string, string[]> RetiredGroups = new(StringComparer.Ordinal)
+    {
+        ["group:actions.copy"] = ["action.copy-path", "action.copy-name"],
+        ["group:image.search"] = ["action.image-search.google", "action.image-search.bing", "action.image-search.tineye"],
+    };
 
     /// <summary>Clamps values that may have been hand-edited into an invalid range.</summary>
     public void Normalize()
@@ -95,7 +114,11 @@ public sealed class AppSettings
         if (!Enum.IsDefined(TriggerKey)) TriggerKey = TriggerKey.Shift;
         if (OutputLocation == OutputLocation.Folder && string.IsNullOrWhiteSpace(OutputFolder))
             OutputLocation = OutputLocation.BesideOriginal;
-        HiddenOptions = (HiddenOptions ?? []).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct(StringComparer.Ordinal).ToArray();
+        HiddenOptions = (HiddenOptions ?? []).SelectMany(k => RetiredGroups.TryGetValue(k ?? "", out var members) ? members : [k])
+            .Where(k => !string.IsNullOrWhiteSpace(k)).Distinct(StringComparer.Ordinal).ToArray();
+        CustomActions = (CustomActions ?? []).Where(a => a is not null).Take(CustomAction.MaxActions)
+            .Select(a => { a.Name = (a.Name ?? "").Trim(); a.Program = (a.Program ?? "").Trim(); a.Arguments ??= ""; a.Extensions ??= ""; if (!CustomAction.Kinds.Contains(a.Kind)) a.Kind = "Everything"; return a; })
+            .ToArray();
         OptionOrder = (OptionOrder ?? []).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct(StringComparer.Ordinal).ToArray();
         LastUsed = (LastUsed ?? []).Where(p => !string.IsNullOrWhiteSpace(p.Key) && !string.IsNullOrWhiteSpace(p.Value))
             .Take(MaxLastUsed).ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);

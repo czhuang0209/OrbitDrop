@@ -17,11 +17,12 @@ public partial class SettingsWindow : Window
         _vm = vm;
         DataContext = vm;
         Nav.SelectedIndex = 0;
+        BuildActions();
         ThemeManager.Current.Changed += OnThemeChanged;
         Closed += (_, _) => ThemeManager.Current.Changed -= OnThemeChanged;
     }
 
-    public static readonly string[] PageNames = ["General", "Appearance", "Shortcuts", "Wheel", "Conversions", "Advanced", "About"];
+    public static readonly string[] PageNames = ["General", "Appearance", "Shortcuts", "Wheel", "Conversions", "MyActions", "Advanced", "About"];
 
     public void ShowPage(string name)
     {

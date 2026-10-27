@@ -19,7 +19,28 @@ public partial class App
         _inputs.Register(OrbitDrop.Conversion.Media.MediaFoundationProvider.TrimId, AskTrimAsync);
         _inputs.Register(FileActionsProvider.CopyToPrefix + FileActionsProvider.ChooseSuffix, (op, files, _) => AskFolderAsync("Copy to", files));
         _inputs.Register(FileActionsProvider.MoveToPrefix + FileActionsProvider.ChooseSuffix, (op, files, _) => AskFolderAsync("Move to", files));
+        // A crowned Premium tool (or a third of your own actions): how to get it, on the website, about that tool.
+        _inputs.Register(OperationRegistry.LockedPrefix, (op, files, _) =>
+        {
+            OpenUpgradePage(op.Id[OperationRegistry.LockedPrefix.Length..], op.Label);
+            return Task.FromResult<(bool, object?)>((false, null));
+        });
     }
+
+    /// <summary>The website's guide to the Store version, about what was tried (no external payment: it leads to the Store).</summary>
+    private const string UpgradePage = "https://orbitdrop.essam.biz/upgrade";
+
+    private static void OpenUpgradePage(string optionId, string label)
+    {
+        string query = optionId.StartsWith(CustomActionsProvider.Prefix, StringComparison.Ordinal)
+            ? $"reason=actions&used={CustomAction.FreeActions}&limit={CustomAction.FreeActions}"
+            : $"tool={Uri.EscapeDataString(optionId)}&name={Uri.EscapeDataString(label)}";
+        Log.Info($"Upgrade page for {optionId}");
+        UpdateManager.OpenUrl($"{UpgradePage}?{query}&from=github");
+    }
+
+    /// <summary>Settings › Your actions › Add, past the free ones: the upgrade guide, saying so.</summary>
+    public void ShowActionsUpgrade() => OpenUpgradePage(CustomActionsProvider.Prefix, "");
 
     /// <summary>Opens the photo editor; the edited full-resolution bitmap becomes the job's input.</summary>
     private async Task<(bool, object?)> AskPhotoEditAsync(OperationDescriptor op, FileSet files, Win32.POINT anchor)

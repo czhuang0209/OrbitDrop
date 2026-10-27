@@ -3,6 +3,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using OrbitDrop.Core;
 using OrbitDrop.Infrastructure;
+using OrbitDrop.Tools;
 using OrbitDrop.UI;
 using OrbitDrop.UI.Onboarding;
 using OrbitDrop.UI.Settings;
@@ -18,6 +19,70 @@ namespace OrbitDrop.App;
 /// </summary>
 internal static class UiReview
 {
+    /// <summary>
+    /// <c>--render-github &lt;folder&gt;</c>: what's new in the GitHub version: the wheel with the Store version's Premium
+    /// tools crowned (Tools and Actions for a photo, Actions › Your actions), Settings › General (Show Premium tools) and
+    /// Settings › Your actions (two free, a third waiting for the Store version).
+    /// </summary>
+    public static int RunGitHub(string dir, OperationRegistry registry)
+    {
+        Directory.CreateDirectory(dir);
+        int count = 0;
+        CustomAction[] samples =
+        [
+            new() { Name = "Open in VS Code", Program = "code", Arguments = "{files}", PerFile = false },
+            new() { Name = "Resize with my script", Program = "python", Arguments = "\"C:\\Tools\\resize.py\" {file} --width 1080", Kind = "Photos", ShowWindow = true },
+            new() { Name = "Copy to my NAS", Program = "", Arguments = "robocopy {folder} \\\\nas\\photos {name}.{ext}" },
+        ];
+        ThemeManager.Current.Apply(AppTheme.Dark, useWindowsAccent: false, reduceMotion: true);
+        var withActions = new OperationRegistry([.. registry.Providers.Where(p => p is not CustomActionsProvider), new CustomActionsProvider(() => samples)],
+            licensed: () => false, showLocked: () => true);
+        var files = new FileSet([Path.Combine(Path.GetTempPath(), "holiday photo.jpg")]);
+        int busiest = Enum.GetValues<OperationMode>().Max(m => OperationMenu.Busiest(withActions.Query(files, m)));
+        foreach (var (name, mode, group) in new (string, OperationMode, string?)[] { ("tools", OperationMode.Tools, null), ("actions", OperationMode.Actions, null),
+            ("your-actions", OperationMode.Actions, CustomActionsProvider.Group.Id), ("share", OperationMode.Actions, FileActionsProvider.ShareGroup.Id) })
+        {
+            var flat = withActions.Query(files, mode);
+            var items = group is null ? OperationMenu.TopLevel(flat) : OperationMenu.Members(flat, group);
+            var wheel = new RadialWheel { Busiest = busiest };
+            wheel.SetContent(mode, items, group is null ? "2.4 MB" : items[0].Group?.Label ?? "", group is null ? "holiday photo.jpg" : "Rest on the centre to go back", animate: false);
+            wheel.SetHighlight(-2);
+            Save(wheel.RenderPreview(Wallpaper(true), 1.5), Path.Combine(dir, $"github-wheel-{name}.png"), ref count);
+            wheel.Close();
+        }
+        foreach (var theme in new[] { AppTheme.Light, AppTheme.Dark })
+        {
+            ThemeManager.Current.Apply(theme, useWindowsAccent: false, reduceMotion: true);
+            var bg = (Brush)Application.Current.FindResource("Orbit.SurfaceBase");
+            string t = theme.ToString().ToLowerInvariant();
+            foreach (var page in new[] { "General", "MyActions" })
+            {
+                var host = new PreviewHost(registry);
+                host.Settings.CustomActions = samples.Select(a => a.Clone()).ToArray();
+                var window = new SettingsWindow(new SettingsViewModel(host));
+                window.ShowPage(page);
+                Settle(window.ContentRoot, 880, page == "General" ? 760 : 1000);
+                RenderElement(window.ContentRoot, 880, page == "General" ? 760 : 1000, bg, dir, $"github-settings-{page.ToLowerInvariant()}-{t}", ref count, [1.0]);
+                window.Close();
+            }
+        }
+        return 0;
+    }
+
+    /// <summary>Lays <paramref name="root"/> out and lets short template animations (a switch's knob) finish before an offscreen render.</summary>
+    private static void Settle(FrameworkElement root, double width, double height)
+    {
+        root.Measure(new Size(width, height));
+        root.Arrange(new Rect(0, 0, width, height));
+        root.UpdateLayout();
+        var frame = new System.Windows.Threading.DispatcherFrame();
+        var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+        timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; };
+        timer.Start();
+        System.Windows.Threading.Dispatcher.PushFrame(frame);
+        root.UpdateLayout();
+    }
+
     public static int Run(string dir, OperationRegistry registry)
     {
         Directory.CreateDirectory(dir);

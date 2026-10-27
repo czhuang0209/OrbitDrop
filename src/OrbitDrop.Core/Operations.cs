@@ -13,6 +13,7 @@ public enum OperationMode { Convert, Tools, Actions }
 /// <param name="ProgressTitle">Toast title while running ("Converting to PNG").</param>
 /// <param name="NeedsInput">The app asks for choices first (a window or picker) and passes them as <see cref="OperationContext.Input"/>.</param>
 /// <param name="DoneTitle">Toast title when an action finishes ("Copied to Desktop"); defaults to the label.</param>
+/// <param name="RequiresLicense">Part of the paid OrbitDrop license: only offered once the app is unlocked.</param>
 public sealed record OperationDescriptor(
     string Id,
     string ProviderId,
@@ -26,7 +27,8 @@ public sealed record OperationDescriptor(
     bool MirrorGlyph = false,
     OperationGroup? Group = null,
     bool NeedsInput = false,
-    string? DoneTitle = null)
+    string? DoneTitle = null,
+    bool RequiresLicense = false)
 {
     public const string GroupPrefix = "group.";
 
@@ -83,6 +85,12 @@ public interface IShellIntegration
 
     /// <summary>Sends files and folders to the Recycle Bin (never a permanent delete). Returns how many went.</summary>
     int Recycle(IReadOnlyList<string> paths) => throw new NotSupportedException("The Recycle Bin isn't available here.");
+
+    /// <summary>Puts a picture (PNG bytes) on the clipboard, so it can be pasted into a web page or another app.</summary>
+    void CopyImage(byte[] png) => throw new NotSupportedException("The clipboard isn't available here.");
+
+    /// <summary>Opens a web page in the default browser.</summary>
+    void OpenUrl(string url) => throw new NotSupportedException("The browser isn't available here.");
 }
 
 /// <summary>

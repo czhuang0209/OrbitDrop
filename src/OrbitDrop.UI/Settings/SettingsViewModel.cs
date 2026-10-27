@@ -36,6 +36,8 @@ public interface ISettingsHost
     string RateButtonText => "Rate";
     string RateHint => "A quick rating helps other people find OrbitDrop.";
     void RateClicked() { }
+    /// <summary>The upgrade guide, opened because the user's actions reached the free limit.</summary>
+    void ShowActionsUpgrade() { }
 }
 
 public sealed class SettingsViewModel : ObservableObject
@@ -129,6 +131,16 @@ public sealed class SettingsViewModel : ObservableObject
     // ---- Advanced
     public bool ExtendedDragDetection { get => S.ExtendedDragDetection; set => Set(s => s.ExtendedDragDetection = value, nameof(ExtendedDragDetection)); }
     public bool DetailedLogging { get => S.DetailedLogging; set => Set(s => s.DetailedLogging = value, nameof(DetailedLogging)); }
+    public bool WorkOnlyInExplorer { get => S.WorkOnlyInExplorer; set => Set(s => s.WorkOnlyInExplorer = value, nameof(WorkOnlyInExplorer)); }
+    public bool ShowPremiumTools { get => S.ShowPremiumTools; set => Set(s => s.ShowPremiumTools = value, nameof(ShowPremiumTools)); }
+
+    // ---- Your actions (the first two are free; more with the Store version's upgrade)
+    /// <summary>This version has no upgrade: it's in the Microsoft Store version.</summary>
+    public bool Licensed => false;
+    public IReadOnlyList<CustomAction> CustomActions => S.CustomActions;
+    public void SetCustomActions(IEnumerable<CustomAction> actions) => _host.Update(s => s.CustomActions = actions.Select(a => a.Clone()).ToArray());
+    /// <summary>Adding past the free actions: the upgrade guide, saying so.</summary>
+    public void ShowActionsUpgrade() => _host.ShowActionsUpgrade();
     public string SettingsPath => _host.SettingsPath;
     public string LogsPath => _host.LogsPath;
 

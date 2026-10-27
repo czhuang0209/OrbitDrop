@@ -98,6 +98,16 @@ public partial class App : Application, ISettingsHost, ITrayCommands
             return;
         }
 
+        int github = Array.IndexOf(args, "--render-github");
+        if (github >= 0 && github + 1 < args.Length)
+        {
+            int code;
+            try { code = UiReview.RunGitHub(args[github + 1], BuildRegistry()); }
+            catch (Exception ex) { Directory.CreateDirectory(args[github + 1]); File.WriteAllText(Path.Combine(args[github + 1], "error.txt"), ex.ToString()); code = 1; }
+            Shutdown(code);
+            return;
+        }
+
         int render = Array.IndexOf(args, "--render-ui");
         if (render >= 0)
         {
@@ -136,7 +146,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         ThemeManager.Current.Apply(_settings.Theme, _settings.UseWindowsAccent, _settings.ReduceMotion);
 
         ClipboardCaptures.Folder = Path.Combine(_paths.LocalDirectory, "Clipboard");
-        _registry = BuildRegistry(new FileActionsProvider(() => _settings.RecentFolders, RememberFolder));
+        _registry = BuildRegistry(new FileActionsProvider(() => _settings.RecentFolders, RememberFolder), () => _settings.CustomActions, () => _settings.ShowPremiumTools);
         _jobs = new JobQueue(_registry, maxConcurrentJobs: 2);
         var jobs = _jobs;
         _shell = new ShellIntegration(Dispatcher) { FloatHandler = ShowShelf };
@@ -187,9 +197,12 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         Log.Info("Ready");
     }
 
-    private static OperationRegistry BuildRegistry(FileActionsProvider? actions = null) =>
+    /// <param name="showPremium">Show the Store version's Premium tools with a crown (Settings › General › Show Premium tools).</param>
+    private static OperationRegistry BuildRegistry(FileActionsProvider? actions = null, Func<IReadOnlyList<CustomAction>>? customActions = null, Func<bool>? showPremium = null) =>
         new([new ImageConversionProvider(), new PdfProvider(), new PdfToolsProvider(), new DocumentProvider(), new MediaFoundationProvider(), new MediaEditingProvider(),
-             new ImageToolsProvider(), new ImageTextProvider(), new ArchiveProvider(), new MetadataProvider(), actions ?? new FileActionsProvider()]);
+             new ImageToolsProvider(), new ImageTextProvider(), new ArchiveProvider(), new MetadataProvider(), actions ?? new FileActionsProvider(),
+             new CustomActionsProvider(customActions ?? (() => [])), new PrintProvider(), new PremiumPreviewProvider(showPremium ?? (() => true))],
+            licensed: () => false, showLocked: showPremium ?? (() => true));
 
     private OperationContext CreateContext() => new()
     {
@@ -210,6 +223,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
         if (_detector is null) return;
         _detector.SetTriggerKey(_settings.TriggerKey == TriggerKey.Ctrl);
         _detector.SetExtendedDetection(_settings.ExtendedDragDetection);
+        _detector.ExplorerOnly = _settings.WorkOnlyInExplorer;
     }
 
     private void ShowTrayMenu(OrbitDrop.Windows.Interop.Win32.POINT anchor) => new TrayFlyout(this).ShowAt(anchor);
@@ -299,7 +313,7 @@ public partial class App : Application, ISettingsHost, ITrayCommands
             ApplyAppearance();
         if (before.KeyboardShortcut != _settings.KeyboardShortcut) ApplyHotkey();
         if (before.ContextMenu != _settings.ContextMenu) ApplyContextMenu();
-        if (before.TriggerKey != _settings.TriggerKey || before.ExtendedDragDetection != _settings.ExtendedDragDetection)
+        if (before.TriggerKey != _settings.TriggerKey || before.ExtendedDragDetection != _settings.ExtendedDragDetection || before.WorkOnlyInExplorer != _settings.WorkOnlyInExplorer)
         {
             ApplyInteractionSettings();
             _tray?.SetTooltip(TrayTooltip);

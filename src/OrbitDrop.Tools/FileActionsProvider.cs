@@ -17,7 +17,9 @@ public sealed class FileActionsProvider(Func<IReadOnlyList<string>>? recentFolde
     public const string ChooseSuffix = ".choose";
     public string Id => ProviderId;
 
-    private static readonly OperationGroup CopyGroup = new("actions.copy", "Copy path", "\uE71B");
+    // Actions stays at about seven slices: things to do with the file's place go in Open, ways to send it out in Share.
+    public static readonly OperationGroup OpenGroup = new("actions.open", "Open", "\uE838");
+    public static readonly OperationGroup ShareGroup = new("actions.share", "Share", "\uE72D");
     private static readonly OperationGroup CopyToGroup = new("actions.copy-to", "Copy to", "\uE8C8");
     private static readonly OperationGroup MoveToGroup = new("actions.move-to", "Move to", "\uE8DE");
 
@@ -25,12 +27,14 @@ public sealed class FileActionsProvider(Func<IReadOnlyList<string>>? recentFolde
     {
         if (mode != OperationMode.Actions || files.IsEmpty) yield break;
         bool many = files.Count > 1;
-        yield return new("action.copy-path", ProviderId, OperationMode.Actions, many ? "Copy paths" : "Copy path", "\uE71B",
-            "%1", many ? "Copy paths" : "Copy path", "Copying path", 200, Group: CopyGroup, DoneTitle: many ? "Paths copied" : "Path copied");
-        yield return new("action.copy-name", ProviderId, OperationMode.Actions, many ? "Copy names" : "Copy name", "\uE8AC",
-            "%1", many ? "Copy names" : "Copy name", "Copying name", 201, Group: CopyGroup, DoneTitle: many ? "Names copied" : "Name copied");
         yield return new("action.reveal", ProviderId, OperationMode.Actions, "Show in folder", "\uE838",
-            "%1", "Show in folder", "Opening folder", 205);
+            "%1", "Show in folder", "Opening folder", 200, Group: OpenGroup);
+        yield return new("action.copy-path", ProviderId, OperationMode.Actions, many ? "Copy paths" : "Copy path", "\uE71B",
+            "%1", many ? "Copy paths" : "Copy path", "Copying path", 201, Group: OpenGroup, DoneTitle: many ? "Paths copied" : "Path copied");
+        yield return new("action.copy-name", ProviderId, OperationMode.Actions, many ? "Copy names" : "Copy name", "\uE8AC",
+            "%1", many ? "Copy names" : "Copy name", "Copying name", 202, Group: OpenGroup, DoneTitle: many ? "Names copied" : "Name copied");
+        yield return new("action.terminal", ProviderId, OperationMode.Actions, "Terminal", "\uE756",
+            "Open a terminal here", "", "Opening Terminal", 203, Group: OpenGroup, DoneTitle: "Terminal opened");
 
         foreach (var op in Destinations(CopyToPrefix, "Copy", "Copying", "Copied", CopyToGroup, 210)) yield return op;
         foreach (var op in Destinations(MoveToPrefix, "Move", "Moving", "Moved", MoveToGroup, 220)) yield return op;
@@ -38,9 +42,7 @@ public sealed class FileActionsProvider(Func<IReadOnlyList<string>>? recentFolde
         yield return new("action.float", ProviderId, OperationMode.Actions, "Float", "\uE718",
             "Keep on a shelf to drag out later", "", "Floating", 225, DoneTitle: "On the shelf");
         yield return new("action.share", ProviderId, OperationMode.Actions, "Share", "\uE72D",
-            "%1", "Share", "Opening Share", 230, DoneTitle: "Share opened");
-        yield return new("action.terminal", ProviderId, OperationMode.Actions, "Terminal", "\uE756",
-            "Open a terminal here", "", "Opening Terminal", 240, DoneTitle: "Terminal opened");
+            "%1", "Share", "Opening Share", 230, Group: ShareGroup, DoneTitle: "Share opened");
     }
 
     /// <summary>"Choose…" (a folder picker) first as the default, then recent folders, then Desktop/Documents/Downloads.</summary>

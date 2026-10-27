@@ -29,7 +29,8 @@ public class RegistryTests
     {
         Assert.Empty(Registry.Query(Files("a.jpg", "c.pdf"), OperationMode.Convert));
         Assert.Empty(Registry.Query(Files("a.jpg", "c.pdf"), OperationMode.Tools));
-        Assert.Equal(["Copy path", "Show in folder", "Copy to", "Move to", "Float", "Share", "Terminal"],
+        // Show in folder, Copy path, Copy name and Terminal are in Open; Share alone needs no group.
+        Assert.Equal(["Open", "Copy to", "Move to", "Float", "Share"],
             OperationMenu.TopLevel(Registry.Query(Files("a.jpg", "c.pdf"), OperationMode.Actions)).Select(d => d.Label));
     }
 

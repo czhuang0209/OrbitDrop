@@ -47,6 +47,37 @@ public static class WheelGeometry
         return Math.Sqrt(nx * nx + ny * ny) >= rMin && Math.Sqrt(fx * fx + fy * fy) <= rMax;
     }
 
+    /// <summary>The most the wheel grows for a crowded page (see <see cref="Density"/>).</summary>
+    public const double MaxDensity = 1.55;
+
+    /// <summary>
+    /// How much bigger the wheel opens when a page has many options: 1 up to 6, then 8% more per option, at most
+    /// <see cref="MaxDensity"/>. Labels keep their on-screen size, so the extra room becomes breathing space in the slices.
+    /// </summary>
+    public static double Density(int count) => count <= 6 ? 1 : Math.Min(MaxDensity, 1 + 0.08 * (count - 6));
+
+    /// <summary>Clearance kept between a label and the sides of its slice, in degrees (the gap between slices is about 1.7° each side there).</summary>
+    public const double LabelSideInset = 2.5;
+
+    /// <summary>
+    /// True when the box fits inside its slice: within the ring (<see cref="LabelFits(double, double, double, double)"/>)
+    /// and between the slice's two sides (centred on <paramref name="mid"/>, <paramref name="step"/> wide, in degrees).
+    /// Slices are convex for up to two options' width, so checking the four corners is enough.
+    /// </summary>
+    public static bool LabelFits(double cx, double cy, double w, double h, double mid, double step)
+    {
+        if (!LabelFits(cx, cy, w, h)) return false;
+        if (step >= 180) return true; // one or two big slices: the ring is all that limits a label
+        double half = step / 2 - LabelSideInset;
+        foreach (var (x, y) in new[] { (cx - w / 2, cy - h / 2), (cx + w / 2, cy - h / 2), (cx - w / 2, cy + h / 2), (cx + w / 2, cy + h / 2) })
+        {
+            double angle = Math.Atan2(y, x) * 180 / Math.PI;
+            double off = ((angle - mid) % 360 + 540) % 360 - 180; // -180…180 from the slice's centre line
+            if (Math.Abs(off) > half) return false;
+        }
+        return true;
+    }
+
     public static double SizeFactor(Infrastructure.WheelSize size) => size switch
     {
         Infrastructure.WheelSize.Compact => 0.86,

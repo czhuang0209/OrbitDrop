@@ -44,6 +44,7 @@
                 <ListBoxItem Tag="Shortcuts"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Orbit.Glyph}" Text="&#xE765;" Margin="0,0,14,0" /><TextBlock Text="Shortcuts" Style="{StaticResource Orbit.Text.Body}" /></StackPanel></ListBoxItem>
                 <ListBoxItem Tag="Wheel"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Orbit.Glyph}" Text="&#xE7F4;" Margin="0,0,14,0" /><TextBlock Text="Wheel" Style="{StaticResource Orbit.Text.Body}" /></StackPanel></ListBoxItem>
                 <ListBoxItem Tag="Conversions"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Orbit.Glyph}" Text="&#xE8AB;" Margin="0,0,14,0" /><TextBlock Text="Conversions" Style="{StaticResource Orbit.Text.Body}" /></StackPanel></ListBoxItem>
+                <ListBoxItem Tag="MyActions"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Orbit.Glyph}" Text="&#xE945;" Margin="0,0,14,0" /><TextBlock Text="Your actions" Style="{StaticResource Orbit.Text.Body}" /></StackPanel></ListBoxItem>
                 <ListBoxItem Tag="Advanced"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Orbit.Glyph}" Text="&#xE90F;" Margin="0,0,14,0" /><TextBlock Text="Advanced" Style="{StaticResource Orbit.Text.Body}" /></StackPanel></ListBoxItem>
                 <ListBoxItem Tag="About"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Orbit.Glyph}" Text="&#xE946;" Margin="0,0,14,0" /><TextBlock Text="About" Style="{StaticResource Orbit.Text.Body}" /></StackPanel></ListBoxItem>
             </ListBox>
@@ -56,6 +57,26 @@
                 <!-- General -->
                 <StackPanel x:Name="General" Style="{StaticResource Page}">
                     <TextBlock Text="General" Style="{StaticResource Orbit.Text.Subtitle}" Margin="2,0,0,16" />
+                    <Border Style="{StaticResource Orbit.Card}">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource RowGlyph}" Text="&#xEC50;" />
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding WorkOnlyInExplorer}" AutomationProperties.Name="Work only in File Explorer" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Work only in File Explorer" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="The wheel opens only for files you drag from File Explorer or the desktop. Turn this on if Shift-dragging in other apps (like Photoshop, Illustrator or Figma) opens it by mistake." Style="{StaticResource RowHint}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Orbit.Card}">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE734;" />
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource Orbit.ToggleSwitch}" IsChecked="{Binding ShowPremiumTools}" AutomationProperties.Name="Show Premium tools" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Show Premium tools" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="Remove background, upscale, stickers and more come with the Microsoft Store version. With this on, they show on the wheel with a crown, and choosing one explains how to get them. This version stays free and open source." Style="{StaticResource RowHint}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
                     <Border Style="{StaticResource Orbit.Card}">
                         <DockPanel>
                             <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE7E8;" />
@@ -382,6 +403,30 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </Border>
+                </StackPanel>
+
+                <!-- Your actions: programs and commands run with the dropped files (two free, more with the upgrade) -->
+                <StackPanel x:Name="MyActions" Style="{StaticResource Page}">
+                    <TextBlock Text="Your actions" Style="{StaticResource Orbit.Text.Subtitle}" Margin="2,0,0,4" />
+                    <TextBlock Style="{StaticResource Orbit.Text.Caption}" Margin="2,0,0,14" TextWrapping="Wrap"
+                               Text="Run your own programs and commands on the files you drop. They're on the wheel in Actions › Your actions." />
+                    <Border Style="{StaticResource Orbit.Card}" Padding="16,12" Margin="0,0,0,8">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Style="{StaticResource RowGlyph}" Text="&#xE946;" />
+                            <TextBlock Style="{StaticResource RowHint}" TextWrapping="Wrap" VerticalAlignment="Center">
+                                <Run Text="In the arguments," /> <Run Text="{}{file}" FontWeight="SemiBold" /><Run Text="," />
+                                <Run Text="{}{files}" FontWeight="SemiBold" /> <Run Text="and" /> <Run Text="{}{folder}" FontWeight="SemiBold" />
+                                <Run Text="become the dropped file, all of them, and their folder, already in quotes;" />
+                                <Run Text="{}{name}" FontWeight="SemiBold" /> <Run Text="and" /> <Run Text="{}{ext}" FontWeight="SemiBold" />
+                                <Run Text="its name and extension. Leave the program empty to type a command." />
+                            </TextBlock>
+                        </DockPanel>
+                    </Border>
+                    <StackPanel x:Name="ActionsHost" />
+                    <DockPanel Margin="0,6,0,0">
+                        <Button x:Name="AddActionButton" DockPanel.Dock="Left" Content="+ Add an action" Style="{StaticResource Orbit.Button.Standard}" Click="OnAddAction" />
+                        <TextBlock x:Name="ActionsUsage" Style="{StaticResource Orbit.Text.Caption}" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                    </DockPanel>
                 </StackPanel>
 
                 <!-- Advanced -->

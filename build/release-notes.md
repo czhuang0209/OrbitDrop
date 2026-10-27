@@ -1,4 +1,12 @@
-## What's new in 0.4.5-alpha
+## What's new in 0.4.6-alpha
+
+- **Your own actions.** Settings › Your actions: put your own programs and commands on the wheel (Actions › Your actions), with the dropped files filled in for you: `{file}`, `{files}`, `{folder}` (already quoted, so names with spaces or & just work), `{name}` and `{ext}`. Ready-made ones to start from: Open in VS Code, Open in Paint, Run a Python script, Open in Photoshop, a command. Two are free; more come with the Microsoft Store version. Thanks to [pixo2000](https://github.com/pixo2000) for the idea ([#4](https://github.com/i3sam/OrbitDrop/issues/4)).
+- **Print.** Actions › Print sends photos and PDFs to your printer through Windows' own print dialog (printer, pages, copies). Photos turn to fill the paper; long PDFs print without filling the memory.
+- **A tidier wheel.** It keeps one size for the whole drag (no more growing when you move to a busy page), Actions is grouped into **Open** (Show in folder, Copy path, Copy name, Terminal) and **Share**, labels are bigger and always stay inside their slice, and Windows' own drag picture no longer covers the centre.
+- **Work only in File Explorer** (Settings › General): the wheel opens only for files dragged from File Explorer or the desktop, so Shift-dragging in Photoshop, Illustrator or Figma never opens it by mistake.
+- **See what the Store version adds.** Its Premium tools (remove background, upscale, stickers and more) now show on the wheel with a small crown, and choosing one explains how to get them. This version stays free and open source; turn them off in Settings › General › Show Premium tools.
+
+## In 0.4.5-alpha
 
 - **Fixed: Compress video failed on some PCs** with "Windows couldn't read this file", often 60 fps game recordings (like NVIDIA Instant Replay clips) on PCs with an NVIDIA graphics card. When the graphics card refuses a video, OrbitDrop now finishes it with Windows' own software encoder instead of failing. This works for every video and audio tool, not only Compress. Thanks to [teecil](https://github.com/teecil) for finding the cause ([#3](https://github.com/i3sam/OrbitDrop/issues/3)).
 - **Videos keep their frame rate.** Compressed and trimmed videos stay at 60 fps (Trim used to make them 30).

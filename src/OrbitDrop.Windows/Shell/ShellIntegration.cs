@@ -28,6 +28,24 @@ public sealed class ShellIntegration(Dispatcher dispatcher) : IShellIntegration
 
     public int Recycle(IReadOnlyList<string> paths) => RecycleBin.Send(paths);
 
+    /// <summary>The picture as a bitmap (for apps and web pages) and as PNG (keeps transparency where it's understood).</summary>
+    public void CopyImage(byte[] png) => dispatcher.Invoke(() =>
+    {
+        var bitmap = System.Windows.Media.Imaging.BitmapFrame.Create(new MemoryStream(png), System.Windows.Media.Imaging.BitmapCreateOptions.None,
+            System.Windows.Media.Imaging.BitmapCacheOption.OnLoad);
+        var data = new DataObject();
+        data.SetImage(bitmap);
+        data.SetData("PNG", new MemoryStream(png));
+        for (int attempt = 0; ; attempt++)
+        {
+            try { Clipboard.SetDataObject(data, copy: true); return; }
+            catch (System.Runtime.InteropServices.COMException) when (attempt < 5) { Thread.Sleep(30); }
+        }
+    });
+
+    public void OpenUrl(string url) =>
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+
     /// <summary>Opens each containing folder once and selects the given items (SHOpenFolderAndSelectItems).</summary>
     public void Reveal(IReadOnlyList<string> paths) => dispatcher.Invoke(() =>
     {

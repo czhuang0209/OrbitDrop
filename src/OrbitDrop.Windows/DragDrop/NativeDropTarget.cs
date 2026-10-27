@@ -73,6 +73,9 @@ public sealed class NativeDropTarget : Ole.IDropTarget
             _sink.OnDragEnter(files, p);
             pdwEffect = files.Length > 0 && (allowed & Ole.DROPEFFECT_COPY) != 0 ? Ole.DROPEFFECT_COPY : Ole.DROPEFFECT_NONE;
             _helper?.DragEnter(_hwnd, pDataObj, ref p, pdwEffect);
+            // Windows' own drag picture (and its "⊘ Cancel" tag) would sit right over the wheel's centre, saying what
+            // the centre already says: hide it while over the wheel. It's back as soon as the pointer leaves.
+            _helper?.Show(false);
         }
         catch (Exception ex)
         {
@@ -105,6 +108,7 @@ public sealed class NativeDropTarget : Ole.IDropTarget
         try
         {
             ClearDescription();
+            _helper?.Show(true);
             _helper?.DragLeave();
             _sink.OnDragLeave();
         }
@@ -121,6 +125,7 @@ public sealed class NativeDropTarget : Ole.IDropTarget
             string[] files = DataObjectReader.ReadFileDrop(pDataObj);
             ClearDescription();
             pdwEffect = files.Length > 0 ? Ole.DROPEFFECT_COPY : Ole.DROPEFFECT_NONE; // never MOVE
+            _helper?.Show(true);
             _helper?.Drop(pDataObj, ref p, pdwEffect);
             _sink.OnDrop(files, p);
         }

@@ -46,6 +46,14 @@ public sealed class RadialWheel : Window
     private readonly Ellipse[] _modeDots = new Ellipse[3];
     private readonly List<SegmentVisual> _visuals = [];
     private Win32.RECT _rect;
+    /// <summary>While open: the centre, the monitor scale × size setting, how much the wheel has grown for a crowded page
+    /// (it only grows during one drag, so it doesn't jump between pages), and the screen area the frost was captured from.</summary>
+    private Win32.POINT _center;
+    private double _scale = 1, _density = 1;
+
+    /// <summary>How many options the busiest page or group of this drag has: the wheel opens big enough for it straight away.</summary>
+    public int Busiest { get; set; }
+    private Win32.RECT _capture;
     private int _highlight = HitOutside;
     private Color _segmentColor, _segmentText, _accent, _onAccent;
     private double _segmentOpacity;
@@ -158,6 +166,17 @@ public sealed class RadialWheel : Window
     /// <summary>Replaces the segments. <paramref name="modeIndex"/> drives the three-dot indicator.</summary>
     public void SetContent(OperationMode mode, IReadOnlyList<OperationDescriptor> items, string value, string detail, bool animate)
     {
+        // A crowded page makes the open wheel bigger (never smaller during one drag); labels keep their size on screen.
+        // Sized for the drag's busiest page from the start (see Busiest), so switching pages doesn't make it grow.
+        double density = Math.Max(Math.Max(IsVisible ? _density : 1, Density(items.Count)), Density(Busiest));
+        if (IsVisible && density > _density)
+        {
+            _density = density;
+            Place();
+            ApplyRect();
+        }
+        else if (!IsVisible) _density = density;
+        double ink = 1 / _density;
         _segments.Children.Clear();
         _visuals.Clear();
         _highlight = HitOutside;
@@ -194,7 +213,7 @@ public sealed class RadialWheel : Window
             {
                 Text = item.Label, // format labels are already upper-case ("PNG"); presets keep their case ("720p")
                 FontFamily = (FontFamily)FindResource("Orbit.Font.Display"),
-                FontSize = item.Glyph is null ? (items.Count > 6 ? 12.5 : 13.5) : 11,
+                FontSize = (item.Glyph is null ? (items.Count > 6 ? 12.5 : 13.5) : 12) * ink,
                 FontWeight = FontWeights.SemiBold,
                 TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
@@ -205,7 +224,8 @@ public sealed class RadialWheel : Window
             {
                 glyph = new TextBlock
                 {
-                    Text = item.Glyph, FontFamily = (FontFamily)FindResource("Orbit.Font.Icons"), FontSize = 19,
+                    Text = item.Glyph, FontSize = 19 * ink,
+                    FontFamily = (FontFamily)FindResource("Orbit.Font.Icons"),
                     HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 3),
                     RenderTransformOrigin = new Point(0.5, 0.5),
                     RenderTransform = item.MirrorGlyph ? new ScaleTransform(-1, 1) : Transform.Identity,
@@ -214,16 +234,25 @@ public sealed class RadialWheel : Window
             }
             stack.Children.Add(label);
             TextBlock? dots = null;
-            if (item.IsGroupHeader)
+            if (OperationRegistry.IsLocked(item))
             {
                 dots = new TextBlock
                 {
-                    Text = "• • •", FontSize = 8, Opacity = 0.55, HorizontalAlignment = HorizontalAlignment.Center,
+                    Text = "\U0001F451", FontFamily = new FontFamily("Segoe UI Emoji"), FontSize = 10 * ink, HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(0, 1, 0, 0), ToolTip = "Part of the upgrade",
+                };
+                stack.Children.Add(dots);
+            }
+            else if (item.IsGroupHeader)
+            {
+                dots = new TextBlock
+                {
+                    Text = "• • •", FontSize = 8 * ink, Opacity = 0.55, HorizontalAlignment = HorizontalAlignment.Center,
                     Margin = new Thickness(0, 2, 0, 0),
                 };
                 stack.Children.Add(dots);
             }
-            center = FitLabel(stack, label, center, items.Count > 5 ? 64 : 78, items.Count > 4 ? 5 : 10);
+            center = FitLabel(stack, label, center, items.Count > 5 ? 64 : 78, items.Count > 4 ? 5 : 10, mid, step);
             System.Windows.Controls.Canvas.SetLeft(stack, center.X - stack.DesiredSize.Width / 2);
             System.Windows.Controls.Canvas.SetTop(stack, center.Y - stack.DesiredSize.Height / 2);
 
@@ -316,15 +345,19 @@ public sealed class RadialWheel : Window
     {
         StopAnimations();
         var monitor = ScreenInfo.MonitorAt(cursor);
-        double scale = monitor.Scale * sizeFactor;
-        int size = (int)Math.Round(Extent * scale);
-        int discR = (int)Math.Ceiling(DiscR * scale), pad = (int)(4 * scale);
+        _scale = monitor.Scale * sizeFactor;
+        _density = 1;
+        Busiest = 0;
+        // Room for the biggest the wheel may grow to, so growing never moves it or runs off the screen.
+        int discR = (int)Math.Ceiling(DiscR * _scale * MaxDensity), pad = (int)(4 * _scale);
         var work = monitor.WorkArea;
         int cx = Math.Clamp(cursor.X, work.Left + discR + pad, Math.Max(work.Left + discR + pad, work.Right - discR - pad));
         int cy = Math.Clamp(cursor.Y, work.Top + discR + pad, Math.Max(work.Top + discR + pad, work.Bottom - discR - pad));
-        _rect = new Win32.RECT(cx - size / 2, cy - size / 2, cx - size / 2 + size, cy - size / 2 + size);
-
-        _backdrop.Source = SystemParameters.HighContrast ? null : ScreenInfo.Capture(_rect);
+        _center = new Win32.POINT(cx, cy);
+        int max = (int)Math.Round(Extent * _scale * MaxDensity);
+        _capture = new Win32.RECT(cx - max / 2, cy - max / 2, cx - max / 2 + max, cy - max / 2 + max);
+        _backdrop.Source = SystemParameters.HighContrast ? null : ScreenInfo.Capture(_capture);
+        Place();
         ApplyTheme();
         ApplyRect();
         if (!IsVisible) Show();
@@ -395,6 +428,27 @@ public sealed class RadialWheel : Window
         Opacity = 1;
     }
 
+    /// <summary>Sizes the window for the current density around the centre, and lines the frost up with the screen.</summary>
+    private void Place()
+    {
+        int size = (int)Math.Round(Extent * _scale * _density);
+        _rect = new Win32.RECT(_center.X - size / 2, _center.Y - size / 2, _center.X - size / 2 + size, _center.Y - size / 2 + size);
+        double k = Extent / size, m = WheelGeometry.Margin, d = Disc;
+        double w = _capture.Width * k, h = _capture.Height * k;
+        double l = (_capture.Left - _rect.Left) * k - m, t = (_capture.Top - _rect.Top) * k - m;
+        _backdrop.Width = w;
+        _backdrop.Height = h;
+        _backdrop.Margin = new Thickness(l, t, d - l - w, d - t - h);
+    }
+
+    /// <summary>The frost laid out for a snapshot of exactly the window (design-review renders).</summary>
+    private void ResetBackdrop()
+    {
+        double m = WheelGeometry.Margin;
+        _backdrop.Width = _backdrop.Height = Extent;
+        _backdrop.Margin = new Thickness(-m);
+    }
+
     private void ApplyRect() =>
         Win32.SetWindowPos(Handle, Win32.HWND_TOPMOST, _rect.Left, _rect.Top, _rect.Width, _rect.Height, Win32.SWP_NOACTIVATE);
 
@@ -404,10 +458,12 @@ public sealed class RadialWheel : Window
     /// <param name="wallpaperBehind">False renders the wheel alone on transparency (wallpaper only shows through the frost).</param>
     public BitmapSource RenderPreview(ImageSource wallpaper, double scale, bool wallpaperBehind = true)
     {
+        ResetBackdrop();
         _backdrop.Source = wallpaper;
         _root.Measure(new Size(Extent, Extent));
         _root.Arrange(new Rect(0, 0, Extent, Extent));
         _root.UpdateLayout();
+        scale *= _density; // a crowded page renders as big as it opens
         int px = (int)Math.Ceiling(Extent * scale);
         var bmp = new RenderTargetBitmap(px, px, 96 * scale, 96 * scale, PixelFormats.Pbgra32);
         if (wallpaperBehind)
@@ -443,12 +499,13 @@ public sealed class RadialWheel : Window
     }
 
     /// <summary>
-    /// Keeps a segment's label inside the ring. A long label on a wide segment ("Show in folder" on a three-item wheel)
-    /// would otherwise run past the segment's edge and vanish against the rim. Tries the widest wrap first, nudging the
-    /// label up to <paramref name="maxShift"/> units from its natural centre, and only then wraps tighter.
+    /// Keeps a segment's label inside its own slice: within the ring and between the slice's sides (centred on
+    /// <paramref name="mid"/>, <paramref name="step"/> degrees wide). A long label ("Watermark", "Show in folder") would
+    /// otherwise run into the next slice or past the rim. Icons and labels stay on the slice's centre line wherever a
+    /// wrap or a slightly smaller font makes them fit; only then are they nudged, up to <paramref name="maxShift"/> units.
     /// Returns the centre to place the stack at.
     /// </summary>
-    private static Point FitLabel(StackPanel stack, TextBlock label, Point center, double maxWidth, double maxShift)
+    private static Point FitLabel(StackPanel stack, TextBlock label, Point center, double maxWidth, double maxShift, double mid, double step)
     {
         var inf = new Size(double.PositiveInfinity, double.PositiveInfinity);
         var shifts = new List<Vector>();
@@ -458,18 +515,21 @@ public sealed class RadialWheel : Window
         shifts.Sort((a, b) => a.LengthSquared.CompareTo(b.LengthSquared));
 
         // Narrower wraps first; if even that fails, a slightly smaller font. Never wrap inside a word ("Downloa/ds").
+        // The first pass keeps the stack centred (icons line up around the wheel); the second may nudge it.
         double baseSize = label.FontSize;
-        foreach (double scale in new[] { 1.0, 0.93, 0.86, 0.8 })
-        {
-            label.FontSize = baseSize * scale;
-            double minWidth = Math.Max(40, WidestWord(label));
-            for (double w = maxWidth; w >= minWidth; w -= 4)
+        var centred = new List<Vector> { new(0, 0) };
+        foreach (var allowed in new[] { centred, shifts })
+            foreach (double scale in new[] { 1.0, 0.93, 0.86, 0.8 })
             {
-                var fit = TryFit(w);
-                if (fit is { } c) return c;
+                label.FontSize = baseSize * scale;
+                double minWidth = Math.Max(36, WidestWord(label));
+                for (double w = maxWidth; w >= minWidth; w -= 4)
+                {
+                    var fit = TryFit(w, allowed);
+                    if (fit is { } c) return c;
+                }
+                if (TryFit(Math.Ceiling(minWidth), allowed) is { } tight) return tight;
             }
-            if (TryFit(Math.Ceiling(minWidth)) is { } tight) return tight;
-        }
         label.FontSize = baseSize;
         label.MaxWidth = maxWidth; // nothing fits (very long text): keep the original layout
         label.InvalidateMeasure();
@@ -477,7 +537,7 @@ public sealed class RadialWheel : Window
         stack.Measure(inf);
         return center;
 
-        Point? TryFit(double w)
+        Point? TryFit(double w, List<Vector> allowed)
         {
             label.MaxWidth = w;
             // Not in the visual tree yet, so a repeat Measure with the same size would return the cached result.
@@ -488,10 +548,10 @@ public sealed class RadialWheel : Window
             double lw = label.DesiredSize.Width, lh = label.DesiredSize.Height, above = 0;
             foreach (UIElement child in stack.Children) { if (child == label) break; above += child.DesiredSize.Height; }
             double below = -stack.DesiredSize.Height / 2 + above + lh / 2;
-            foreach (var s in shifts)
+            foreach (var s in allowed)
             {
                 var c = center + s;
-                if (LabelFits(c.X - Extent / 2, c.Y + below - Extent / 2, lw, lh)) return c;
+                if (LabelFits(c.X - Extent / 2, c.Y + below - Extent / 2, lw, lh, mid, step)) return c;
             }
             return null;
         }

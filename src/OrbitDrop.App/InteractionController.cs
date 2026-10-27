@@ -43,6 +43,8 @@ public sealed class InteractionController : IDropSink, IDisposable
         /// <summary>Estimated result sizes by option id (Settings → Wheel → Show estimated size), and the files' own total.</summary>
         public IReadOnlyDictionary<string, long>? Estimates;
         public long OriginalBytes;
+        /// <summary>Options on the busiest page or group for these files: the wheel's size for the whole drag (0: not worked out yet).</summary>
+        public int Busiest;
         public CancellationTokenSource? EstimateCts;
     }
 
@@ -100,6 +102,9 @@ public sealed class InteractionController : IDropSink, IDisposable
     /// <summary>Every finished job: (input files, files written). Used by the guide's practice step.</summary>
     public event Action<IReadOnlyList<string>, IReadOnlyList<string>>? JobFinished;
 
+    /// <summary>Every finished job: the option that ran and the files it wrote (counts free tries of paid options).</summary>
+    public event Action<OperationDescriptor, IReadOnlyList<string>>? OperationFinished;
+
     private string TriggerName => _settings().TriggerKey == TriggerKey.Ctrl ? "Ctrl" : "Shift";
 
     // ------------------------------------------------------------------ session lifecycle
@@ -110,15 +115,18 @@ public sealed class InteractionController : IDropSink, IDisposable
         Open();
     }
 
+    /// <summary>The page the wheel opens on (the app passes the user's choice when the upgrade is unlocked).</summary>
+    public Func<OperationMode> StartMode { get; set; } = () => OperationMode.Convert;
+
     private void Open()
     {
         _previewTimer?.Stop();
         _deferredDismiss?.Stop();
         long t0 = Stopwatch.GetTimestamp();
         var cursor = ScreenInfo.CursorPosition;
-        _session = new Session { Anchor = cursor, OpenedAt = t0 };
+        _session = new Session { Anchor = cursor, OpenedAt = t0, Mode = StartMode() };
         _detector.SessionOpen = true;
-        _wheel.SetContent(OperationMode.Convert, [], "Move here", "", animate: false);
+        _wheel.SetContent(_session.Mode, [], "Move here", "", animate: false);
         _wheel.Open(cursor, WheelGeometry.SizeFactor(_settings().WheelSize), animate: true);
         Log.Info($"Wheel opened in {Stopwatch.GetElapsedTime(t0).TotalMilliseconds:F1} ms");
     }
@@ -177,6 +185,10 @@ public sealed class InteractionController : IDropSink, IDisposable
     {
         if (_session is not { } s) return;
         s.Flat = Options(s.Files, s.Mode);
+        // One size for the whole drag, from the busiest page or group, so moving between pages never makes it jump.
+        if (s.EnterSeen && s.Busiest == 0)
+            s.Busiest = Math.Max(1, Enum.GetValues<OperationMode>().Max(m => OperationMenu.Busiest(Options(s.Files, m))));
+        _wheel.Busiest = s.Busiest;
         s.Items = s.OpenGroup is { } g ? OperationMenu.Members(s.Flat, g.Group!.Id) : OperationMenu.TopLevel(s.Flat);
         s.LastHit = WheelGeometry.HitOutside;
         _dwell.Stop();
@@ -268,8 +280,9 @@ public sealed class InteractionController : IDropSink, IDisposable
             s.FromArchive = files.Length == 0 && _dropTarget.LastDragFromArchive;
             Log.Info($"DragEnter after {Stopwatch.GetElapsedTime(s.OpenedAt).TotalMilliseconds:F1} ms: {s.Files.Count} file(s)");
             // Never open on an empty ring: start in the first mode that has options and say why.
-            var start = NextMode(s, OperationMode.Convert, includeCurrent: true);
-            if (start != OperationMode.Convert && !s.Files.IsEmpty)
+            var preferred = StartMode();
+            var start = NextMode(s, preferred, includeCurrent: true);
+            if (preferred == OperationMode.Convert && start != OperationMode.Convert && !s.Files.IsEmpty)
                 s.UnsupportedNote = $"No conversions for {KindSummary(s.Files)} yet";
             s.Mode = start;
             Refresh(animate: false);
@@ -400,6 +413,7 @@ public sealed class InteractionController : IDropSink, IDisposable
             var outputs = j.Outcomes.Where(o => o.Output is not null).Select(o => o.Output!).ToList();
             if (settings.RevealWhenDone && outputs.Count > 0) _shell.Reveal(outputs);
             JobFinished?.Invoke(j.Files, outputs);
+            OperationFinished?.Invoke(item, outputs);
         };
     }
 
@@ -425,8 +439,9 @@ public sealed class InteractionController : IDropSink, IDisposable
         var s = new Session { Files = files, EnterSeen = true, ClickMode = true, OverWheel = true, Anchor = cursor, OpenedAt = Stopwatch.GetTimestamp(),
             OutputFolder = outputFolder, SourceLabel = label };
         _session = s;
-        s.Mode = NextMode(s, OperationMode.Convert, includeCurrent: true);
-        if (s.Mode != OperationMode.Convert) s.UnsupportedNote = $"No conversions for {KindSummary(files)} yet";
+        var preferred = StartMode();
+        s.Mode = NextMode(s, preferred, includeCurrent: true);
+        if (preferred == OperationMode.Convert && s.Mode != OperationMode.Convert) s.UnsupportedNote = $"No conversions for {KindSummary(files)} yet";
         _detector.SessionOpen = true;
         _detector.EnsurePolling();
         Refresh(animate: false);

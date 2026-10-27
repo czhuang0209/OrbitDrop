@@ -21,6 +21,10 @@ public static class OperationMenu
         return result;
     }
 
+    /// <summary>The most slices any view of these options has: the top level, or the biggest group opened.</summary>
+    public static int Busiest(IReadOnlyList<OperationDescriptor> flat) =>
+        Math.Max(TopLevel(flat).Count, flat.Where(o => o.Group is not null).GroupBy(o => o.Group!.Id).Select(g => g.Count()).DefaultIfEmpty(0).Max());
+
     /// <summary>The options inside group <paramref name="groupId"/>, default first.</summary>
     public static IReadOnlyList<OperationDescriptor> Members(IReadOnlyList<OperationDescriptor> flat, string groupId) =>
         flat.Where(o => o.Group?.Id == groupId).ToList();

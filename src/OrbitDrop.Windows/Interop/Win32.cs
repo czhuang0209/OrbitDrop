@@ -117,6 +117,20 @@ public static class Win32
     }
 
     [DllImport("user32.dll")]
+    public static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint processId);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr WindowFromPoint(POINT pt);
+
+    /// <summary>The name of the process that owns <paramref name="hwnd"/> ("explorer"), or "" when it can't be read.</summary>
+    public static string ProcessNameOf(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero || GetWindowThreadProcessId(hwnd, out uint pid) == 0) return "";
+        try { using var p = System.Diagnostics.Process.GetProcessById((int)pid); return p.ProcessName; }
+        catch { return ""; }
+    }
+
+    [DllImport("user32.dll")]
     public static extern bool SetForegroundWindow(IntPtr hwnd);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]

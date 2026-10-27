@@ -26,7 +26,7 @@ public sealed class DragSessionDetector : IDisposable
     private readonly DispatcherTimer _poll;
     private IntPtr _showHideHook, _captureHook, _mouseHook;
     private IntPtr _dragImage;
-    private bool _imageArmed, _oleArmed, _hookArmed, _hookButtonDown;
+    private bool _imageArmed, _oleArmed, _hookArmed, _hookButtonDown, _hookRejected;
     private Win32.POINT _downPoint;
     private bool _prevTrigger, _prevEscape, _prevButton;
     private int _triggerVk = Win32.VK_SHIFT;
@@ -49,6 +49,25 @@ public sealed class DragSessionDetector : IDisposable
     public bool SessionOpen { get; set; }
 
     public bool Enabled { get; set; } = true;
+
+    /// <summary>
+    /// Settings → General → Work only in File Explorer: drags that start in any other app (Photoshop, Figma, a browser…)
+    /// never arm the trigger key. The window behind each signal belongs to the app doing the dragging: the shell's drag
+    /// image and OLE's drag window are created by it, and the hook's case uses the window under the press.
+    /// </summary>
+    public bool ExplorerOnly { get; set; }
+
+    /// <summary>File Explorer and the desktop are both explorer.exe.</summary>
+    public static bool IsExplorerProcess(string processName) => processName.Equals("explorer", StringComparison.OrdinalIgnoreCase);
+
+    private bool SourceAllowed(IntPtr hwnd)
+    {
+        if (!ExplorerOnly) return true;
+        string name = Win32.ProcessNameOf(hwnd);
+        if (IsExplorerProcess(name)) return true;
+        Diagnostics.Write($"Drag from {(name.Length > 0 ? name : "an unknown app")} ignored (Work only in File Explorer)");
+        return false;
+    }
 
     public bool IsArmed => Armed && DragButtonDown;
 
@@ -89,7 +108,7 @@ public sealed class DragSessionDetector : IDisposable
     {
         if (evt == Win32.EVENT_SYSTEM_CAPTURESTART)
         {
-            if (!_oleArmed && DragButtonDown && Win32.ClassNameOf(hwnd) == "CLIPBRDWNDCLASS")
+            if (!_oleArmed && DragButtonDown && Win32.ClassNameOf(hwnd) == "CLIPBRDWNDCLASS" && SourceAllowed(hwnd))
             {
                 _oleArmed = true;
                 Diagnostics.Write("Drag detected (OLE drag loop)");
@@ -101,7 +120,7 @@ public sealed class DragSessionDetector : IDisposable
         if (evt == Win32.EVENT_OBJECT_SHOW && Win32.ClassNameOf(hwnd) == "SysDragImage")
         {
             _dragImage = hwnd;
-            if (!_imageArmed && DragButtonDown)
+            if (!_imageArmed && DragButtonDown && SourceAllowed(hwnd))
             {
                 _imageArmed = true;
                 StartPolling();
@@ -120,14 +139,15 @@ public sealed class DragSessionDetector : IDisposable
             var info = Marshal.PtrToStructure<Win32.MSLLHOOKSTRUCT>(lParam);
             bool swapped = Win32.GetSystemMetrics(Win32.SM_SWAPBUTTON) != 0;
             int msg = (int)wParam, down = swapped ? Win32.WM_RBUTTONDOWN : Win32.WM_LBUTTONDOWN, up = swapped ? Win32.WM_RBUTTONUP : Win32.WM_LBUTTONUP;
-            if (msg == down) { _hookButtonDown = true; _downPoint = info.pt; }
+            if (msg == down) { _hookButtonDown = true; _hookRejected = false; _downPoint = info.pt; }
             else if (msg == up) { _hookButtonDown = false; }
-            else if (msg == Win32.WM_MOUSEMOVE && _hookButtonDown && !_hookArmed &&
+            else if (msg == Win32.WM_MOUSEMOVE && _hookButtonDown && !_hookArmed && !_hookRejected &&
                      (Math.Abs(info.pt.X - _downPoint.X) > Win32.GetSystemMetrics(Win32.SM_CXDRAG) ||
                       Math.Abs(info.pt.Y - _downPoint.Y) > Win32.GetSystemMetrics(Win32.SM_CYDRAG)))
             {
-                _hookArmed = true;
-                StartPolling();
+                // Asked once per press: the rest of this drag's moves are ignored when the app isn't allowed.
+                if (SourceAllowed(Win32.WindowFromPoint(_downPoint))) { _hookArmed = true; StartPolling(); }
+                else _hookRejected = true;
             }
         }
         return Win32.CallNextHookEx(_mouseHook, nCode, wParam, lParam);
