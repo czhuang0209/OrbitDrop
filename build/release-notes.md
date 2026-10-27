@@ -1,4 +1,9 @@
-## What's new in 0.4.6-alpha
+## What's new in 0.4.7-alpha
+
+- **Fixed: the Your actions cards overlapped in a narrow Settings window.** The action's name no longer runs into the "Works on" box. Names and descriptions now shorten neatly, and Works on and Advanced move onto a row of their own when there isn't room.
+- **Rename an action under Advanced.** The name is now the first row there, which keeps each card clean: app icon, name, what it does.
+
+## In 0.4.6-alpha
 
 - **Your own actions.** Settings › Your actions: put your own programs and commands on the wheel (Actions › Your actions), with the dropped files filled in for you: `{file}`, `{files}`, `{folder}` (already quoted, so names with spaces or & just work), `{name}` and `{ext}`. Ready-made ones to start from: Open in VS Code, Open in Paint, Run a Python script, Open in Photoshop, a command. Two are free; more come with the Microsoft Store version. Thanks to [pixo2000](https://github.com/pixo2000) for the idea ([#4](https://github.com/i3sam/OrbitDrop/issues/4)).
 - **Print.** Actions › Print sends photos and PDFs to your printer through Windows' own print dialog (printer, pages, copies). Photos turn to fill the paper; long PDFs print without filling the memory.

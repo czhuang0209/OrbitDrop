@@ -12,15 +12,11 @@
 
 ## Download
 
-<a href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ?mode=direct"><img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" alt="Get it from Microsoft"></a>
+<a href="https://apps.microsoft.com/detail/9NJQRMQLL2SZ?mode=direct"><img src="https://get.microsoft.com/images/en-us%20dark.svg" height="52" alt="Get it from Microsoft"></a>&nbsp;&nbsp;<a href="https://github.com/i3sam/OrbitDrop/releases/download/v0.4.6-alpha/OrbitDrop-Setup.exe"><img src="docs/design/download-installer.svg" height="52" alt="Download the installer"></a>
 
-**Recommended: [OrbitDrop on the Microsoft Store](https://apps.microsoft.com/detail/9NJQRMQLL2SZ).** Free, installs without any security warning, and the Store keeps it up to date.
+**The Microsoft Store is the easiest way:** it's free, installs without a security warning, and keeps OrbitDrop up to date.
 
-Prefer not to use the Store? [Installer](https://github.com/i3sam/OrbitDrop/releases/download/v0.4.6-alpha/OrbitDrop-Setup.exe) · [portable .zip](https://github.com/i3sam/OrbitDrop/releases/download/v0.4.6-alpha/OrbitDrop-Portable.zip) · [all releases](https://github.com/i3sam/OrbitDrop/releases). No admin rights or .NET needed. These downloads aren't code-signed yet, so if Windows shows "Windows protected your PC", click **More info → Run anyway**.
-
-> **Switching from the GitHub version to the Store?** Uninstall the old one first (Settings → Apps → OrbitDrop → Uninstall), so only one OrbitDrop runs.
-
-> **Status: 0.4.6-alpha.** The core gesture is validated on Windows 11 (single monitor, 100% scale). Multi-monitor, mixed-DPI and Windows 10 sign-off are still pending; see [the feasibility report](docs/research/02-feasibility-report.md).
+<sub>The installer needs no admin rights or .NET. It isn't code-signed yet, so if Windows says "Windows protected your PC", click **More info → Run anyway**. Also available: [portable .zip](https://github.com/i3sam/OrbitDrop/releases/download/v0.4.6-alpha/OrbitDrop-Portable.zip) · [all releases](https://github.com/i3sam/OrbitDrop/releases)<br>Already using the GitHub version? **Settings › About › Switch to the Store version** moves you over, settings included.</sub>
 
 ## How it works
 
@@ -87,6 +83,8 @@ More detail: [docs/development/building.md](docs/development/building.md).
 | `docs/` | Research, architecture, design system, milestones |
 
 ## Documentation
+
+**Status: 0.4.6-alpha.** The core gesture is validated on Windows 11 (single monitor, 100% scale). Multi-monitor, mixed-DPI and Windows 10 sign-off are still pending; see [the feasibility report](docs/research/02-feasibility-report.md).
 
 - [Initial assessment](docs/research/00-initial-assessment.md) · [Probe test sheet](docs/research/01-orbit-probe-test-sheet.md) · [Feasibility report](docs/research/02-feasibility-report.md)
 - [Architecture & milestones](docs/architecture/03-architecture-and-milestones.md) · [Design system](docs/design/design-system.md) · [Milestone 1 summary](docs/milestones/M1-foundation.md)
