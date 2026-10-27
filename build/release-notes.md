@@ -1,4 +1,9 @@
-## What's new in 0.4.4-alpha
+## What's new in 0.4.5-alpha
+
+- **Fixed: Compress video failed on some PCs** with "Windows couldn't read this file", often 60 fps game recordings (like NVIDIA Instant Replay clips) on PCs with an NVIDIA graphics card. When the graphics card refuses a video, OrbitDrop now finishes it with Windows' own software encoder instead of failing. This works for every video and audio tool, not only Compress. Thanks to [teecil](https://github.com/teecil) for finding the cause ([#3](https://github.com/i3sam/OrbitDrop/issues/3)).
+- **Videos keep their frame rate.** Compressed and trimmed videos stay at 60 fps (Trim used to make them 30).
+
+## In 0.4.4-alpha
 
 - **Fixed: updates that didn't install, and OrbitDrop not coming back afterwards.** The installer could stop because it thought OrbitDrop was still open, or because File Explorer was holding the right-click menu. Now OrbitDrop is closed for the update the standard Windows way, the right-click menu gets a new file name with every version, and if an update ever can't be installed, the version you had starts again by itself.
 - Updates keep a log next to OrbitDrop's own (Settings → Advanced → Open logs), so any problem can be explained.
