@@ -81,14 +81,4 @@ public sealed class CustomAction
         if (Kind == "Chosen types" && ChosenExtensions().Count == 0) return "Type the file types it's for, like .psd .ai";
         return null;
     }
-
-    /// <summary>Ready-made actions to start from (Settings → Your actions → Add).</summary>
-    public static IReadOnlyList<CustomAction> Templates { get; } =
-    [
-        new() { Name = "Open in VS Code", Program = "code", Arguments = "{files}", PerFile = false },
-        new() { Name = "Open in Paint", Program = "mspaint", Arguments = "{file}", Kind = "Photos" },
-        new() { Name = "Run a Python script", Program = "python", Arguments = "\"C:\\path\\to\\script.py\" {file}", ShowWindow = true },
-        new() { Name = "Open in Photoshop", Program = "", Arguments = "", Kind = "Photos" },
-        new() { Name = "My command", Program = "", Arguments = "echo {file}", ShowWindow = true },
-    ];
 }

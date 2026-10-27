@@ -405,28 +405,24 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Your actions: programs and commands run with the dropped files (two free, more with the upgrade) -->
+                <!-- Your actions: open the dropped files in your favourite apps (two free, more with the upgrade) -->
                 <StackPanel x:Name="MyActions" Style="{StaticResource Page}">
                     <TextBlock Text="Your actions" Style="{StaticResource Orbit.Text.Subtitle}" Margin="2,0,0,4" />
                     <TextBlock Style="{StaticResource Orbit.Text.Caption}" Margin="2,0,0,14" TextWrapping="Wrap"
-                               Text="Run your own programs and commands on the files you drop. They're on the wheel in Actions › Your actions." />
-                    <Border Style="{StaticResource Orbit.Card}" Padding="16,12" Margin="0,0,0,8">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Left" Style="{StaticResource RowGlyph}" Text="&#xE946;" />
-                            <TextBlock Style="{StaticResource RowHint}" TextWrapping="Wrap" VerticalAlignment="Center">
-                                <Run Text="In the arguments," /> <Run Text="{}{file}" FontWeight="SemiBold" /><Run Text="," />
-                                <Run Text="{}{files}" FontWeight="SemiBold" /> <Run Text="and" /> <Run Text="{}{folder}" FontWeight="SemiBold" />
-                                <Run Text="become the dropped file, all of them, and their folder, already in quotes;" />
-                                <Run Text="{}{name}" FontWeight="SemiBold" /> <Run Text="and" /> <Run Text="{}{ext}" FontWeight="SemiBold" />
-                                <Run Text="its name and extension. Leave the program empty to type a command." />
-                            </TextBlock>
-                        </DockPanel>
-                    </Border>
+                               Text="Open your files in your favourite apps, straight from the wheel: drag, tap Shift until Actions, and choose Your actions." />
                     <StackPanel x:Name="ActionsHost" />
                     <DockPanel Margin="0,6,0,0">
-                        <Button x:Name="AddActionButton" DockPanel.Dock="Left" Content="+ Add an action" Style="{StaticResource Orbit.Button.Standard}" Click="OnAddAction" />
+                        <Button x:Name="AddActionButton" DockPanel.Dock="Left" Content="+ Add an action" Style="{StaticResource Orbit.Button.Accent}" Padding="16,8" Click="OnAddAction" />
                         <TextBlock x:Name="ActionsUsage" Style="{StaticResource Orbit.Text.Caption}" VerticalAlignment="Center" HorizontalAlignment="Right" />
                     </DockPanel>
+                    <!-- Add: the apps found on this PC, one click each -->
+                    <Border x:Name="ActionPicker" Style="{StaticResource Orbit.Card}" Padding="18,16" Margin="0,10,0,0" Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock Text="Which app should open your files?" Style="{StaticResource Orbit.Text.BodyStrong}" FontSize="15" />
+                            <TextBlock Text="These are on your PC. Pick one and it's ready." Style="{StaticResource RowHint}" Margin="0,2,0,12" />
+                            <WrapPanel x:Name="ActionPickerApps" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
                 <!-- Advanced -->

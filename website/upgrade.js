@@ -36,10 +36,15 @@
   const reason = q.get("reason") || "";
 
   if (reason === "actions") {
+    // Good news, not a wall: they've clearly made OrbitDrop theirs, and there's more.
     const limit = Math.max(1, Math.min(99, parseInt(q.get("limit"), 10) || 2));
-    $("up-eyebrow").textContent = "Your actions";
-    $("up-title").textContent = `You've used ${limit} of ${limit} free custom actions.`;
-    $("up-lead").textContent = "Want unlimited? As many of your own programs and commands as you like come with OrbitDrop from the Microsoft Store, along with remove background, upscale, stickers and the rest of the Premium tools. The GitHub version stays free and open source.";
+    $("up-eyebrow").textContent = `🎉 You've made the most of your ${limit} free actions`;
+    $("up-title").textContent = "Unlock unlimited actions ✨";
+    $("up-lead").textContent = "You're clearly making OrbitDrop yours. With the upgrade, add as many actions as you like, open your files in every app you use, and get remove background, upscale, stickers and 24 more Premium tools too. One payment, yours forever.";
+    $("up-img").src = "/assets/upgrade/your-actions.gif";
+    $("up-img").alt = "Your actions in OrbitDrop: two free, then unlimited with the upgrade";
+    $("up-caption").textContent = "Two actions free, as many as you like with the upgrade.";
+    $("up-shot").hidden = false;
     $("up-store").href = store("web_upgrade_actions");
     document.title = "Unlimited custom actions · OrbitDrop";
   } else if (tool) {

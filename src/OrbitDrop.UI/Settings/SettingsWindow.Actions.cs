@@ -7,13 +7,17 @@ using OrbitDrop.Core;
 namespace OrbitDrop.UI.Settings;
 
 /// <summary>
-/// Settings → Your actions: the user's own programs and commands on the wheel. Two are free; adding a third without
-/// the upgrade opens the Upgrade window ("You've used 2 of 2 free custom actions"), and actions past the free ones
-/// wear a crown until it's bought. Each card shows exactly what will run, on a sample photo.
+/// Settings → Your actions: open the dropped files in your favourite apps. "+ Add an action" shows the apps found on
+/// this PC with their icons (VS Code, Photoshop, Paint…), so one click makes "Open in Photoshop" for photos; "Another
+/// app…" takes any program. Each action is a simple card (icon, name, what it works on); the full editor (program,
+/// arguments with {file} and friends, a command instead of an app) waits behind "Advanced". Two actions are free;
+/// adding a third without the upgrade opens the upgrade ("You've used 2 of 2 free custom actions"), and actions past
+/// the free ones wear a crown until it's bought.
 /// </summary>
 public partial class SettingsWindow
 {
     private List<CustomAction> _actions = [];
+    private readonly HashSet<int> _advancedOpen = [];
 
     /// <summary>The colour of "what's wrong" text under a card (shared with the shortcut cards).</summary>
     private static readonly System.Windows.Media.Brush ProblemBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xC4, 0x2B, 0x1C));
@@ -31,6 +35,8 @@ public partial class SettingsWindow
             ? $"{_actions.Count} of {CustomAction.MaxActions} · unlimited with your upgrade"
             : $"{Math.Min(_actions.Count, free)} of {free} free actions used · more with the upgrade \U0001F451";
         AddActionButton.IsEnabled = _actions.Count < CustomAction.MaxActions;
+        // Nothing yet: show the apps straight away, so the first action is one click.
+        if (_actions.Count == 0) ShowPicker();
     }
 
     private void SaveActions(bool rebuild)
@@ -39,7 +45,7 @@ public partial class SettingsWindow
         if (rebuild) BuildActions();
     }
 
-    /// <summary>Add: past the free actions without the upgrade, the Upgrade window; otherwise a menu of ready-made actions.</summary>
+    /// <summary>Add: past the free actions without the upgrade, the upgrade; otherwise the apps on this PC.</summary>
     private void OnAddAction(object sender, RoutedEventArgs e)
     {
         if (!_vm.Licensed && _actions.Count >= CustomAction.FreeActions)
@@ -47,49 +53,83 @@ public partial class SettingsWindow
             _vm.ShowActionsUpgrade();
             return;
         }
-        var menu = new ContextMenu { PlacementTarget = AddActionButton, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
-        foreach (var template in CustomAction.Templates)
-        {
-            var item = new MenuItem { Header = template.Name };
-            item.Click += (_, _) => AddAction(template);
-            menu.Items.Add(item);
-        }
-        menu.Items.Add(new Separator());
-        var blank = new MenuItem { Header = "Start from scratch" };
-        blank.Click += (_, _) => AddAction(new CustomAction { Name = $"Action {_actions.Count + 1}", Arguments = "{file}" });
-        menu.Items.Add(blank);
-        menu.IsOpen = true;
+        if (ActionPicker.Visibility == Visibility.Visible && _actions.Count > 0) ActionPicker.Visibility = Visibility.Collapsed;
+        else ShowPicker();
     }
 
-    private void AddAction(CustomAction template)
+    /// <summary>A tile for each app found on this PC, then "Another app…" and "A command".</summary>
+    private void ShowPicker()
     {
-        var action = template.Clone();
-        if (action.Name == "Open in Photoshop") { action.Program = FindPhotoshop() ?? ""; action.Arguments = "{files}"; action.PerFile = false; }
+        ActionPicker.Visibility = Visibility.Visible;
+        if (ActionPickerApps.Children.Count > 0) return;
+        foreach (var app in AppCatalog.Installed)
+            ActionPickerApps.Children.Add(PickerTile(AppCatalog.IconOf(app.Program), "\uE7AC", app.Name, $"Opens {KindPhrase(app.Kind, app.Extensions)} in {app.Name}",
+                () => AddAction(app.ToAction(), advanced: false)));
+        ActionPickerApps.Children.Add(PickerTile(null, "\uE8E5", "Another app…", "Choose any program on your PC", () =>
+        {
+            var dialog = new OpenFileDialog { Title = "Which app should open your files?", Filter = "Programs (*.exe)|*.exe",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) };
+            if (dialog.ShowDialog(this) != true) return;
+            string name = AppCatalog.NameOf(dialog.FileName);
+            AddAction(new CustomAction { Name = $"Open in {name}", Program = dialog.FileName, Arguments = "{files}", PerFile = false }, advanced: false);
+        }));
+        ActionPickerApps.Children.Add(PickerTile(null, "\uE756", "A command", "For scripts and command lines (advanced)",
+            () => AddAction(new CustomAction { Name = "My command", Program = "", Arguments = "echo {file}", ShowWindow = true }, advanced: true)));
+    }
+
+    private Button PickerTile(System.Windows.Media.ImageSource? icon, string glyph, string title, string tip, Action pick)
+    {
+        var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
+        stack.Children.Add(IconFor(icon, glyph, 32));
+        stack.Children.Add(new TextBlock { Text = title, Style = (Style)FindResource("Orbit.Text.BodyStrong"), FontSize = 12.5, HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) });
+        var tile = new Button { Content = stack, Style = (Style)FindResource("Orbit.Button.Standard"), Width = 118, Height = 92, Margin = new Thickness(0, 0, 8, 8),
+            Padding = new Thickness(6, 10, 6, 8), ToolTip = tip };
+        AutomationProperties.SetName(tile, title);
+        tile.Click += (_, _) => pick();
+        return tile;
+    }
+
+    /// <summary>The app's own icon, or a Fluent glyph when it has none.</summary>
+    private FrameworkElement IconFor(System.Windows.Media.ImageSource? icon, string glyph, double size) => icon is not null
+        ? new Image { Source = icon, Width = size, Height = size, HorizontalAlignment = HorizontalAlignment.Center }
+        : new TextBlock { Text = glyph, Style = (Style)FindResource("Orbit.Glyph"), FontSize = size * 0.75, Width = size, Height = size, TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center, Padding = new Thickness(0, size * 0.1, 0, 0) };
+
+    private void AddAction(CustomAction action, bool advanced)
+    {
         _actions.Add(action);
+        if (advanced) _advancedOpen.Add(_actions.Count - 1);
+        ActionPicker.Visibility = Visibility.Collapsed;
         SaveActions(rebuild: true);
     }
 
-    /// <summary>Photoshop.exe in Program Files › Adobe (any version), or null.</summary>
-    private static string? FindPhotoshop()
+    /// <summary>"photos", "files and folders", ".psd and .ai files"…: what an action works on, in words.</summary>
+    private static string KindPhrase(string kind, string extensions) => kind switch
     {
-        try
-        {
-            string adobe = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Adobe");
-            return !Directory.Exists(adobe) ? null : Directory.EnumerateDirectories(adobe, "Adobe Photoshop*")
-                .OrderByDescending(d => d, StringComparer.OrdinalIgnoreCase)
-                .Select(d => Path.Combine(d, "Photoshop.exe")).FirstOrDefault(File.Exists);
-        }
-        catch (Exception) { return null; }
+        "Everything" => "files and folders",
+        "Chosen types" => string.Join(", ", new CustomAction { Extensions = extensions }.ChosenExtensions()) + " files",
+        _ => kind == "PDFs" ? "PDFs" : kind.ToLowerInvariant(),
+    };
+
+    /// <summary>"Opens photos in Photoshop", or "Runs a command".</summary>
+    private static string Summary(CustomAction action)
+    {
+        if (action.Program.Length == 0) return $"Runs a command on {KindPhrase(action.Kind, action.Extensions)}";
+        string app = Path.IsPathRooted(action.Program) ? AppCatalog.NameOf(action.Program) : action.Program;
+        return $"Opens {KindPhrase(action.Kind, action.Extensions)} in {app}";
     }
 
     private FrameworkElement ActionCard(int index)
     {
         var action = _actions[index];
         bool locked = !_vm.Licensed && index >= CustomAction.FreeActions;
+        bool open = _advancedOpen.Contains(index);
         var card = new Border { Style = (Style)FindResource("Orbit.Card"), Padding = new Thickness(16, 12, 16, 12) };
         var panel = new StackPanel();
         card.Child = panel;
 
+        var summary = new TextBlock { Style = (Style)FindResource("RowHint"), Text = Summary(action), Margin = new Thickness(2, 3, 0, 0), TextWrapping = TextWrapping.Wrap };
         var problem = new TextBlock { Style = (Style)FindResource("Orbit.Text.Caption"), Foreground = ProblemBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
         var runs = new TextBlock { Style = (Style)FindResource("Orbit.Text.Caption"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0), FontFamily = new System.Windows.Media.FontFamily("Cascadia Mono, Consolas") };
         void Refresh()
@@ -99,54 +139,95 @@ public partial class SettingsWindow
             problem.Visibility = why is null ? Visibility.Collapsed : Visibility.Visible;
             runs.Text = why is null ? $"Runs: {Preview(action)}" : "";
             runs.Visibility = why is null ? Visibility.Visible : Visibility.Collapsed;
+            summary.Text = Summary(action);
         }
         void Changed() { SaveActions(rebuild: false); Refresh(); }
 
-        // Name · (crown) · delete
+        // The simple card: icon · name and what it does · works on · advanced · delete
         var top = new DockPanel();
-        var delete = new Button { Style = (Style)FindResource("Orbit.Button.Subtle"), ToolTip = "Delete this action", Margin = new Thickness(8, 0, 0, 0),
+        var icon = IconFor(AppCatalog.IconOf(action.Program), action.Program.Length == 0 ? "\uE756" : "\uE7AC", 32);
+        icon.VerticalAlignment = VerticalAlignment.Center;
+        icon.Margin = new Thickness(0, 0, 14, 0);
+        DockPanel.SetDock(icon, Dock.Left);
+        top.Children.Add(icon);
+        var delete = new Button { Style = (Style)FindResource("Orbit.Button.Subtle"), ToolTip = "Delete this action", Margin = new Thickness(4, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
             Content = new TextBlock { Style = (Style)FindResource("Orbit.Glyph"), Text = "\uE74D", FontSize = 14 } };
-        delete.Click += (_, _) => { _actions.RemoveAt(index); SaveActions(rebuild: true); };
+        delete.Click += (_, _) => { _actions.RemoveAt(index); _advancedOpen.Clear(); SaveActions(rebuild: true); };
         DockPanel.SetDock(delete, Dock.Right);
         top.Children.Add(delete);
-        if (locked)
-        {
-            var crown = new TextBlock { Text = "\U0001F451 Needs the upgrade", Style = (Style)FindResource("Orbit.Text.Caption"), VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(10, 0, 0, 0), ToolTip = $"The first {CustomAction.FreeActions} actions are free; more come with the upgrade." };
-            DockPanel.SetDock(crown, Dock.Right);
-            top.Children.Add(crown);
-        }
-        var name = new TextBox { Text = action.Name, FontSize = 13, VerticalContentAlignment = VerticalAlignment.Center, MaxWidth = 280, HorizontalAlignment = HorizontalAlignment.Left, MinWidth = 200 };
+        var more = new Button { Style = (Style)FindResource("Orbit.Button.Subtle"), Content = open ? "Advanced ▴" : "Advanced ▾", Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
+            FontSize = 12, ToolTip = "The program, what's passed to it, and a few options" };
+        more.Click += (_, _) => { if (!_advancedOpen.Remove(index)) _advancedOpen.Add(index); BuildActions(); };
+        DockPanel.SetDock(more, Dock.Right);
+        top.Children.Add(more);
+        var kind = new ComboBox { Width = 140, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, ToolTip = "Which files it shows up for" };
+        foreach (var k in CustomAction.Kinds) kind.Items.Add(new ComboBoxItem { Content = k, Tag = k, IsSelected = k == action.Kind });
+        AutomationProperties.SetName(kind, "Works on");
+        DockPanel.SetDock(kind, Dock.Right);
+        top.Children.Add(kind);
+        var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        var name = new TextBox { Text = action.Name, FontSize = 13.5, FontWeight = FontWeights.SemiBold, VerticalContentAlignment = VerticalAlignment.Center, Width = 230,
+            HorizontalAlignment = HorizontalAlignment.Left, ToolTip = "Its name on the wheel" };
         AutomationProperties.SetName(name, "Action name");
         name.LostFocus += (_, _) => { if (name.Text.Trim() != action.Name) { action.Name = name.Text.Trim(); Changed(); } };
-        top.Children.Add(name);
+        words.Children.Add(name);
+        words.Children.Add(summary);
+        if (locked)
+            words.Children.Add(new TextBlock { Text = $"\U0001F451 Needs the upgrade: the first {CustomAction.FreeActions} actions are free", Style = (Style)FindResource("Orbit.Text.Caption"), Margin = new Thickness(2, 3, 0, 0) });
+        top.Children.Add(words);
         panel.Children.Add(top);
 
-        // Program · Browse
+        // Chosen types: the extensions, right under the card (it's part of "works on").
+        var extensions = new TextBox { Text = action.Extensions, Width = 200, FontSize = 13, VerticalContentAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 8, 0, 0), ToolTip = "File types, like .psd .ai", Visibility = action.Kind == "Chosen types" ? Visibility.Visible : Visibility.Collapsed };
+        AutomationProperties.SetName(extensions, "File types");
+        extensions.LostFocus += (_, _) => { if (extensions.Text != action.Extensions) { action.Extensions = extensions.Text; Changed(); } };
+        kind.SelectionChanged += (_, _) =>
+        {
+            if (kind.SelectedItem is not ComboBoxItem { Tag: string k } || k == action.Kind) return;
+            action.Kind = k;
+            extensions.Visibility = k == "Chosen types" ? Visibility.Visible : Visibility.Collapsed;
+            Changed();
+        };
+        panel.Children.Add(extensions);
+
+        if (open) panel.Children.Add(AdvancedEditor(action, Changed));
+        panel.Children.Add(problem);
+        if (open) panel.Children.Add(runs);
+        Refresh();
+        if (!open) runs.Visibility = Visibility.Collapsed;
+        if (locked) card.Opacity = 0.7;
+        return card;
+    }
+
+    /// <summary>Behind "Advanced": the program, the arguments with their placeholders, and how it runs.</summary>
+    private StackPanel AdvancedEditor(CustomAction action, Action changed)
+    {
+        var editor = new StackPanel { Margin = new Thickness(46, 4, 0, 0) };
+
         var programRow = Labelled("Program", out var programSlot);
         var program = new TextBox { Text = action.Program, FontSize = 13, VerticalContentAlignment = VerticalAlignment.Center, ToolTip = "A program (Browse), or a name like code or python. Empty: the arguments are a command." };
         AutomationProperties.SetName(program, "Program");
-        program.LostFocus += (_, _) => { if (program.Text.Trim() != action.Program) { action.Program = program.Text.Trim(); Changed(); } };
+        program.LostFocus += (_, _) => { if (program.Text.Trim() != action.Program) { action.Program = program.Text.Trim(); changed(); } };
         var browse = new Button { Content = "Browse…", Style = (Style)FindResource("Orbit.Button.Standard"), Margin = new Thickness(8, 0, 0, 0) };
         browse.Click += (_, _) =>
         {
             var dialog = new OpenFileDialog { Title = "Choose the program", Filter = "Programs (*.exe;*.bat;*.cmd)|*.exe;*.bat;*.cmd|All files (*.*)|*.*" };
             if (dialog.ShowDialog(this) != true) return;
             program.Text = action.Program = dialog.FileName;
-            Changed();
+            changed();
         };
         DockPanel.SetDock(browse, Dock.Right);
         programSlot.Children.Add(browse);
         programSlot.Children.Add(program);
-        panel.Children.Add(programRow);
+        editor.Children.Add(programRow);
 
-        // Arguments · placeholders
         var argsRow = Labelled("Arguments", out var argsSlot);
         var args = new TextBox { Text = action.Arguments, FontSize = 13, VerticalContentAlignment = VerticalAlignment.Center, FontFamily = new System.Windows.Media.FontFamily("Cascadia Mono, Consolas") };
         AutomationProperties.SetName(args, "Arguments");
-        args.LostFocus += (_, _) => { if (args.Text != action.Arguments) { action.Arguments = args.Text; Changed(); } };
+        args.LostFocus += (_, _) => { if (args.Text != action.Arguments) { action.Arguments = args.Text; changed(); } };
         argsSlot.Children.Add(args);
-        panel.Children.Add(argsRow);
+        editor.Children.Add(argsRow);
         var chipsRow = Labelled("", out var chipsSlot); // lined up under the arguments box
         chipsRow.Margin = new Thickness(0, 6, 0, 0);
         var chips = new WrapPanel();
@@ -159,55 +240,33 @@ public partial class SettingsWindow
                 args.Text = args.Text.Insert(at, token);
                 args.CaretIndex = at + token.Length;
                 action.Arguments = args.Text;
-                Changed();
+                changed();
             };
             chips.Children.Add(chip);
         }
         chipsSlot.Children.Add(chips);
-        panel.Children.Add(chipsRow);
+        editor.Children.Add(chipsRow);
 
-        // Works on · once per file · show its window
-        var optionsRow = Labelled("Works on", out var optionsSlot);
+        var optionsRow = Labelled("Runs", out var optionsSlot);
         var options = new WrapPanel { VerticalAlignment = VerticalAlignment.Center };
-        var kind = new ComboBox { Width = 150, FontSize = 13, Margin = new Thickness(0, 0, 8, 0) };
-        foreach (var k in CustomAction.Kinds) kind.Items.Add(new ComboBoxItem { Content = k, Tag = k, IsSelected = k == action.Kind });
-        AutomationProperties.SetName(kind, "Works on");
-        var extensions = new TextBox { Text = action.Extensions, Width = 130, FontSize = 13, VerticalContentAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 14, 0),
-            ToolTip = "File types, like .psd .ai", Visibility = action.Kind == "Chosen types" ? Visibility.Visible : Visibility.Collapsed };
-        AutomationProperties.SetName(extensions, "File types");
-        extensions.LostFocus += (_, _) => { if (extensions.Text != action.Extensions) { action.Extensions = extensions.Text; Changed(); } };
-        kind.SelectionChanged += (_, _) =>
-        {
-            if (kind.SelectedItem is not ComboBoxItem { Tag: string k } || k == action.Kind) return;
-            action.Kind = k;
-            extensions.Visibility = k == "Chosen types" ? Visibility.Visible : Visibility.Collapsed;
-            Changed();
-        };
         var perFile = new CheckBox { Content = "Once per file", IsChecked = action.PerFile, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 14, 0),
             ToolTip = "On: runs separately for each file. Off: runs once, with all of them ({files})." };
-        perFile.Click += (_, _) => { action.PerFile = perFile.IsChecked == true; Changed(); };
+        perFile.Click += (_, _) => { action.PerFile = perFile.IsChecked == true; changed(); };
         var show = new CheckBox { Content = "Show its window", IsChecked = action.ShowWindow, VerticalAlignment = VerticalAlignment.Center,
             ToolTip = "Shows the window and keeps it open when it's done, to read a script's output." };
-        show.Click += (_, _) => { action.ShowWindow = show.IsChecked == true; Changed(); };
-        options.Children.Add(kind);
-        options.Children.Add(extensions);
+        show.Click += (_, _) => { action.ShowWindow = show.IsChecked == true; changed(); };
         options.Children.Add(perFile);
         options.Children.Add(show);
         optionsSlot.Children.Add(options);
-        panel.Children.Add(optionsRow);
-
-        panel.Children.Add(problem);
-        panel.Children.Add(runs);
-        Refresh();
-        if (locked) card.Opacity = 0.7;
-        return card;
+        editor.Children.Add(optionsRow);
+        return editor;
     }
 
     /// <summary>A row with a fixed-width label and a slot for its controls.</summary>
     private DockPanel Labelled(string label, out DockPanel slot)
     {
         var row = new DockPanel { Margin = new Thickness(0, 10, 0, 0) };
-        var text = new TextBlock { Text = label, Style = (Style)FindResource("RowHint"), Width = 96, VerticalAlignment = VerticalAlignment.Center };
+        var text = new TextBlock { Text = label, Style = (Style)FindResource("RowHint"), Width = 86, VerticalAlignment = VerticalAlignment.Center };
         DockPanel.SetDock(text, Dock.Left);
         row.Children.Add(text);
         slot = new DockPanel();
