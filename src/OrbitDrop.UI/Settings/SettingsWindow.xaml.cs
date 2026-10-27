@@ -22,6 +22,8 @@ public partial class SettingsWindow : Window
         Closed += (_, _) => ThemeManager.Current.Changed -= OnThemeChanged;
     }
 
+    private void OnSwitchToStore(object sender, RoutedEventArgs e) => _vm.SwitchToStore();
+
     public static readonly string[] PageNames = ["General", "Appearance", "Shortcuts", "Wheel", "Conversions", "MyActions", "Advanced", "About"];
 
     public void ShowPage(string name)

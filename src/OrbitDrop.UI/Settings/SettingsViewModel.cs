@@ -38,6 +38,8 @@ public interface ISettingsHost
     void RateClicked() { }
     /// <summary>The upgrade guide, opened because the user's actions reached the free limit.</summary>
     void ShowActionsUpgrade() { }
+    /// <summary>About › Switch to the Microsoft Store version.</summary>
+    void SwitchToStore() { }
 }
 
 public sealed class SettingsViewModel : ObservableObject
@@ -141,6 +143,7 @@ public sealed class SettingsViewModel : ObservableObject
     public void SetCustomActions(IEnumerable<CustomAction> actions) => _host.Update(s => s.CustomActions = actions.Select(a => a.Clone()).ToArray());
     /// <summary>Adding past the free actions: the upgrade guide, saying so.</summary>
     public void ShowActionsUpgrade() => _host.ShowActionsUpgrade();
+    public void SwitchToStore() => _host.SwitchToStore();
     public string SettingsPath => _host.SettingsPath;
     public string LogsPath => _host.LogsPath;
 

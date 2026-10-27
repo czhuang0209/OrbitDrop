@@ -39,6 +39,18 @@ public partial class App
         UpdateManager.OpenUrl($"{UpgradePage}?{query}&from=github");
     }
 
+    /// <summary>About › Switch to the Microsoft Store version: install it, then hand over (see <see cref="StoreSwitch"/>).</summary>
+    public void SwitchToStore()
+    {
+        Log.Info("Switch to the Store version: asked");
+        bool portable = !File.Exists(Path.Combine(AppContext.BaseDirectory, "unins000.exe"));
+        ShowInFront(new OrbitDrop.UI.Settings.SwitchWindow(
+            install: (progress, ct) => StoreSwitch.InstallAsync(progress, ct),
+            handOver: () => { SaveNow(); StoreSwitch.HandOver(_paths); Quit(); },
+            openStorePage: () => UpdateManager.OpenUrl(StoreSwitch.StorePage),
+            portable));
+    }
+
     /// <summary>Settings › Your actions › Add, past the free ones: the upgrade guide, saying so.</summary>
     public void ShowActionsUpgrade() => OpenUpgradePage(CustomActionsProvider.Prefix, "");
 

@@ -489,6 +489,17 @@
                             </StackPanel>
                         </DockPanel>
                     </Border>
+                    <!-- The GitHub version: move to the Store version in one go (it installs first, then this one goes) -->
+                    <Border Style="{StaticResource Orbit.Card}">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE719;" />
+                            <Button DockPanel.Dock="Right" Content="Switch" Style="{StaticResource Orbit.Button.Accent}" VerticalAlignment="Center" MinWidth="96" Click="OnSwitchToStore" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Switch to the Microsoft Store version" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="Updates that install themselves, no security warning, and the Premium tools one click away. Your settings come with you." Style="{StaticResource RowHint}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
                     <Border Style="{StaticResource Orbit.Card}">
                         <DockPanel>
                             <TextBlock Style="{StaticResource RowGlyph}" Text="&#xE895;" />
