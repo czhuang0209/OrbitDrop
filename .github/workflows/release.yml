@@ -37,3 +37,21 @@ jobs:
             artifacts/OrbitDrop-Setup.exe
             artifacts/OrbitDrop-Portable.zip
             artifacts/SHA256SUMS.txt
+
+      # The README's Installer / portable links name a release (pre-releases have no "latest" link): point them at
+      # this one, so the README never hands out an old version.
+      - name: Point the README's downloads at this release
+        shell: pwsh
+        run: |
+          git fetch origin main
+          git checkout -B main origin/main
+          $tag = "${{ github.ref_name }}"
+          $readme = Get-Content README.md -Raw
+          $updated = $readme -replace 'releases/download/v[^/]+/', "releases/download/$tag/" -replace '\*\*Status: [^*]+\.\*\*', "**Status: $($tag.TrimStart('v')).**"
+          if ($updated -ne $readme) {
+            Set-Content README.md $updated -NoNewline
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "README: downloads point to $tag"
+            git push origin main
+          }
